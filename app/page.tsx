@@ -70,7 +70,7 @@ export default function HogwartsApp() {
       if (error) throw error;
       if (data) setRecords(data);
     } catch (err) {
-      console.error("Fetch Error:", err);
+      console.error("데이터 로드 실패:", err);
     }
   };
 
@@ -118,6 +118,7 @@ export default function HogwartsApp() {
         .eq('student_name', selectedName);
 
       if (!existing || existing.length === 0) {
+        // [수정] 최소한의 필드만 전송하여 400 에러 방지
         const { error: insError } = await supabase
           .from('study_records')
           .insert({ 
@@ -137,8 +138,8 @@ export default function HogwartsApp() {
       alert(`비밀번호가 [${newPw}]로 변경되었습니다.\n다시 로그인해주세요!`);
       window.location.reload(); 
     } catch (err: any) {
-      console.error("Change Password Error Object:", err);
-      alert("변경 실패: Supabase 연결 상태 또는 DB 컬럼 설정을 확인해주세요.");
+      console.error("비밀번호 변경 실패:", err);
+      alert(`변경 실패: ${err.message || "연결 상태를 확인해주세요."}`);
     }
     setIsSaving(false);
   };
