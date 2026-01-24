@@ -29,7 +29,7 @@ const studentData: { [key: string]: { house: string; emoji: string; color: strin
   "🐈‍⬛깜냥": { house: "후플푸프", emoji: "🐈‍⬛", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🦊여우": { house: "후플푸프", emoji: "🦊", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🧄마늘": { house: "후플푸프", emoji: "🧄", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
-  "🦖공룡": { house: "후플푸프", emoji: "🦖", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
+  "Rex🦖공룡": { house: "후플푸프", emoji: "🦖", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🐿️다람": { house: "후플푸프", emoji: "🐿️", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" }
 };
 
@@ -39,6 +39,47 @@ const HOUSE_CONFIG = {
   "래번클로": { bg: "bg-blue-700", border: "border-blue-800", icon: "🦅", accent: "bg-blue-400" },
   "그리핀도르": { bg: "bg-red-700", border: "border-red-800", icon: "🦁", accent: "bg-red-400" },
   "후플푸프": { bg: "bg-amber-500", border: "border-amber-600", icon: "🦡", accent: "bg-amber-300" }
+};
+
+// 🪄 이제 여기서 자유롭게 엔터를 쳐서 수정하세요!
+const HOUSE_NOTICES: { [key: string]: { title: string, content: string } } = {
+  "래번클로": {
+    title: "지적인 도약과 <이러쿵저러쿵> 특별 부록 안내",
+    content: `래번클로 학생 여러분, 이번 주 우리 기숙사는 62점으로 2위를 기록했습니다. 비록 1위는 놓쳤지만, 플리트윅 교수님께서는 우리가 마법 수업에서 보여준 창의적인 주문 운용과 완벽한 이론 해석을 매우 높게 평가하셨습니다. 점수라는 숫자가 우리의 지식의 깊이를 다 대변할 수는 없음을 잊지 마세요.
+
+게시판 한편에 잡지 <이러쿵저러쿵>의 흥미로운 단신과 함께 특별 부록인 '보이지 않는 잉크를 읽는 돋보기'가 비치되었습니다. 이번 호의 주제는 '겨울철 천문탑 주위를 맴도는 보이지 않는 존재들에 대하여'입니다. 
+가끔은 딱딱한 교과서에서 벗어나 이런 기발한 상상력을 통해 새로운 마법적 영감을 얻어보는 것도 래번클로다운 공부법일 거예요.
+
+최근 독수리 문고리가 던지는 질문이 유독 철학적이라 입구에 정체가 발생하고 있습니다. 논쟁을 즐기는 것은 좋으나, 뒤에 서 있는 학우들이 추위에 떨지 않도록 배려해 주세요. 정 답을 모르겠다면 망설이지 말고 근처의 선배들에게 힌트를 요청하시길 바랍니다.`
+  },
+  "그리핀도르": {
+    title: "잃어버린 용기를 찾아서, 그리고 안전 점검 안내",
+    content: `그리핀도르 학우 여러분, 이번 주 53점이라는 성적은 분명 아쉽습니다. 하지만 네빌 롱보텀 교수님께서는 점수보다 우리가 숲 근처에서 위험에 처한 하급생을 도와준 그 용기를 더 자랑스러워하셨습니다. 점수는 다시 따면 그만이니 너무 기죽지 마십시오. 우리에게는 언제나 역전의 기회가 기다리고 있습니다.
+
+오늘 저녁, 침체된 분위기를 살리고 서로를 격려하기 위해 휴게실에서 짧은 티타임을 갖겠습니다. 주방에서 갓 구운 당근 케이크를 공수해올 예정이니 모두 모여주세요.
+
+단, 한 가지 엄격히 주의할 점이 있습니다. 최근 누군가 휴게실 벽난로 근처에서 위즐리 형제의 폭죽을 테스트하다 카페트를 태워 먹을 뻔했습니다. 사감실의 기억력 향상 선인장이 폭음 때문에 극심한 스트레스를 받아 지난밤 내내 사방으로 가시를 발사했습니다. 덕분에 롱보텀 교수님의 새 망토가 누더기가 되었으니, 실내에서의 장난감 사용은 엄격히 금지합니다. 다시 한번 적발될 경우 해당 학생은 한 달간 약초학 온실 청소를 맡게 될 것입니다.`
+  },
+  "슬리데린": {
+    title: "영광과 슬러그 클럽 후보자 선출",
+    content: `슬리데린의 자부심을 드높인 학우 여러분, 70점이라는 압도적인 점수로 주간 우승을 차지한 것을 축하합니다! 특히 마법약 수업에서 완벽한 '살아있는 죽음의 약'을 제조해 슬러그혼 교수님을 감탄시킨 6학년들의 공이 컸습니다. 
+교수님께서 이번 승리를 기념해 특별히 최고급 설탕 절임 파인애플 한 상자를 휴게실에 보내주셨으니, 우승의 달콤함을 만끽하시기 바랍니다.
+
+이번 승리를 기점으로 슬러그혼 교수님께서 새로운 슬러그 클럽 후보 명단을 검토 중이십니다. 단순히 혈통뿐만 아니라 탁월한 재능과 야망을 가진 학생이라면 누구든 기회가 열려 있습니다. 교수님께 깊은 인상을 남기고 싶은 학생들은 다음 주 마법약 과제에 더 신경 쓰길 바랍니다.
+
+또한, 최근 지하 감옥 복도 초상화들 사이에서 우리 기숙사 학생들이 타 기숙사 학생들과 불필요한 마법 결투를 벌인다는 소문이 돌고 있습니다. 우리는 품격 있게 승리해야 합니다. 상대의 낮은 수준에 맞추기보다, 무시무시할 정도로 완벽한 성적으로 그들을 압도하십시오. 
+
+이번주 기숙사 암호는 '에메랄드 결속'입니다.`
+  },
+  "후플푸프": {
+    title: "성실함과 주방의 친절 릴레이",
+    content: `친애하는 후플푸프 학우 여러분! 이번 주 우리는 64점을 기록하며 2위에 올랐습니다. 우수 기숙사인 슬리데린과 아주 근소한 차이였죠! 스프라우트 교수님께서는 추운 날씨에도 온실의 겨울 장미를 정성껏 돌보고, 얼어붙은 흙을 갈아엎는 데 앞장선 우리 학생들의 성실함을 극찬하셨습니다.
+교수님께서 고마움의 표시로 한겨울에도 시들지 않는 노란 복수초 화분들을 휴게실 창가에 잔뜩 놓아두셨으니, 그 따스한 생명력을 함께 즐겨주세요.
+
+한 가지 공지할 소동이 있습니다. 최근 휴게실 소파 틈새에서 주인 없는 깃펜과 양피지가 무더기로 발견되고 있습니다. 특히 자동 철자 수정 기능이 고장 나 멋대로 춤을 추는 깃펜을 분실한 학생은 즉시 반장에게 찾으러오세요. 그 깃펜이 밤마다 휴게실 벽면에 이상한 낙서를 하고 다녀서 지우느라 애를 먹고 있습니다.
+
+그리고, 이번 주 약초학 실습에는 '신경질적인 거대 전략 식물'을 다룰 예정이니 모두 잊지 말고 용 가죽 장갑을 꼼꼼히 수선해 두세요. 구멍 난 장갑을 끼고 왔다가 손가락이 보라색으로 변하는 일은 없어야겠죠? 서로의 장갑 상태를 미리 확인해 주는 후플푸프만의 세심함을 발휘해 봅시다!`
+  }
 };
 
 const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
@@ -58,6 +99,7 @@ export default function HogwartsApp() {
   const [records, setRecords] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [selectedHouseNotice, setSelectedHouseNotice] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -161,7 +203,6 @@ export default function HogwartsApp() {
         password: current.password || '0000', monthly_off_count: current.monthly_off_count ?? 4
       };
       
-      // 상태 즉시 반영 (게이지 리셋 포함)
       if (field === 'monthly_off_count') {
         setRecords(prev => prev.map(r => r.student_name === name ? { ...r, monthly_off_count: value } : r));
       } else if (idx > -1) {
@@ -171,7 +212,6 @@ export default function HogwartsApp() {
         newRecords.push(updatedData);
         setRecords(newRecords);
       }
-
       await supabase.from('study_records').upsert(updatedData, { onConflict: 'student_name,day_of_week' });
     }
     setIsSaving(false);
@@ -204,7 +244,26 @@ export default function HogwartsApp() {
     : [selectedName];
 
   return (
-    <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 font-sans">
+    <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 font-sans relative">
+      {/* 마법 공지사항 팝업 */}
+      {selectedHouseNotice && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setSelectedHouseNotice(null)}>
+          <div className="relative bg-[#f4e4bc] p-8 md:p-12 w-full max-w-2xl rounded-sm shadow-[0_0_50px_rgba(0,0,0,0.3)] overflow-hidden animate-in zoom-in-95 duration-300" onClick={(e) => e.stopPropagation()} style={{ backgroundImage: 'radial-gradient(circleAt 50% 50%, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.05) 100%)' }}>
+            <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/paper-fibers.png")' }}></div>
+            <button onClick={() => setSelectedHouseNotice(null)} className="absolute top-4 right-4 text-slate-800 hover:rotate-90 transition-transform p-2 text-2xl">✕</button>
+            <div className="relative z-10 font-serif">
+              <div className="w-16 h-1 bg-slate-800/20 mx-auto mb-6"></div>
+              <h3 className="text-2xl md:text-3xl font-black text-[#4a3728] mb-6 text-center italic border-b border-[#4a3728]/20 pb-4">{HOUSE_NOTICES[selectedHouseNotice].title}</h3>
+              <div className="text-lg leading-relaxed text-[#5d4037] whitespace-pre-wrap font-medium">
+                {HOUSE_NOTICES[selectedHouseNotice].content}
+              </div>
+              <div className="mt-8 text-right italic font-bold text-[#4a3728]/60">— Hogwarts School of Witchcraft and Wizardry —</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 이하 점수판 및 테이블 코드 동일 */}
       <div className="max-w-[1100px] mx-auto mb-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight uppercase">Hogwarts House Cup</h2>
@@ -218,7 +277,7 @@ export default function HogwartsApp() {
             const config = (HOUSE_CONFIG as any)[item.house];
             const rankLabel = ["1st", "2nd", "3rd", "4th"][idx];
             return (
-              <div key={item.house} className={`${config.bg} ${config.border} border-b-4 p-1.5 md:p-5 rounded-xl md:rounded-[2rem] text-white shadow-xl relative overflow-hidden`}>
+              <div key={item.house} onClick={() => setSelectedHouseNotice(item.house)} className={`${config.bg} ${config.border} border-b-4 p-1.5 md:p-5 rounded-xl md:rounded-[2rem] text-white shadow-xl relative overflow-hidden cursor-pointer active:scale-95 transition-all hover:brightness-110`}>
                 <div className="absolute right-[-10px] bottom-[-10px] text-5xl opacity-20">{config.icon}</div>
                 <div className="flex justify-between items-start mb-1">
                   <div className="text-[7px] md:text-xs font-black opacity-90 uppercase">{item.house}</div>
