@@ -76,9 +76,11 @@ export default function HogwartsApp() {
     if (!selectedName) { alert("이름을 선택해주세요."); return; }
     
     const { data } = await supabase.from('study_records').select('password').eq('student_name', selectedName);
-    const validPassword = (data && data.length > 0) ? data[0].password : "0000";
+    
+    // 0000이 아닌 비밀번호가 하나라도 있으면 그걸 실제 비번으로 간주
+    const actualPassword = data?.find(r => r.password !== "0000")?.password || "0000";
 
-    if (password === validPassword) {
+    if (password === actualPassword) {
       setIsAdmin(false);
       setIsLoggedIn(true);
     } else {
@@ -95,21 +97,21 @@ export default function HogwartsApp() {
     
     setIsSaving(true);
     try {
-      // 1. 기존 모든 행의 비밀번호 업데이트
+      // 1. 기존 데이터가 있는지 확인
       const { data: existing } = await supabase.from('study_records').select('id').eq('student_name', selectedName);
       
       if (!existing || existing.length === 0) {
-        // 2. 기록이 아예 없는 신규 학생인 경우 '월'요일 데이터 생성
+        // 2. 신규 학생은 월요일 데이터 생성
         await supabase.from('study_records').insert([{ student_name: selectedName, day_of_week: '월', password: newPw, study_time: '0:00' }]);
       } else {
-        // 3. 기록이 있으면 전체 업데이트
+        // 3. 기존 학생은 모든 요일 데이터의 비밀번호를 강제 업데이트
         await supabase.from('study_records').update({ password: newPw }).eq('student_name', selectedName);
       }
 
-      alert(`비밀번호가 변경되었습니다! 새로운 비밀번호로 다시 로그인해 주세요.`);
-      window.location.reload(); // 캐시 방지 및 재로그인 유도
+      alert(`비밀번호가 [${newPw}]로 변경되었습니다.\n창이 새로고침되면 새 번호로 로그인하세요!`);
+      window.location.reload(); 
     } catch (err) {
-      alert("저장 실패");
+      alert("비밀번호 저장에 실패했습니다. 다시 시도해 주세요.");
     }
     setIsSaving(false);
   };
@@ -152,9 +154,11 @@ export default function HogwartsApp() {
     if (!isAdmin) return;
     setIsSaving(true);
     const existing = records.find(r => r.student_name === name && r.day_of_week === day);
-    const sameStudentRec = records.find(r => r.student_name === name && r.password);
+    // 가장 최근의 비밀번호를 찾아서 보존
+    const latestPw = records.filter(r => r.student_name === name).find(r => r.password !== "0000")?.password || "0000";
+    
     const updatedData = { 
-      ...(existing || { student_name: name, day_of_week: day, password: sameStudentRec?.password || "0000" }), 
+      ...(existing || { student_name: name, day_of_week: day, password: latestPw }), 
       [field]: value 
     };
     await supabase.from('study_records').upsert(updatedData, { onConflict: 'student_name,day_of_week' });
