@@ -146,35 +146,29 @@ export default function HogwartsApp() {
     }).sort((a, b) => b.finalPoint - a.finalPoint);
   }, [records]);
 
-  // [수정 핵심] 즉각적인 상태 업데이트 함수
+  // [핵심] DB와 로컬 상태를 일치시키는 함수
   const handleChange = async (name: string, day: string, field: string, value: any) => {
     if (!isAdmin) return;
-    setIsSaving(true);
-    
-    // 1. 로컬 상태 즉시 업데이트 (사용자 경험 향상)
-    const newRecords = records.map(r => {
-      if (r.student_name === name && r.day_of_week === day) {
-        return { ...r, [field]: value };
-      }
-      return r;
-    });
-    setRecords(newRecords);
 
-    // 2. DB 업데이트
+    // 로컬 상태 즉시 반영 (공부시간 입력 중에는 별도 처리하므로 필터링)
+    if (field !== 'study_time_typing') {
+        const newRecords = records.map(r => (r.student_name === name && r.day_of_week === day) ? { ...r, [field]: value } : r);
+        setRecords(newRecords);
+    }
+
+    setIsSaving(true);
     try {
       const existing = records.find(r => r.student_name === name && r.day_of_week === day);
       const latestPw = records.filter(r => r.student_name === name).find(r => r.password && r.password !== "0000")?.password || "0000";
-      
       const updatedData = { 
         ...(existing || { student_name: name, day_of_week: day, password: latestPw, is_late: false, am_3h: false, study_time: '0:00', off_type: '-' }), 
         [field]: value 
       };
-
       const { error } = await supabase.from('study_records').upsert(updatedData, { onConflict: 'student_name,day_of_week' });
       if (error) throw error;
     } catch (err) {
       console.error("저장 실패:", err);
-      fetchRecords(); // 에러 시 원래 데이터로 복구
+      fetchRecords(); // 에러 시 복구
     } finally {
       setIsSaving(false);
     }
@@ -254,7 +248,6 @@ export default function HogwartsApp() {
                 const info = studentData[name];
                 const monRec = records.find(r => r.student_name === name && r.day_of_week === '월') || {};
                 const offCount = (monRec.monthly_off_count === null || monRec.monthly_off_count === undefined) ? 4 : monRec.monthly_off_count;
-                
                 const rows = [{l:'휴무',f:'off_type'},{l:'지각',f:'is_late'},{l:'오전3H',f:'am_3h'},{l:'공부시간',f:'study_time'},{l:'벌점',f:'penalty'},{l:'상점',f:'bonus'},{l:'총점',f:'total'}];
                 return (
                   <React.Fragment key={name}>
@@ -281,12 +274,16 @@ export default function HogwartsApp() {
                               ) : (row.f === 'is_late' || row.f === 'am_3h') ? (
                                 <input type="checkbox" className="w-5 h-5 accent-slate-800 mx-auto block cursor-pointer" checked={!!rec[row.f]} onChange={(e) => handleChange(name, day, row.f, e.target.checked)} disabled={!isAdmin} />
                               ) : row.f === 'study_time' ? (
-                                <input type="text" className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-sm" value={rec.study_time || '0:00'} onChange={(e) => {
-                                  // 입력 중에는 로컬 상태만 빠르게 업데이트
-                                  const val = e.target.value;
-                                  const newRecs = records.map(r => (r.student_name === name && r.day_of_week === day) ? { ...r, study_time: val } : r);
-                                  setRecords(newRecs);
-                                }} onBlur={(e) => handleChange(name, day, 'study_time', e.target.value)} disabled={!isAdmin} />
+                                <input type="text" className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-sm" 
+                                  value={rec.study_time || ''} 
+                                  placeholder="0:00"
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setRecords(prev => prev.map(r => (r.student_name === name && r.day_of_week === day) ? { ...r, study_time: val } : r));
+                                  }} 
+                                  onBlur={(e) => handleChange(name, day, 'study_time', e.target.value || '0:00')} 
+                                  disabled={!isAdmin} 
+                                />
                               ) : <span className={`font-black text-sm ${row.f === 'penalty' ? 'text-red-500' : row.f === 'bonus' ? 'text-blue-600' : 'text-slate-900'}`}>{res[row.f as keyof typeof res]}</span>}
                             </td>
                           );
@@ -298,29 +295,13 @@ export default function HogwartsApp() {
                         {rIdx === 0 && (
                           <td rowSpan={7} className="p-2 bg-white border-l">
                             <div className="flex flex-col items-center gap-2">
-                              <div 
-                                className={`flex flex-col gap-1 ${isAdmin ? 'cursor-pointer hover:opacity-80' : ''}`}
-                                onClick={() => {
-                                  if(isAdmin) {
-                                    const nextVal = offCount > 0 ? offCount - 1 : 0;
-                                    handleChange(name, '월', 'monthly_off_count', nextVal);
-                                  }
-                                }}
-                              >
+                              <div className={`flex flex-col gap-1 ${isAdmin ? 'cursor-pointer' : ''}`} onClick={() => isAdmin && handleChange(name, '월', 'monthly_off_count', offCount > 0 ? offCount - 1 : 0)}>
                                 {[1, 2, 3, 4].map((n) => (
                                   <div key={n} className={`w-8 h-4 rounded-md border-2 ${offCount >= (5-n) ? info.accent : 'bg-slate-50 border-slate-200'}`} />
                                 ))}
                               </div>
                               {isAdmin && (
-                                <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleChange(name, '월', 'monthly_off_count', 4);
-                                  }}
-                                  className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-500 p-1 px-2 rounded-full font-black flex items-center gap-1"
-                                >
-                                  <span>↺</span> RESET
-                                </button>
+                                <button onClick={(e) => { e.stopPropagation(); handleChange(name, '월', 'monthly_off_count', 4); }} className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-500 p-1 px-2 rounded-full font-black"><span>↺</span> RESET</button>
                               )}
                             </div>
                           </td>
