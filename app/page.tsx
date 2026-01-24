@@ -75,10 +75,7 @@ export default function HogwartsApp() {
     if (password === "8888") { setIsAdmin(true); setIsLoggedIn(true); return; }
     if (!selectedName) { alert("이름을 선택해주세요."); return; }
     
-    // DB에서 비밀번호 조회
     const { data } = await supabase.from('study_records').select('password').eq('student_name', selectedName);
-    
-    // 기록이 아예 없는 학생은 기본값 '0000', 기록이 있으면 저장된 비밀번호 사용
     const validPassword = (data && data.length > 0) ? data[0].password : "0000";
 
     if (password === validPassword) {
@@ -91,24 +88,30 @@ export default function HogwartsApp() {
 
   const changePassword = async () => {
     const newPw = prompt("새로운 4자리 숫자를 입력하세요.");
-    if (!newPw || newPw.length !== 4 || isNaN(Number(newPw))) { alert("4자리 숫자로 입력해주세요."); return; }
+    if (!newPw || newPw.length !== 4 || isNaN(Number(newPw))) { 
+      alert("4자리 숫자로 입력해주세요."); 
+      return; 
+    }
     
     setIsSaving(true);
-    
-    // 1. 현재 테이블에 학생 기록이 있는지 확인
-    const { data: existing } = await supabase.from('study_records').select('*').eq('student_name', selectedName);
+    try {
+      // 1. 기존 모든 행의 비밀번호 업데이트
+      const { data: existing } = await supabase.from('study_records').select('id').eq('student_name', selectedName);
+      
+      if (!existing || existing.length === 0) {
+        // 2. 기록이 아예 없는 신규 학생인 경우 '월'요일 데이터 생성
+        await supabase.from('study_records').insert([{ student_name: selectedName, day_of_week: '월', password: newPw, study_time: '0:00' }]);
+      } else {
+        // 3. 기록이 있으면 전체 업데이트
+        await supabase.from('study_records').update({ password: newPw }).eq('student_name', selectedName);
+      }
 
-    if (!existing || existing.length === 0) {
-      // 기록이 없으면 '월'요일 데이터로 하나 생성하며 비밀번호 저장
-      await supabase.from('study_records').insert([{ student_name: selectedName, day_of_week: '월', password: newPw }]);
-    } else {
-      // 기록이 있으면 모든 해당 학생 행의 비밀번호 업데이트
-      await supabase.from('study_records').update({ password: newPw }).eq('student_name', selectedName);
+      alert(`비밀번호가 변경되었습니다! 새로운 비밀번호로 다시 로그인해 주세요.`);
+      window.location.reload(); // 캐시 방지 및 재로그인 유도
+    } catch (err) {
+      alert("저장 실패");
     }
-
-    alert("비밀번호가 변경되었습니다. 이제 새 비밀번호로 로그인하세요!");
     setIsSaving(false);
-    fetchRecords();
   };
 
   const calc = (r: any) => {
