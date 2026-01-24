@@ -199,19 +199,23 @@ export default function HogwartsApp() {
       const current = newRecords[idx] || {};
       const updatedData = { 
         student_name: name, day_of_week: day, [field]: value, 
-        password: current.password || '0000', monthly_off_count: current.monthly_off_count ?? 4
+        password: current.password || '0000', 
+        monthly_off_count: field === 'monthly_off_count' ? value : (current.monthly_off_count ?? 4)
       };
       
       if (field === 'monthly_off_count') {
         setRecords(prev => prev.map(r => r.student_name === name ? { ...r, monthly_off_count: value } : r));
+        // 월휴 게이지 데이터 저장
+        await supabase.from('study_records').upsert(updatedData, { onConflict: 'student_name,day_of_week' });
       } else if (idx > -1) {
         newRecords[idx] = { ...newRecords[idx], ...updatedData };
         setRecords(newRecords);
+        await supabase.from('study_records').upsert(updatedData, { onConflict: 'student_name,day_of_week' });
       } else {
         newRecords.push(updatedData);
         setRecords(newRecords);
+        await supabase.from('study_records').upsert(updatedData, { onConflict: 'student_name,day_of_week' });
       }
-      await supabase.from('study_records').upsert(updatedData, { onConflict: 'student_name,day_of_week' });
     }
     setIsSaving(false);
   };
@@ -244,18 +248,15 @@ export default function HogwartsApp() {
 
   return (
     <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 font-sans relative">
-      {/* 마법 공지사항 팝업 (모바일 최적화 수정본) */}
+      {/* 마법 공지사항 팝업 (모바일 최적화) */}
       {selectedHouseNotice && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setSelectedHouseNotice(null)}>
           <div className="relative bg-[#f4e4bc] p-6 md:p-12 w-full max-w-2xl rounded-sm shadow-[0_0_50px_rgba(0,0,0,0.3)] overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()} style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.05) 100%)' }}>
             <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/paper-fibers.png")' }}></div>
             <button onClick={() => setSelectedHouseNotice(null)} className="absolute top-2 right-2 md:top-4 md:right-4 text-slate-800 hover:rotate-90 transition-transform p-2 text-2xl z-20">✕</button>
-            
             <div className="relative z-10 font-serif flex flex-col overflow-hidden">
               <div className="w-16 h-1 bg-slate-800/20 mx-auto mb-4 md:mb-6 shrink-0"></div>
               <h3 className="text-xl md:text-3xl font-black text-[#4a3728] mb-4 md:mb-6 text-center italic border-b border-[#4a3728]/20 pb-4 shrink-0 px-4">{HOUSE_NOTICES[selectedHouseNotice].title}</h3>
-              
-              {/* 내용 영역에 스크롤 추가 */}
               <div className="overflow-y-auto pr-2 custom-scrollbar">
                 <div className="text-base md:text-lg leading-relaxed text-[#5d4037] whitespace-pre-wrap font-medium">
                   {HOUSE_NOTICES[selectedHouseNotice].content}
@@ -267,7 +268,7 @@ export default function HogwartsApp() {
         </div>
       )}
 
-      {/* 이하 점수판 및 테이블 코드 동일 */}
+      {/* 대시보드 */}
       <div className="max-w-[1100px] mx-auto mb-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight uppercase">Hogwarts House Cup</h2>
@@ -294,6 +295,7 @@ export default function HogwartsApp() {
         </div>
       </div>
 
+      {/* 기록 테이블 */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
         <div className="bg-slate-900 p-4 px-6 md:px-8 flex justify-between items-center text-white">
           <span className="text-[10px] md:text-xs font-black text-yellow-500 uppercase tracking-widest flex items-center gap-2">
@@ -401,7 +403,13 @@ export default function HogwartsApp() {
                           <td rowSpan={7} className="p-2 bg-white border-l text-center">
                             <div className="flex flex-col items-center gap-1.5">
                               {[1, 2, 3, 4].map((n) => (
-                                <div key={n} onClick={() => isAdmin && handleChange(name, '월', 'monthly_off_count', offCount >= (5-n) ? (5-n)-1 : offCount)} 
+                                <div key={n} 
+                                     onClick={() => {
+                                       if(isAdmin) {
+                                         const nextCount = offCount >= (5-n) ? (5-n)-1 : offCount;
+                                         handleChange(name, '월', 'monthly_off_count', nextCount);
+                                       }
+                                     }} 
                                      className={`w-7 h-5 rounded-md border-2 ${isAdmin ? 'cursor-pointer' : ''} ${offCount >= (5-n) ? info.accent : 'bg-slate-50 border-slate-200'}`} />
                               ))}
                               {isAdmin && <button onClick={() => confirm("월휴 리셋?") && handleChange(name, '월', 'monthly_off_count', 4)} className="mt-2 px-1 py-0.5 bg-slate-800 text-[8px] text-white rounded font-bold uppercase">Reset</button>}
