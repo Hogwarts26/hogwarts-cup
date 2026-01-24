@@ -75,12 +75,15 @@ export default function HogwartsApp() {
     if (password === "8888") { setIsAdmin(true); setIsLoggedIn(true); return; }
     if (!selectedName) { alert("이름을 선택해주세요."); return; }
     
+    // DB에서 해당 학생의 비밀번호 조회
     const { data } = await supabase.from('study_records').select('password').eq('student_name', selectedName);
-    
-    // 0000이 아닌 비밀번호가 하나라도 있으면 실제 비번으로 간주, 없으면 0000
-    const actualPassword = data?.find(r => r.password && r.password !== "0000")?.password || "0000";
+    const dbPassword = data?.find(r => r.password && r.password !== "0000")?.password || "0000";
 
-    if (password === actualPassword) {
+    if (password === dbPassword) {
+      // 로그인 성공 시 데이터가 하나도 없는 학생이라면 '월'요일 기초 데이터 생성 (비번 유지용)
+      if (!data || data.length === 0) {
+        await supabase.from('study_records').insert([{ student_name: selectedName, day_of_week: '월', password: dbPassword, study_time: '0:00' }]);
+      }
       setIsAdmin(false);
       setIsLoggedIn(true);
     } else {
@@ -97,23 +100,21 @@ export default function HogwartsApp() {
     
     setIsSaving(true);
     try {
-      // 1. 현재 DB에 해당 학생의 데이터가 하나라도 있는지 확인
-      const { data: existing } = await supabase.from('study_records').select('id').eq('student_name', selectedName);
-      
-      if (!existing || existing.length === 0) {
-        // 2. [중요] 기록이 아예 없는 학생은 '월'요일 행을 새로 만들어서 비번을 심음
-        await supabase.from('study_records').insert([
-          { student_name: selectedName, day_of_week: '월', password: newPw, study_time: '0:00', off_type: '-' }
-        ]);
-      } else {
-        // 3. 기록이 이미 있는 학생은 모든 행의 비번을 업데이트
-        await supabase.from('study_records').update({ password: newPw }).eq('student_name', selectedName);
-      }
+      // 모든 요일에 대해 해당 학생의 비밀번호를 업데이트하거나, 없으면 새로 만듬
+      // 월요일 데이터는 확실히 생성/업데이트
+      await supabase.from('study_records').upsert({ 
+        student_name: selectedName, 
+        day_of_week: '월', 
+        password: newPw 
+      }, { onConflict: 'student_name,day_of_week' });
 
-      alert(`비밀번호가 [${newPw}]로 설정되었습니다!\n로그인 화면으로 돌아갑니다.`);
+      // 기존에 다른 요일 데이터가 있다면 그것들도 비번 통일
+      await supabase.from('study_records').update({ password: newPw }).eq('student_name', selectedName);
+
+      alert(`비밀번호가 성공적으로 변경되었습니다!`);
       window.location.reload(); 
     } catch (err) {
-      alert("비밀번호 저장 중 오류가 발생했습니다.");
+      alert("저장 실패. 네트워크 상태를 확인해주세요.");
     }
     setIsSaving(false);
   };
@@ -156,7 +157,6 @@ export default function HogwartsApp() {
     if (!isAdmin) return;
     setIsSaving(true);
     const existing = records.find(r => r.student_name === name && r.day_of_week === day);
-    // 가장 최근의 바뀐 비번을 찾아 유지 (없으면 0000)
     const latestPw = records.filter(r => r.student_name === name).find(r => r.password && r.password !== "0000")?.password || "0000";
     
     const updatedData = { 
