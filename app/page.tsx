@@ -35,10 +35,10 @@ const studentData: { [key: string]: { house: string; emoji: string; color: strin
 
 const HOUSE_ORDER = ["슬리데린", "래번클로", "그리핀도르", "후플푸프"];
 const HOUSE_CONFIG = {
-  "슬리데린": { bg: "bg-emerald-600", border: "border-emerald-700", icon: "🐍" },
-  "래번클로": { bg: "bg-blue-700", border: "border-blue-800", icon: "🦅" },
-  "그리핀도르": { bg: "bg-red-700", border: "border-red-800", icon: "🦁" },
-  "후플푸프": { bg: "bg-amber-500", border: "border-amber-600", icon: "🦡" }
+  "슬리데린": { bg: "bg-emerald-600", border: "border-emerald-700", icon: "🐍", accent: "bg-emerald-400" },
+  "래번클로": { bg: "bg-blue-700", border: "border-blue-800", icon: "🦅", accent: "bg-blue-400" },
+  "그리핀도르": { bg: "bg-red-700", border: "border-red-800", icon: "🦁", accent: "bg-red-400" },
+  "후플푸프": { bg: "bg-amber-500", border: "border-amber-600", icon: "🦡", accent: "bg-amber-300" }
 };
 
 const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
@@ -205,12 +205,16 @@ export default function HogwartsApp() {
           </div>
         </div>
         <div className="grid grid-cols-4 gap-1.5 md:gap-4">
-          {houseRankings.map((item) => {
+          {houseRankings.map((item, idx) => {
             const config = (HOUSE_CONFIG as any)[item.house];
+            const rankLabel = ["1st", "2nd", "3rd", "4th"][idx];
             return (
               <div key={item.house} className={`${config.bg} ${config.border} border-b-4 p-1.5 md:p-5 rounded-xl md:rounded-[2rem] text-white shadow-xl relative overflow-hidden`}>
                 <div className="absolute right-[-10px] bottom-[-10px] text-5xl opacity-20">{config.icon}</div>
-                <div className="text-[7px] md:text-xs font-black opacity-90 uppercase mb-1">{item.house}</div>
+                <div className="flex justify-between items-start mb-1">
+                  <div className="text-[7px] md:text-xs font-black opacity-90 uppercase">{item.house}</div>
+                  <div className={`text-[8px] md:text-[10px] font-black px-1.5 md:px-2 py-0.5 rounded-full ${config.accent} text-slate-900 shadow-sm`}>{rankLabel}</div>
+                </div>
                 <div className="text-lg md:text-4xl font-black">{item.finalPoint.toFixed(1)}</div>
               </div>
             );
@@ -255,7 +259,7 @@ export default function HogwartsApp() {
                   totalPointsSum += res.total;
                 });
 
-                // 이름에서 이모지 분리 (표시용)
+                // 이름에서 이모지 분리
                 const emoji = name.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]|\uD83D[\uDC00-\uDE4F]|[\u2000-\u3300]/g)?.[0] || "";
                 const displayName = name.replace(emoji, "");
 
