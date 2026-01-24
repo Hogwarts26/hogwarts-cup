@@ -29,7 +29,7 @@ const studentData: { [key: string]: { house: string; emoji: string; color: strin
   "🐈‍⬛깜냥": { house: "후플푸프", emoji: "🐈‍⬛", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🦊여우": { house: "후플푸프", emoji: "🦊", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🧄마늘": { house: "후플푸프", emoji: "🧄", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
-  "🦖공룡": { house: "후플푸프", emoji: "🦖", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
+  "Rex🦖공룡": { house: "후플푸프", emoji: "🦖", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🐿️다람": { house: "후플푸프", emoji: "🐿️", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" }
 };
 
@@ -77,7 +77,6 @@ export default function HogwartsApp() {
     
     const { data } = await supabase.from('study_records').select('password').eq('student_name', selectedName);
     
-    // 데이터가 없는 학생은 0000이면 통과
     if (!data || data.length === 0) {
       if (password === "0000") {
         setIsAdmin(false);
@@ -108,26 +107,35 @@ export default function HogwartsApp() {
     
     setIsSaving(true);
     try {
-      // 1. 기존 모든 요일 데이터의 비번을 업데이트
-      await supabase.from('study_records').update({ password: newPw }).eq('student_name', selectedName);
-
-      // 2. 데이터가 아예 없는 학생은 월요일 데이터로 비번 저장
-      const { data: existing } = await supabase.from('study_records').select('id').eq('student_name', selectedName).limit(1);
+      const { data: existing } = await supabase
+        .from('study_records')
+        .select('id')
+        .eq('student_name', selectedName);
 
       if (!existing || existing.length === 0) {
-        await supabase.from('study_records').insert({
-          student_name: selectedName,
-          day_of_week: '월',
-          password: newPw,
-          study_time: '0:00'
-        });
+        // [수정 포인트] id를 아예 제외하고 insert하여 DB가 gen_random_uuid()를 수행하게 함
+        const { error: insError } = await supabase
+          .from('study_records')
+          .insert([{ 
+            student_name: selectedName, 
+            day_of_week: '월', 
+            password: newPw, 
+            study_time: '0:00' 
+          }]);
+        if (insError) throw insError;
+      } else {
+        const { error: updError } = await supabase
+          .from('study_records')
+          .update({ password: newPw })
+          .eq('student_name', selectedName);
+        if (updError) throw updError;
       }
 
       alert(`비밀번호가 [${newPw}]로 변경되었습니다.\n다시 로그인해주세요!`);
       window.location.reload(); 
     } catch (err) {
       console.error(err);
-      alert("변경 실패: Supabase 연결을 확인해주세요.");
+      alert("변경 실패: Supabase 연결 또는 id 컬럼 설정을 확인해주세요.");
     }
     setIsSaving(false);
   };
