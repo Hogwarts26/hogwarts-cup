@@ -65,7 +65,7 @@ export default function HogwartsApp() {
   }, []);
 
   const fetchRecords = async () => {
-    const { data } = await supabase.from('study_records').select('*');
+    const { data, error } = await supabase.from('study_records').select('*');
     if (data) setRecords(data);
   };
 
@@ -75,15 +75,14 @@ export default function HogwartsApp() {
     if (password === "8888") { setIsAdmin(true); setIsLoggedIn(true); return; }
     if (!selectedName) { alert("이름을 선택해주세요."); return; }
     
-    // DB에서 해당 학생의 비밀번호 조회
+    // DB에서 해당 학생의 데이터를 모두 긁어옴
     const { data } = await supabase.from('study_records').select('password').eq('student_name', selectedName);
-    const dbPassword = data?.find(r => r.password && r.password !== "0000")?.password || "0000";
+    
+    // 0000이 아닌 다른 비밀번호가 하나라도 있는지 체크
+    const customPw = data?.find(r => r.password && r.password !== "0000")?.password;
+    const finalValidPw = customPw || "0000";
 
-    if (password === dbPassword) {
-      // 로그인 성공 시 데이터가 하나도 없는 학생이라면 '월'요일 기초 데이터 생성 (비번 유지용)
-      if (!data || data.length === 0) {
-        await supabase.from('study_records').insert([{ student_name: selectedName, day_of_week: '월', password: dbPassword, study_time: '0:00' }]);
-      }
+    if (password === finalValidPw) {
       setIsAdmin(false);
       setIsLoggedIn(true);
     } else {
@@ -100,21 +99,24 @@ export default function HogwartsApp() {
     
     setIsSaving(true);
     try {
-      // 모든 요일에 대해 해당 학생의 비밀번호를 업데이트하거나, 없으면 새로 만듬
-      // 월요일 데이터는 확실히 생성/업데이트
-      await supabase.from('study_records').upsert({ 
-        student_name: selectedName, 
-        day_of_week: '월', 
-        password: newPw 
+      // 핵심: 데이터 유무 상관없이 '월요일' 자리에 비밀번호를 강제 주입(Upsert)
+      const { error: upsertError } = await supabase.from('study_records').upsert({
+        student_name: selectedName,
+        day_of_week: '월',
+        password: newPw,
+        study_time: '0:00'
       }, { onConflict: 'student_name,day_of_week' });
 
-      // 기존에 다른 요일 데이터가 있다면 그것들도 비번 통일
+      if (upsertError) throw upsertError;
+
+      // 이미 생성된 다른 요일 데이터가 있다면 그것들도 비번 통일
       await supabase.from('study_records').update({ password: newPw }).eq('student_name', selectedName);
 
-      alert(`비밀번호가 성공적으로 변경되었습니다!`);
+      alert(`비밀번호가 [${newPw}]로 변경되었습니다.\n다시 로그인해주세요!`);
       window.location.reload(); 
     } catch (err) {
-      alert("저장 실패. 네트워크 상태를 확인해주세요.");
+      console.error(err);
+      alert("변경 실패: Supabase 연결을 확인해주세요.");
     }
     setIsSaving(false);
   };
