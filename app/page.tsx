@@ -44,21 +44,17 @@ const HOUSE_CONFIG = {
 const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
 const OFF_OPTIONS = ['-', '반휴', '주휴', '월휴', '월반휴', '자율', '결석', '늦반휴', '늦휴', '늦월반휴', '늦월휴'];
 
-// [가나다순 정렬] - 로그인 화면용
 const sortKorean = (a: string, b: string) => {
   const cleanA = a.replace(/[^\uAC00-\uD7AF]/g, "");
   const cleanB = b.replace(/[^\uAC00-\uD7AF]/g, "");
   return cleanA.localeCompare(cleanB, 'ko');
 };
 
-// [기숙사순 정렬] - 관리자 화면용
 const sortStudentsByHouse = (names: string[]) => {
   return [...names].sort((a, b) => {
     const houseA = studentData[a].house;
     const houseB = studentData[b].house;
-    if (houseA !== houseB) {
-      return HOUSE_ORDER.indexOf(houseA) - HOUSE_ORDER.indexOf(houseB);
-    }
+    if (houseA !== houseB) return HOUSE_ORDER.indexOf(houseA) - HOUSE_ORDER.indexOf(houseB);
     return sortKorean(a, b);
   });
 };
@@ -117,9 +113,7 @@ export default function HogwartsApp() {
   };
 
   const calc = (r: any) => {
-    if (!r || (!r.study_time && !r.off_type) || (r.study_time === '0:00' && (r.off_type === '-' || !r.off_type))) {
-      return { penalty: 0, bonus: 0, total: 0, studyH: 0 };
-    }
+    if (!r || (!r.study_time && !r.off_type) || (r.study_time === '0:00' && (r.off_type === '-' || !r.off_type))) return { penalty: 0, bonus: 0, total: 0, studyH: 0 };
     if (r.off_type === '결석') return { penalty: -5, bonus: 0, total: -5, studyH: 0 };
     const [h, m] = (r.study_time || "0:00").split(':').map(Number);
     const studyH = (isNaN(h) ? 0 : h) + (isNaN(m) ? 0 : m / 60);
@@ -163,7 +157,6 @@ export default function HogwartsApp() {
     setIsSaving(false);
   };
 
-  // 정렬 리스트 두 가지 준비
   const loginSortedNames = useMemo(() => Object.keys(studentData).sort(sortKorean), []);
   const adminSortedNames = useMemo(() => sortStudentsByHouse(Object.keys(studentData)), []);
 
@@ -176,7 +169,6 @@ export default function HogwartsApp() {
           <div className="space-y-6">
             <select className="w-full p-5 border-2 rounded-2xl font-bold bg-slate-50 outline-none text-slate-800" value={selectedName} onChange={(e)=>setSelectedName(e.target.value)}>
               <option value="">이름을 선택하세요.</option>
-              {/* [로그인 화면] 가나다순 유지 */}
               {loginSortedNames.map(n => <option key={n} value={n}>{n}</option>)}
             </select>
             <input type="password" placeholder="비밀번호 입력" className="w-full p-5 border-2 rounded-2xl font-bold bg-slate-50 outline-none text-slate-800" value={password} onChange={(e)=>setPassword(e.target.value)} onKeyDown={(e)=>e.key==='Enter' && handleLogin()} />
@@ -231,11 +223,10 @@ export default function HogwartsApp() {
                 <th className="w-16 p-2 border-r">Field</th>
                 {DAYS.map(d => <th key={d} className="w-14 p-2 text-slate-900">{d}</th>)}
                 <th className="w-20 p-2 bg-slate-100 text-slate-900 text-center text-[10px]">총 시간</th>
-                <th className="w-16 p-2 bg-slate-100 border-l text-[10px]">잔여월휴</th>
+                <th className="w-24 p-2 bg-slate-100 border-l text-[10px]">잔여월휴</th>
               </tr>
             </thead>
             <tbody>
-              {/* [관리자 화면] 기숙사별 정렬 리스트 사용 */}
               {(isAdmin ? adminSortedNames : [selectedName]).map(name => {
                 const info = studentData[name];
                 const monRec = records.find(r => r.student_name === name && r.day_of_week === '월') || {};
@@ -277,10 +268,24 @@ export default function HogwartsApp() {
                         })() : ""}</td>
                         {rIdx === 0 && (
                           <td rowSpan={7} className="p-2 bg-white border-l">
-                            <div className="flex flex-col items-center gap-1.5">
-                              {[1, 2, 3, 4].map((n) => (
-                                <div key={n} onClick={() => isAdmin && handleChange(name, '월', 'monthly_off_count', offCount >= (5-n) ? (5-n)-1 : offCount)} className={`w-7 h-5 rounded-md border-2 ${isAdmin ? 'cursor-pointer' : ''} ${offCount >= (5-n) ? info.accent : 'bg-slate-50 border-slate-200'}`} />
-                              ))}
+                            <div className="flex flex-col items-center gap-2">
+                              {/* [수정] 게이지바 클릭 시 하나씩 감소 + 리셋 버튼 추가 */}
+                              <div 
+                                className={`flex flex-col gap-1 ${isAdmin ? 'cursor-pointer hover:opacity-80' : ''}`}
+                                onClick={() => isAdmin && handleChange(name, '월', 'monthly_off_count', offCount > 0 ? offCount - 1 : 0)}
+                              >
+                                {[1, 2, 3, 4].map((n) => (
+                                  <div key={n} className={`w-8 h-4 rounded-md border-2 ${offCount >= (5-n) ? info.accent : 'bg-slate-50 border-slate-200'}`} />
+                                ))}
+                              </div>
+                              {isAdmin && (
+                                <button 
+                                  onClick={() => handleChange(name, '월', 'monthly_off_count', 4)}
+                                  className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-500 p-1 px-2 rounded-full font-black flex items-center gap-1"
+                                >
+                                  <span>↺</span> RESET
+                                </button>
+                              )}
                             </div>
                           </td>
                         )}
