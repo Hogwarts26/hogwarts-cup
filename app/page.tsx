@@ -42,7 +42,6 @@ const HOUSE_CONFIG = {
 };
 
 const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
-// '출석' 옵션 추가
 const OFF_OPTIONS = ['-', '출석', '반휴', '주휴', '월휴', '월반휴', '자율', '결석', '늦반휴', '늦휴', '늦월반휴', '늦월휴'];
 
 const sortKorean = (a: string, b: string) => {
@@ -120,7 +119,6 @@ export default function HogwartsApp() {
     const isFullOff = ['주휴', '월휴', '자율', '늦휴', '늦월휴'].includes(r.off_type);
     if (['늦반휴', '늦휴', '늦월반휴', '늦월휴'].includes(r.off_type)) penalty -= 1;
     if (r.is_late && !isFullOff) penalty -= 1;
-    // '출석'은 기존 '-'와 동일하게 로직 적용
     if ((r.off_type === '-' || r.off_type === '출석') && r.am_3h === false && studyH > 0) penalty -= 1;
     if (!isFullOff && r.off_type !== '자율' && studyH > 0) {
       const target = isHalfOff ? 4 : 9;
@@ -247,8 +245,26 @@ export default function HogwartsApp() {
                 const monRec = records.find(r => r.student_name === name && r.day_of_week === '월') || {};
                 const offCount = monRec.monthly_off_count ?? 4;
                 const rows = [{l:'휴무',f:'off_type'},{l:'지각',f:'is_late'},{l:'오전3H',f:'am_3h'},{l:'공부시간',f:'study_time'},{l:'벌점',f:'penalty'},{l:'상점',f:'bonus'},{l:'총점',f:'total'}];
+                
+                let totalTimeMinutes = 0;
+                let totalPointsSum = 0;
+                records.filter(r => r.student_name === name).forEach(r => {
+                  const res = calc(r);
+                  const [h, m] = (r.study_time || "").split(':').map(Number);
+                  totalTimeMinutes += (isNaN(h) ? 0 : h * 60) + (isNaN(m) ? 0 : m);
+                  totalPointsSum += res.total;
+                });
+
                 return (
                   <React.Fragment key={name}>
+                    {isAdmin && (
+                      <tr className="bg-slate-100/50 border-t-2 border-slate-200">
+                        <td className="sticky left-0 bg-slate-100/50 z-20 border-r"></td>
+                        <td className="p-1 text-[8px] font-black text-slate-400 text-center border-r">DAYS</td>
+                        {DAYS.map(d => <td key={d} className="p-1 text-[10px] font-black text-slate-500 text-center">{d}</td>)}
+                        <td colSpan={2} className="border-l"></td>
+                      </tr>
+                    )}
                     {rows.map((row, rIdx) => (
                       <tr key={row.l} className={`${rIdx === 6 ? "border-b-[6px] border-slate-100" : "border-b border-slate-50"}`}>
                         {rIdx === 0 && (
@@ -270,7 +286,6 @@ export default function HogwartsApp() {
                             if (['반휴','월반휴','늦반휴','늦월반휴'].includes(val)) return 'bg-green-100';
                             if (['주휴','월휴','늦휴','늦월휴'].includes(val)) return 'bg-blue-100';
                             if (val === '결석') return 'bg-red-100';
-                            // '출석', '자율', '-' 는 배경색 없음
                             return '';
                           };
                           return (
@@ -280,7 +295,7 @@ export default function HogwartsApp() {
                                   {OFF_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
                                 </select>
                               ) : (row.f === 'is_late' || row.f === 'am_3h') ? (
-                                <input type="checkbox" className="w-5 h-5 accent-slate-800 cursor-pointer mx-auto block" checked={!!rec[row.f]} onChange={(e) => handleChange(name, day, row.f, e.target.checked)} disabled={!isAdmin} />
+                                <input type="checkbox" className={`w-5 h-5 ${row.f === 'is_late' ? 'accent-amber-400' : 'accent-slate-800'} cursor-pointer mx-auto block`} checked={!!rec[row.f]} onChange={(e) => handleChange(name, day, row.f, e.target.checked)} disabled={!isAdmin} />
                               ) : row.f === 'study_time' ? (
                                 <input type="text" className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-sm placeholder-slate-200" placeholder="-" value={rec.study_time || ''} 
                                   onChange={(e) => setRecords(prev => prev.map(r => (r.student_name === name && r.day_of_week === day) ? {...r, study_time: e.target.value} : r))}
@@ -291,11 +306,17 @@ export default function HogwartsApp() {
                             </td>
                           );
                         })}
-                        <td className="bg-slate-50 text-center font-black text-slate-900 border-l text-sm">
-                          {row.f === 'study_time' && (()=>{
-                            let tm = 0; records.filter(r=>r.student_name===name).forEach(r=>{const[h,m]=(r.study_time||"").split(':').map(Number);tm+=(isNaN(h)?0:h*60)+(isNaN(m)?0:m);});
-                            return tm > 0 ? `${Math.floor(tm/60)}:${(tm%60).toString().padStart(2,'0')}` : "";
-                          })()}
+                        <td className="bg-slate-50 text-center font-black border-l">
+                          {rIdx === 3 && (
+                            <div className="text-sm text-slate-900">
+                              {totalTimeMinutes > 0 ? `${Math.floor(totalTimeMinutes/60)}:${(totalTimeMinutes%60).toString().padStart(2,'0')}` : "-"}
+                            </div>
+                          )}
+                          {rIdx === 6 && (
+                            <div className="text-[10px] text-blue-700 bg-blue-50 py-1 rounded">
+                              합계: {totalPointsSum}
+                            </div>
+                          )}
                         </td>
                         {rIdx === 0 && (
                           <td rowSpan={7} className="p-2 bg-white border-l text-center">
