@@ -76,7 +76,19 @@ export default function HogwartsApp() {
     if (!selectedName) { alert("이름을 선택해주세요."); return; }
     
     const { data } = await supabase.from('study_records').select('password').eq('student_name', selectedName);
-    const customPw = data?.find(r => r.password && r.password !== "0000")?.password;
+    
+    // 데이터가 없는 학생은 0000이면 통과
+    if (!data || data.length === 0) {
+      if (password === "0000") {
+        setIsAdmin(false);
+        setIsLoggedIn(true);
+      } else {
+        alert("비밀번호가 일치하지 않습니다. (초기 비번 0000)");
+      }
+      return;
+    }
+
+    const customPw = data.find(r => r.password && r.password !== "0000")?.password;
     const finalValidPw = customPw || "0000";
 
     if (password === finalValidPw) {
@@ -96,20 +108,11 @@ export default function HogwartsApp() {
     
     setIsSaving(true);
     try {
-      // 1. 기존 데이터들의 비번을 일괄 업데이트
-      const { error: updateError } = await supabase
-        .from('study_records')
-        .update({ password: newPw })
-        .eq('student_name', selectedName);
+      // 1. 기존 모든 요일 데이터의 비번을 업데이트
+      await supabase.from('study_records').update({ password: newPw }).eq('student_name', selectedName);
 
-      if (updateError) throw updateError;
-
-      // 2. 데이터가 아예 없는 학생일 경우 첫 데이터(월요일) 생성
-      const { data: existing } = await supabase
-        .from('study_records')
-        .select('id')
-        .eq('student_name', selectedName)
-        .limit(1);
+      // 2. 데이터가 아예 없는 학생은 월요일 데이터로 비번 저장
+      const { data: existing } = await supabase.from('study_records').select('id').eq('student_name', selectedName).limit(1);
 
       if (!existing || existing.length === 0) {
         await supabase.from('study_records').insert({
@@ -124,7 +127,7 @@ export default function HogwartsApp() {
       window.location.reload(); 
     } catch (err) {
       console.error(err);
-      alert("변경 실패: Supabase 연결 및 RLS 설정을 확인해주세요.");
+      alert("변경 실패: Supabase 연결을 확인해주세요.");
     }
     setIsSaving(false);
   };
