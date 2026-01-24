@@ -45,6 +45,13 @@ const HOUSE_CONFIG = {
 const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
 const OFF_OPTIONS = ['-', '반휴', '주휴', '월휴', '월반휴', '자율', '결석', '늦반휴', '늦휴', '늦월반휴', '늦월휴'];
 
+// 한글 텍스트만 추출하여 정렬하는 함수
+const sortKorean = (a: string, b: string) => {
+  const cleanA = a.replace(/[^\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/g, "");
+  const cleanB = b.replace(/[^\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/g, "");
+  return cleanA.localeCompare(cleanB, 'ko');
+};
+
 export default function HogwartsApp() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -131,8 +138,8 @@ export default function HogwartsApp() {
           <div className="space-y-6">
             <select className="w-full p-5 border-2 rounded-2xl font-bold text-slate-800 bg-slate-50 outline-none text-lg cursor-pointer" value={selectedName} onChange={(e)=>setSelectedName(e.target.value)}>
               <option value="">이름을 선택하세요.</option>
-              {/* 로그인 화면 이름 ㄱㄴㄷ 정렬 적용 */}
-              {Object.keys(studentData).sort((a, b) => a.localeCompare(b, 'ko')).map(n => <option key={n} value={n}>{n}</option>)}
+              {/* 한글만 추출 정렬 함수 적용 */}
+              {Object.keys(studentData).sort(sortKorean).map(n => <option key={n} value={n}>{n}</option>)}
             </select>
             <input type="password" placeholder="비밀번호 입력" className="w-full p-5 border-2 rounded-2xl font-bold text-slate-800 bg-slate-50 outline-none text-lg" value={password} onChange={(e)=>setPassword(e.target.value)} onKeyDown={(e)=>e.key==='Enter' && (password === "8888" ? (setIsAdmin(true), setIsLoggedIn(true)) : (password === "0000" && selectedName ? (setIsAdmin(false), setIsLoggedIn(true)) : alert("정보 확인")))} />
             <button onClick={() => password === "8888" ? (setIsAdmin(true), setIsLoggedIn(true)) : (password === "0000" && selectedName ? (setIsAdmin(false), setIsLoggedIn(true)) : alert("정보 확인"))} className="w-full bg-slate-900 text-yellow-500 py-5 rounded-2xl font-black shadow-lg uppercase text-xl active:scale-95 transition-transform">Enter Castle</button>
@@ -142,9 +149,9 @@ export default function HogwartsApp() {
     );
   }
 
-  /* 관리자 화면 이름 ㄱㄴㄷ 정렬 적용 */
+  // 관리자 화면 리스트에도 한글 추출 정렬 적용
   const displayList = isAdmin 
-    ? Object.keys(studentData).sort((a, b) => a.localeCompare(b, 'ko')) 
+    ? Object.keys(studentData).sort(sortKorean) 
     : [selectedName];
 
   return (
