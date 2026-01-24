@@ -160,9 +160,18 @@ export default function HogwartsApp() {
         student_name: name, day_of_week: day, [field]: value, 
         password: current.password || '0000', monthly_off_count: current.monthly_off_count ?? 4
       };
-      if (idx > -1) newRecords[idx] = { ...newRecords[idx], ...updatedData }; 
-      else newRecords.push(updatedData);
-      setRecords(newRecords);
+      
+      // 상태 즉시 반영 (게이지 리셋 포함)
+      if (field === 'monthly_off_count') {
+        setRecords(prev => prev.map(r => r.student_name === name ? { ...r, monthly_off_count: value } : r));
+      } else if (idx > -1) {
+        newRecords[idx] = { ...newRecords[idx], ...updatedData };
+        setRecords(newRecords);
+      } else {
+        newRecords.push(updatedData);
+        setRecords(newRecords);
+      }
+
       await supabase.from('study_records').upsert(updatedData, { onConflict: 'student_name,day_of_week' });
     }
     setIsSaving(false);
