@@ -118,13 +118,16 @@ export default function HogwartsApp() {
         .eq('student_name', selectedName);
 
       if (!existing || existing.length === 0) {
-        // [수정] 최소한의 필드만 전송하여 400 에러 방지
+        // [수정] 새 행을 생성할 때 is_late와 am_3h를 명시적으로 false로 설정
         const { error: insError } = await supabase
           .from('study_records')
           .insert({ 
             student_name: selectedName, 
             day_of_week: '월', 
-            password: newPw 
+            password: newPw,
+            is_late: false,
+            am_3h: false,
+            study_time: '0:00'
           });
         if (insError) throw insError;
       } else {
@@ -139,7 +142,7 @@ export default function HogwartsApp() {
       window.location.reload(); 
     } catch (err: any) {
       console.error("비밀번호 변경 실패:", err);
-      alert(`변경 실패: ${err.message || "연결 상태를 확인해주세요."}`);
+      alert(`변경 실패: ${err.message}`);
     }
     setIsSaving(false);
   };
