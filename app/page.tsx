@@ -65,8 +65,13 @@ export default function HogwartsApp() {
   }, []);
 
   const fetchRecords = async () => {
-    const { data } = await supabase.from('study_records').select('*');
-    if (data) setRecords(data);
+    try {
+      const { data, error } = await supabase.from('study_records').select('*');
+      if (error) throw error;
+      if (data) setRecords(data);
+    } catch (err) {
+      console.error("Fetch Error:", err);
+    }
   };
 
   useEffect(() => { if (isLoggedIn) fetchRecords(); }, [isLoggedIn]);
@@ -113,15 +118,13 @@ export default function HogwartsApp() {
         .eq('student_name', selectedName);
 
       if (!existing || existing.length === 0) {
-        // [수정 포인트] id를 아예 제외하고 insert하여 DB가 gen_random_uuid()를 수행하게 함
         const { error: insError } = await supabase
           .from('study_records')
-          .insert([{ 
+          .insert({ 
             student_name: selectedName, 
             day_of_week: '월', 
-            password: newPw, 
-            study_time: '0:00' 
-          }]);
+            password: newPw 
+          });
         if (insError) throw insError;
       } else {
         const { error: updError } = await supabase
@@ -133,9 +136,9 @@ export default function HogwartsApp() {
 
       alert(`비밀번호가 [${newPw}]로 변경되었습니다.\n다시 로그인해주세요!`);
       window.location.reload(); 
-    } catch (err) {
-      console.error(err);
-      alert("변경 실패: Supabase 연결 또는 id 컬럼 설정을 확인해주세요.");
+    } catch (err: any) {
+      console.error("Change Password Error Object:", err);
+      alert("변경 실패: Supabase 연결 상태 또는 DB 컬럼 설정을 확인해주세요.");
     }
     setIsSaving(false);
   };
