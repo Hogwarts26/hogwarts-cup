@@ -45,7 +45,6 @@ const HOUSE_CONFIG = {
 const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
 const OFF_OPTIONS = ['-', '반휴', '주휴', '월휴', '월반휴', '자율', '결석', '늦반휴', '늦휴', '늦월반휴', '늦월휴'];
 
-// 한글 텍스트만 추출하여 정렬하는 함수
 const sortKorean = (a: string, b: string) => {
   const cleanA = a.replace(/[^\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/g, "");
   const cleanB = b.replace(/[^\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/g, "");
@@ -59,6 +58,13 @@ export default function HogwartsApp() {
   const [password, setPassword] = useState("");
   const [records, setRecords] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // 실시간 시계 업데이트 로직
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const fetchRecords = async () => {
     const { data } = await supabase.from('study_records').select('*');
@@ -93,7 +99,6 @@ export default function HogwartsApp() {
       const count = students.length;
       let totalScore = 0;
       let totalStudyH = 0;
-
       students.forEach(name => {
         DAYS.forEach(day => {
           const rec = records.find(r => r.student_name === name && r.day_of_week === day);
@@ -102,12 +107,9 @@ export default function HogwartsApp() {
           totalStudyH += res.studyH;
         });
       });
-
       const avgScore = count > 0 ? totalScore / count : 0;
       const avgStudyH = count > 0 ? Math.floor(totalStudyH / count) : 0;
-      const finalPoint = avgScore + avgStudyH;
-
-      return { house, finalPoint, count };
+      return { house, finalPoint: avgScore + avgStudyH, count };
     }).sort((a, b) => b.finalPoint - a.finalPoint);
   }, [records]);
 
@@ -138,7 +140,6 @@ export default function HogwartsApp() {
           <div className="space-y-6">
             <select className="w-full p-5 border-2 rounded-2xl font-bold text-slate-800 bg-slate-50 outline-none text-lg cursor-pointer" value={selectedName} onChange={(e)=>setSelectedName(e.target.value)}>
               <option value="">이름을 선택하세요.</option>
-              {/* 한글만 추출 정렬 함수 적용 */}
               {Object.keys(studentData).sort(sortKorean).map(n => <option key={n} value={n}>{n}</option>)}
             </select>
             <input type="password" placeholder="비밀번호 입력" className="w-full p-5 border-2 rounded-2xl font-bold text-slate-800 bg-slate-50 outline-none text-lg" value={password} onChange={(e)=>setPassword(e.target.value)} onKeyDown={(e)=>e.key==='Enter' && (password === "8888" ? (setIsAdmin(true), setIsLoggedIn(true)) : (password === "0000" && selectedName ? (setIsAdmin(false), setIsLoggedIn(true)) : alert("정보 확인")))} />
@@ -149,10 +150,7 @@ export default function HogwartsApp() {
     );
   }
 
-  // 관리자 화면 리스트에도 한글 추출 정렬 적용
-  const displayList = isAdmin 
-    ? Object.keys(studentData).sort(sortKorean) 
-    : [selectedName];
+  const displayList = isAdmin ? Object.keys(studentData).sort(sortKorean) : [selectedName];
 
   return (
     <div className="min-h-screen bg-stone-100 p-2 md:p-4 font-sans pb-16">
@@ -183,7 +181,12 @@ export default function HogwartsApp() {
 
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
         <div className="bg-slate-900 p-4 px-6 md:px-8 flex justify-between items-center">
-          <span className="text-[10px] md:text-xs font-black text-yellow-500 uppercase tracking-[0.2em]">{isAdmin ? "Headmaster Console" : `Student: ${selectedName}`}</span>
+          {/* 상단 텍스트를 실시간 날짜와 시계로 교체 */}
+          <span className="text-[10px] md:text-xs font-black text-yellow-500 uppercase tracking-widest flex items-center gap-2">
+            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-1"></span>
+            {isAdmin ? "Headmaster Console" : currentTime.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}
+            {!isAdmin && <span className="ml-2 text-white">{currentTime.toLocaleTimeString('ko-KR', { hour12: false })}</span>}
+          </span>
           {isSaving && <div className="flex items-center gap-2 text-[9px] text-yellow-500 font-bold uppercase"><div className="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-ping"></div>Magic...</div>}
         </div>
         
@@ -203,16 +206,7 @@ export default function HogwartsApp() {
                 const info = studentData[name];
                 const monRec = records.find(r => r.student_name === name && r.day_of_week === '월') || {};
                 const offCount = monRec.monthly_off_count === undefined ? 4 : monRec.monthly_off_count;
-                const rows = [
-                  {l:'휴무',f:'off_type'}, 
-                  {l:'지각',f:'is_late'}, 
-                  {l:'오전3H',f:'am_3h'}, 
-                  {l:'공부시간',f:'study_time'}, 
-                  {l:'벌점',f:'penalty'},
-                  {l:'상점',f:'bonus'},
-                  {l:'총점',f:'total'}
-                ];
-                
+                const rows = [{l:'휴무',f:'off_type'},{l:'지각',f:'is_late'},{l:'오전3H',f:'am_3h'},{l:'공부시간',f:'study_time'},{l:'벌점',f:'penalty'},{l:'상점',f:'bonus'},{l:'총점',f:'total'}];
                 return (
                   <React.Fragment key={name}>
                     {rows.map((row, rIdx) => (
@@ -229,7 +223,6 @@ export default function HogwartsApp() {
                           const rec = records.find(r => r.student_name === name && r.day_of_week === day) || {};
                           const res = calc(rec);
                           let cellBg = row.f === 'off_type' ? (['반휴','월반휴','늦반휴','늦월반휴'].includes(rec.off_type)?'bg-green-100':['주휴','월휴','자율','늦휴','늦월휴'].includes(rec.off_type)?'bg-blue-100':rec.off_type==='결석'?'bg-red-100':'') : '';
-                          
                           return (
                             <td key={day} className={`p-1.5 text-center border-r border-slate-50 ${cellBg}`}>
                               {row.f === 'off_type' ? (
@@ -239,24 +232,9 @@ export default function HogwartsApp() {
                               ) : (row.f === 'is_late' || row.f === 'am_3h') ? (
                                 <input type="checkbox" className="w-5 h-5 accent-slate-800 cursor-pointer mx-auto block" checked={!!rec[row.f]} onChange={(e) => handleChange(name, day, row.f, e.target.checked)} disabled={!isAdmin} />
                               ) : row.f === 'study_time' ? (
-                                <input 
-                                  type="text" 
-                                  className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-sm" 
-                                  value={rec.study_time === undefined ? '0:00' : rec.study_time} 
-                                  onChange={(e) => {
-                                    const newRecords = [...records];
-                                    const idx = newRecords.findIndex(r => r.student_name === name && r.day_of_week === day);
-                                    if (idx > -1) newRecords[idx] = { ...newRecords[idx], study_time: e.target.value };
-                                    else newRecords.push({ student_name: name, day_of_week: day, study_time: e.target.value });
-                                    setRecords(newRecords);
-                                  }} 
-                                  onBlur={(e) => handleChange(name, day, 'study_time', e.target.value)}
-                                  disabled={!isAdmin} 
-                                />
+                                <input type="text" className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-sm" value={rec.study_time === undefined ? '0:00' : rec.study_time} onBlur={(e) => handleChange(name, day, 'study_time', e.target.value)} disabled={!isAdmin} />
                               ) : (
-                                <span className={`font-black text-sm ${row.f === 'penalty' ? 'text-red-500' : row.f === 'bonus' ? 'text-blue-600' : 'text-slate-900'}`}>
-                                  {res[row.f as keyof typeof res]}
-                                </span>
+                                <span className={`font-black text-sm ${row.f === 'penalty' ? 'text-red-500' : row.f === 'bonus' ? 'text-blue-600' : 'text-slate-900'}`}>{res[row.f as keyof typeof res]}</span>
                               )}
                             </td>
                           );
@@ -271,9 +249,7 @@ export default function HogwartsApp() {
                               {[1, 2, 3, 4].map((n) => (
                                 <div key={n} onClick={() => isAdmin && handleChange(name, '월', 'monthly_off_count', offCount >= (5-n) ? (5-n)-1 : offCount)} className={`w-7 h-5 rounded-md border-2 ${isAdmin ? 'cursor-pointer hover:brightness-90' : ''} ${offCount >= (5-n) ? info.accent : 'bg-slate-50 border-slate-200'}`} />
                               ))}
-                              {isAdmin && (
-                                <button onClick={() => resetMonthlyOff(name)} className="mt-2 px-1 py-0.5 bg-slate-800 text-[8px] text-white rounded font-bold hover:bg-black transition-colors">RESET</button>
-                              )}
+                              {isAdmin && <button onClick={() => resetMonthlyOff(name)} className="mt-2 px-1 py-0.5 bg-slate-800 text-[8px] text-white rounded font-bold hover:bg-black transition-colors">RESET</button>}
                             </div>
                           </td>
                         )}
