@@ -81,14 +81,47 @@ export default function HogwartsApp() {
     let admin = password === "8888";
     if (!admin) {
       const { data } = await supabase.from('study_records').select('password').eq('student_name', selectedName);
-      // DB에 저장된 비밀번호들 중 하나라도 일치하면 로그인 허용 (기본값 0000)
-      const validPasswords = data?.map(r => r.password).filter(p => p) || [];
-      const currentPw = validPasswords.length > 0 ? validPasswords[0] : "0000";
-      
-      if (password !== currentPw) { alert("비밀번호가 틀렸습니다."); return; }
+      const validPw = data?.find(r => r.password)?.password || "0000";
+      if (password !== validPw) { alert("비밀번호가 틀렸습니다."); return; }
     }
     setIsAdmin(admin); setIsLoggedIn(true);
     localStorage.setItem('hg_auth', JSON.stringify({ name: selectedName, admin }));
+  };
+
+  // 주간 초기화 기능
+  const resetWeeklyData = async () => {
+    if (!confirm("⚠️ 주의: 모든 학생의 이번 주 공부 기록(휴무, 지각, 시간)을 초기화하시겠습니까?")) return;
+    if (!confirm("정말로 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) return;
+
+    setIsSaving(true);
+    const names = Object.keys(studentData);
+    const resetData = [];
+    
+    for (const name of names) {
+      for (const day of DAYS) {
+        // 기존 레코드 찾기 (잔여월휴와 비밀번호는 유지하기 위함)
+        const existing = records.find(r => r.student_name === name && r.day_of_week === day) || {};
+        resetData.push({
+          student_name: name,
+          day_of_week: day,
+          off_type: '-',
+          is_late: false,
+          am_3h: false,
+          study_time: '',
+          password: existing.password || '0000',
+          monthly_off_count: existing.monthly_off_count ?? 4
+        });
+      }
+    }
+
+    const { error } = await supabase.from('study_records').upsert(resetData, { onConflict: 'student_name,day_of_week' });
+    if (!error) {
+      setRecords(resetData);
+      alert("✅ 모든 공부 기록이 초기화되었습니다.");
+    } else {
+      alert("초기화 중 오류가 발생했습니다.");
+    }
+    setIsSaving(false);
   };
 
   const calc = (r: any) => {
@@ -127,11 +160,9 @@ export default function HogwartsApp() {
   }, [records]);
 
   const handleChange = async (name: string, day: string, field: string, value: any) => {
-    // 비밀번호 변경의 경우 학생 본인도 가능해야 하므로 관리자 체크 우회 로직 필요
     if (!isAdmin && field !== 'password') return;
     setIsSaving(true);
     
-    // DB 업데이트용 데이터 구성 (비밀번호 변경 시에는 해당 학생의 모든 요일 레코드 비밀번호를 일괄 업데이트하는 것이 안전)
     if (field === 'password') {
       const { error } = await supabase.from('study_records').upsert(
         DAYS.map(d => ({ student_name: name, day_of_week: d, password: value })),
@@ -146,10 +177,9 @@ export default function HogwartsApp() {
       const idx = newRecords.findIndex(r => r.student_name === name && r.day_of_week === day);
       const current = newRecords[idx] || {};
       const updatedData = { 
-        student_name: name, 
-        day_of_week: day, 
-        [field]: value, 
-        password: current.password || '0000' 
+        student_name: name, day_of_week: day, [field]: value, 
+        password: current.password || '0000',
+        monthly_off_count: current.monthly_off_count ?? 4
       };
       if (idx > -1) newRecords[idx] = { ...newRecords[idx], ...updatedData }; 
       else newRecords.push(updatedData);
@@ -186,11 +216,17 @@ export default function HogwartsApp() {
     : [selectedName];
 
   return (
-    <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16">
+    <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 font-sans">
       <div className="max-w-[1100px] mx-auto mb-8">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight">House Cup</h2>
-          <button onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full shadow-sm">LOGOUT</button>
+          <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight uppercase">Hogwarts House Cup</h2>
+          <div className="flex gap-2">
+            {/* 초기화 버튼 추가 */}
+            {isAdmin && (
+              <button onClick={resetWeeklyData} className="text-[10px] font-black text-white bg-red-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-red-700 transition-colors">WEEKLY RESET</button>
+            )}
+            <button onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full shadow-sm">LOGOUT</button>
+          </div>
         </div>
         <div className="grid grid-cols-4 gap-1.5 md:gap-4">
           {houseRankings.map((item) => {
@@ -198,7 +234,7 @@ export default function HogwartsApp() {
             return (
               <div key={item.house} className={`${config.bg} ${config.border} border-b-4 p-1.5 md:p-5 rounded-xl md:rounded-[2rem] text-white shadow-xl relative overflow-hidden`}>
                 <div className="absolute right-[-10px] bottom-[-10px] text-5xl opacity-20">{config.icon}</div>
-                <div className="text-[7px] md:text-xs font-black opacity-90 uppercase mb-1">{item.house} {config.icon}</div>
+                <div className="text-[7px] md:text-xs font-black opacity-90 uppercase mb-1">{item.house}</div>
                 <div className="text-lg md:text-4xl font-black">{item.finalPoint.toFixed(1)}</div>
               </div>
             );
@@ -213,7 +249,7 @@ export default function HogwartsApp() {
             {isAdmin ? "Headmaster Console" : currentTime.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}
             {!isAdmin && <span className="text-white ml-2">{currentTime.toLocaleTimeString('ko-KR', { hour12: false })}</span>}
           </span>
-          {isSaving && <div className="text-[9px] text-yellow-500 font-bold uppercase">Recording...</div>}
+          {isSaving && <div className="text-[9px] text-yellow-500 font-bold uppercase animate-bounce">Magic occurring...</div>}
         </div>
 
         <div className="w-full overflow-x-auto">
@@ -291,7 +327,7 @@ export default function HogwartsApp() {
                                 <div key={n} onClick={() => isAdmin && handleChange(name, '월', 'monthly_off_count', offCount >= (5-n) ? (5-n)-1 : offCount)} 
                                      className={`w-7 h-5 rounded-md border-2 ${isAdmin ? 'cursor-pointer hover:brightness-90' : ''} ${offCount >= (5-n) ? info.accent : 'bg-slate-50 border-slate-200'}`} />
                               ))}
-                              {isAdmin && <button onClick={() => confirm("월휴를 4개로 리셋할까요?") && handleChange(name, '월', 'monthly_off_count', 4)} className="mt-2 px-1 py-0.5 bg-slate-800 text-[8px] text-white rounded font-bold uppercase">Reset</button>}
+                              {isAdmin && <button onClick={() => confirm("월휴를 4개로 리셋할까요?") && handleChange(name, '월', 'monthly_off_count', 4)} className="mt-2 px-1 py-0.5 bg-slate-800 text-[8px] text-white rounded font-bold uppercase hover:bg-black transition-colors">Reset</button>}
                             </div>
                           </td>
                         )}
