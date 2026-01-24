@@ -41,7 +41,6 @@ const HOUSE_CONFIG = {
   "후플푸프": { bg: "bg-amber-500", border: "border-amber-600", icon: "🦡", accent: "bg-amber-300" }
 };
 
-// 🪄 이제 여기서 자유롭게 엔터를 쳐서 수정하세요!
 const HOUSE_NOTICES: { [key: string]: { title: string, content: string } } = {
   "래번클로": {
     title: "지적인 도약과 <이러쿵저러쿵> 특별 부록 안내",
@@ -245,19 +244,24 @@ export default function HogwartsApp() {
 
   return (
     <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 font-sans relative">
-      {/* 마법 공지사항 팝업 */}
+      {/* 마법 공지사항 팝업 (모바일 최적화 수정본) */}
       {selectedHouseNotice && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setSelectedHouseNotice(null)}>
-          <div className="relative bg-[#f4e4bc] p-8 md:p-12 w-full max-w-2xl rounded-sm shadow-[0_0_50px_rgba(0,0,0,0.3)] overflow-hidden animate-in zoom-in-95 duration-300" onClick={(e) => e.stopPropagation()} style={{ backgroundImage: 'radial-gradient(circleAt 50% 50%, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.05) 100%)' }}>
+          <div className="relative bg-[#f4e4bc] p-6 md:p-12 w-full max-w-2xl rounded-sm shadow-[0_0_50px_rgba(0,0,0,0.3)] overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()} style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.05) 100%)' }}>
             <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/paper-fibers.png")' }}></div>
-            <button onClick={() => setSelectedHouseNotice(null)} className="absolute top-4 right-4 text-slate-800 hover:rotate-90 transition-transform p-2 text-2xl">✕</button>
-            <div className="relative z-10 font-serif">
-              <div className="w-16 h-1 bg-slate-800/20 mx-auto mb-6"></div>
-              <h3 className="text-2xl md:text-3xl font-black text-[#4a3728] mb-6 text-center italic border-b border-[#4a3728]/20 pb-4">{HOUSE_NOTICES[selectedHouseNotice].title}</h3>
-              <div className="text-lg leading-relaxed text-[#5d4037] whitespace-pre-wrap font-medium">
-                {HOUSE_NOTICES[selectedHouseNotice].content}
+            <button onClick={() => setSelectedHouseNotice(null)} className="absolute top-2 right-2 md:top-4 md:right-4 text-slate-800 hover:rotate-90 transition-transform p-2 text-2xl z-20">✕</button>
+            
+            <div className="relative z-10 font-serif flex flex-col overflow-hidden">
+              <div className="w-16 h-1 bg-slate-800/20 mx-auto mb-4 md:mb-6 shrink-0"></div>
+              <h3 className="text-xl md:text-3xl font-black text-[#4a3728] mb-4 md:mb-6 text-center italic border-b border-[#4a3728]/20 pb-4 shrink-0 px-4">{HOUSE_NOTICES[selectedHouseNotice].title}</h3>
+              
+              {/* 내용 영역에 스크롤 추가 */}
+              <div className="overflow-y-auto pr-2 custom-scrollbar">
+                <div className="text-base md:text-lg leading-relaxed text-[#5d4037] whitespace-pre-wrap font-medium">
+                  {HOUSE_NOTICES[selectedHouseNotice].content}
+                </div>
+                <div className="mt-8 mb-4 text-right italic font-bold text-[#4a3728]/60">— Hogwarts School of Witchcraft and Wizardry —</div>
               </div>
-              <div className="mt-8 text-right italic font-bold text-[#4a3728]/60">— Hogwarts School of Witchcraft and Wizardry —</div>
             </div>
           </div>
         </div>
