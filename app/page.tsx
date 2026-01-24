@@ -35,14 +35,21 @@ const studentData: { [key: string]: { house: string; emoji: string; color: strin
 
 const HOUSE_ORDER = ["슬리데린", "래번클로", "그리핀도르", "후플푸프"];
 const HOUSE_CONFIG = {
-  "슬리데린": { bg: "bg-emerald-600", icon: "🐍" },
-  "래번클로": { bg: "bg-blue-700", icon: "🦅" },
-  "그리핀도르": { bg: "bg-red-700", icon: "🦁" },
-  "후플푸프": { bg: "bg-amber-500", icon: "🦡" }
+  "슬리데린": { bg: "bg-emerald-600", border: "border-emerald-700", icon: "🐍" },
+  "래번클로": { bg: "bg-blue-700", border: "border-blue-800", icon: "🦅" },
+  "그리핀도르": { bg: "bg-red-700", border: "border-red-800", icon: "🦁" },
+  "후플푸프": { bg: "bg-amber-500", border: "border-amber-600", icon: "🦡" }
 };
 
 const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
 const OFF_OPTIONS = ['-', '반휴', '주휴', '월휴', '월반휴', '자율', '결석', '늦반휴', '늦휴', '늦월반휴', '늦월휴'];
+
+// 1. 이모지 제외한 ㄱㄴㄷ 정렬 로직
+const sortKorean = (a: string, b: string) => {
+  const cleanA = a.replace(/[^\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/g, "");
+  const cleanB = b.replace(/[^\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/g, "");
+  return cleanA.localeCompare(cleanB, 'ko');
+};
 
 export default function HogwartsApp() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -51,13 +58,17 @@ export default function HogwartsApp() {
   const [password, setPassword] = useState("");
   const [records, setRecords] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
-    const saved = sessionStorage.getItem('hg_session_v4');
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    // 6. 자동 로그아웃 방지 (localStorage 체크)
+    const saved = localStorage.getItem('hg_auth');
     if (saved) {
-      const parsed = JSON.parse(saved);
-      setSelectedName(parsed.name); setIsAdmin(parsed.admin); setIsLoggedIn(true);
+      const { name, admin } = JSON.parse(saved);
+      setSelectedName(name); setIsAdmin(admin); setIsLoggedIn(true);
     }
+    return () => clearInterval(timer);
   }, []);
 
   const fetchRecords = async () => {
@@ -69,23 +80,20 @@ export default function HogwartsApp() {
 
   const calc = (r: any) => {
     if (!r) return { penalty: 0, bonus: 0, total: 0, studyH: 0 };
+    if (r.off_type === '결석') return { penalty: -5, bonus: 0, total: -5, studyH: 0 };
     const timeVal = r.study_time || "";
     const [h, m] = timeVal.split(':').map(Number);
     const studyH = (isNaN(h) ? 0 : h) + (isNaN(m) ? 0 : m / 60);
     let penalty = 0, bonus = 0;
-
     const isHalfOff = ['반휴', '월반휴', '늦반휴', '늦월반휴'].includes(r.off_type);
     const isFullOff = ['주휴', '월휴', '자율', '늦휴', '늦월휴'].includes(r.off_type);
-
-    if (r.off_type === '결석') return { penalty: -5, bonus: 0, total: -5, studyH: 0 };
     if (['늦반휴', '늦휴', '늦월반휴', '늦월휴'].includes(r.off_type)) penalty -= 1;
     if (r.is_late && !isFullOff) penalty -= 1;
     if (r.off_type === '-' && r.am_3h === false && studyH > 0) penalty -= 1;
-
-    if (!isFullOff && r.off_type !== '자율') {
+    if (!isFullOff && r.off_type !== '자율' && studyH > 0) {
       const target = isHalfOff ? 4 : 9;
-      if (studyH < target && studyH > 0) penalty -= Math.ceil(target - studyH);
-      else if (studyH >= target + 1 && !isHalfOff) bonus += Math.floor(studyH - target);
+      if (studyH < target) penalty -= Math.ceil(target - studyH);
+      else if (!isHalfOff && studyH >= target + 1) bonus += Math.floor(studyH - target);
     }
     return { penalty: Math.max(penalty, -5), bonus, total: Math.max(penalty, -5) + bonus, studyH };
   };
@@ -100,154 +108,174 @@ export default function HogwartsApp() {
           tScore += res.total; tH += res.studyH;
         });
       });
-      return { house, finalPoint: (tScore / (students.length || 1)) + Math.floor(tH / (students.length || 1)) };
+      const avg = students.length > 0 ? (tScore / students.length) + Math.floor(tH / students.length) : 0;
+      return { house, finalPoint: avg };
     }).sort((a, b) => b.finalPoint - a.finalPoint);
   }, [records]);
 
+  // 7. 실시간 DB 저장 및 상태 유지
   const handleChange = async (name: string, day: string, field: string, value: any) => {
     if (!isAdmin) return;
-    setRecords(prev => {
-      const existing = prev.find(r => r.student_name === name && r.day_of_week === day);
-      if (existing) return prev.map(r => (r.student_name === name && r.day_of_week === day) ? { ...r, [field]: value } : r);
-      return [...prev, { student_name: name, day_of_week: day, [field]: value, password: '0000' }];
-    });
     setIsSaving(true);
-    try {
-      const current = records.find(r => r.student_name === name && r.day_of_week === day) || {};
-      await supabase.from('study_records').upsert({
-        student_name: name, day_of_week: day,
-        password: current.password || '0000',
-        is_late: field === 'is_late' ? value : (current.is_late ?? false),
-        am_3h: field === 'am_3h' ? value : (current.am_3h ?? false),
-        study_time: field === 'study_time' ? value : (current.study_time ?? ''),
-        off_type: field === 'off_type' ? value : (current.off_type ?? '-'),
-        monthly_off_count: field === 'monthly_off_count' ? value : (current.monthly_off_count ?? 4)
-      }, { onConflict: 'student_name,day_of_week' });
-    } catch (e) { fetchRecords(); } finally { setIsSaving(false); }
+    const newRecords = [...records];
+    const idx = newRecords.findIndex(r => r.student_name === name && r.day_of_week === day);
+    const updatedData = idx > -1 ? { ...newRecords[idx], [field]: value } : { student_name: name, day_of_week: day, [field]: value, password: '0000' };
+    if (idx > -1) newRecords[idx] = updatedData; else newRecords.push(updatedData);
+    setRecords(newRecords);
+    await supabase.from('study_records').upsert(updatedData, { onConflict: 'student_name,day_of_week' });
+    setIsSaving(false);
   };
 
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-[2rem] w-full max-w-sm shadow-2xl">
-          <h1 className="text-3xl font-black text-center mb-8 text-slate-800 italic uppercase">Hogwarts</h1>
-          <select className="w-full p-4 border-2 rounded-xl mb-4 font-bold" value={selectedName} onChange={e => setSelectedName(e.target.value)}>
-            <option value="">이름 선택</option>
-            {Object.keys(studentData).sort().map(n => <option key={n} value={n}>{n}</option>)}
-          </select>
-          <input type="password" placeholder="PASSWORD" className="w-full p-4 border-2 rounded-xl mb-6 font-bold" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter'} />
-          <button onClick={async () => {
-             let admin = password === "8888";
-             if(!admin) {
-               const { data } = await supabase.from('study_records').select('password').eq('student_name', selectedName);
-               if(password !== (data?.find(r=>r.password && r.password !== "0000")?.password || "0000")) { alert("비밀번호 오류"); return; }
-             }
-             setIsAdmin(admin); setIsLoggedIn(true); sessionStorage.setItem('hg_session_v4', JSON.stringify({ name: selectedName, admin }));
-          }} className="w-full bg-slate-900 text-yellow-500 py-4 rounded-xl font-black uppercase">Enter Castle</button>
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
+        <div className="bg-white p-10 rounded-[2.5rem] w-full max-w-md shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-2 bg-yellow-500"></div>
+          <h1 className="text-4xl font-serif font-black text-center mb-10 text-slate-800 tracking-tighter italic uppercase">Hogwarts</h1>
+          <div className="space-y-6">
+            <select className="w-full p-5 border-2 rounded-2xl font-bold text-slate-800 bg-slate-50 outline-none text-lg cursor-pointer" value={selectedName} onChange={(e)=>setSelectedName(e.target.value)}>
+              <option value="">이름을 선택하세요.</option>
+              {/* 1. 로그인 ㄱㄴㄷ 정렬 */}
+              {Object.keys(studentData).sort(sortKorean).map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+            <input type="password" placeholder="PASSWORD" className="w-full p-5 border-2 rounded-2xl font-bold text-slate-800 bg-slate-50 outline-none text-lg" value={password} onChange={(e)=>setPassword(e.target.value)} onKeyDown={(e)=>e.key==='Enter' && handleLogin()} />
+            <button onClick={handleLogin} className="w-full bg-slate-900 text-yellow-500 py-5 rounded-2xl font-black shadow-lg uppercase text-xl active:scale-95 transition-transform">Enter Castle</button>
+          </div>
         </div>
       </div>
     );
   }
 
+  async function handleLogin() {
+    let admin = password === "8888";
+    if (!admin) {
+      const { data } = await supabase.from('study_records').select('password').eq('student_name', selectedName);
+      const dbPw = data?.find(r => r.password && r.password !== "0000")?.password || "0000";
+      if (password !== dbPw) { alert("비밀번호가 틀렸습니다."); return; }
+    }
+    setIsAdmin(admin); setIsLoggedIn(true);
+    localStorage.setItem('hg_auth', JSON.stringify({ name: selectedName, admin }));
+  }
+
+  // 2. 관리자용 기숙사별 정렬 명단 생성
+  const displayList = isAdmin 
+    ? Object.keys(studentData).sort((a, b) => {
+        const houseDiff = HOUSE_ORDER.indexOf(studentData[a].house) - HOUSE_ORDER.indexOf(studentData[b].house);
+        return houseDiff !== 0 ? houseDiff : sortKorean(a, b);
+      })
+    : [selectedName];
+
   return (
     <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16">
       <div className="max-w-[1100px] mx-auto mb-8">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-black text-slate-800 italic">House Cup</h2>
-          <button onClick={() => { sessionStorage.clear(); window.location.reload(); }} className="text-[10px] font-black text-slate-400 bg-white border px-3 py-1.5 rounded-full">LOGOUT</button>
+          <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight">House Cup</h2>
+          <button onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full shadow-sm">LOGOUT</button>
         </div>
-        <div className="grid grid-cols-4 gap-2 md:gap-4">
-          {houseRankings.map((h) => (
-            <div key={h.house} className={`${(HOUSE_CONFIG as any)[h.house].bg} p-3 md:p-5 rounded-2xl text-white shadow-lg relative overflow-hidden`}>
-              <div className="absolute right-[-10px] bottom-[-10px] text-5xl opacity-20">{(HOUSE_CONFIG as any)[h.house].icon}</div>
-              <div className="text-[9px] font-black uppercase mb-1 opacity-80">{h.house} {(HOUSE_CONFIG as any)[h.house].icon}</div>
-              <div className="text-lg md:text-3xl font-black">{h.finalPoint.toFixed(1)}</div>
-            </div>
-          ))}
+        <div className="grid grid-cols-4 gap-1.5 md:gap-4">
+          {houseRankings.map((item) => {
+            const config = (HOUSE_CONFIG as any)[item.house];
+            return (
+              <div key={item.house} className={`${config.bg} ${config.border} border-b-4 p-1.5 md:p-5 rounded-xl md:rounded-[2rem] text-white shadow-xl relative overflow-hidden`}>
+                <div className="absolute right-[-10px] bottom-[-10px] text-5xl opacity-20">{config.icon}</div>
+                <div className="text-[7px] md:text-xs font-black opacity-90 uppercase mb-1">{item.house} {config.icon}</div>
+                <div className="text-lg md:text-4xl font-black">{item.finalPoint.toFixed(1)}</div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      <div className="max-w-[1100px] mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200">
-        <div className="bg-slate-900 p-4 px-6 flex justify-between items-center text-white">
-          <span className="text-xs font-black uppercase tracking-widest">{isAdmin ? "Headmaster Console" : `${selectedName} Info`}</span>
-          {isSaving && <span className="text-[10px] text-yellow-500 font-bold animate-pulse uppercase">Recording...</span>}
+      <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
+        <div className="bg-slate-900 p-4 px-6 md:px-8 flex justify-between items-center text-white">
+          <span className="text-[10px] md:text-xs font-black text-yellow-500 uppercase tracking-widest flex items-center gap-2">
+            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+            {isAdmin ? "Headmaster Console" : `${selectedName} Info`}
+            {!isAdmin && <span className="text-white ml-2">{currentTime.toLocaleTimeString('ko-KR', { hour12: false })}</span>}
+          </span>
+          {isSaving && <div className="text-[9px] text-yellow-500 font-bold uppercase animate-ping">Recording...</div>}
         </div>
 
         <div className="w-full overflow-x-auto">
-          <table className="w-full table-fixed border-collapse">
+          {/* table-fixed와 명확한 너비 설정으로 셀 높이/너비 통일 */}
+          <table className="min-w-[850px] w-full table-fixed border-collapse">
             <thead>
-              <tr className="bg-slate-50 text-[11px] font-black text-slate-500 uppercase border-b border-slate-200">
-                <th className="w-[100px] p-3 sticky left-0 bg-slate-50 z-20 border-r border-slate-200">Wizard</th>
-                <th className="w-[70px] border-r border-slate-200">Field</th>
-                {DAYS.map(d => <th key={d} className="w-[65px] text-slate-900 border-r border-slate-200">{d}</th>)}
-                <th className="w-[80px] bg-slate-100 border-r border-slate-200">Total</th>
-                <th className="w-[80px] bg-slate-100">잔여월휴</th>
+              <tr className="bg-slate-50 text-slate-500 uppercase font-black text-[11px] border-b-2">
+                <th className="w-28 p-2 sticky left-0 bg-slate-50 z-20 border-r">Witch/Wizard</th>
+                <th className="w-20 p-2 border-r">Field</th>
+                {DAYS.map(d => <th key={d} className="w-16 p-2 text-slate-900">{d}</th>)}
+                <th className="w-24 p-2 bg-slate-100 text-[10px]">총 공부시간</th>
+                <th className="w-16 p-2 bg-slate-100 border-l text-[10px]">잔여월휴</th>
               </tr>
             </thead>
             <tbody>
-              {(isAdmin ? Object.keys(studentData).sort((a, b) => HOUSE_ORDER.indexOf(studentData[a].house) - HOUSE_ORDER.indexOf(studentData[b].house)) : [selectedName]).map(name => {
+              {displayList.map(name => {
                 const info = studentData[name];
                 const monRec = records.find(r => r.student_name === name && r.day_of_week === '월') || {};
                 const offCount = monRec.monthly_off_count ?? 4;
-                const rows = [
-                  { l: '휴무', f: 'off_type' }, { l: '지각', f: 'is_late' }, { l: '오전3H', f: 'am_3h' }, 
-                  { l: '공부시간', f: 'study_time' }, { l: '벌점', f: 'penalty' }, { l: '상점', f: 'bonus' }, { l: '총점', f: 'total' }
-                ];
-
+                const rows = [{l:'휴무',f:'off_type'},{l:'지각',f:'is_late'},{l:'오전3H',f:'am_3h'},{l:'공부시간',f:'study_time'},{l:'벌점',f:'penalty'},{l:'상점',f:'bonus'},{l:'총점',f:'total'}];
+                
                 return (
                   <React.Fragment key={name}>
                     {rows.map((row, rIdx) => (
-                      <tr key={row.l} className="border-b border-slate-100">
+                      <tr key={row.l} className={`${rIdx === 6 ? "border-b-[6px] border-slate-100" : "border-b border-slate-50"}`}>
                         {rIdx === 0 && (
-                          <td rowSpan={7} className={`p-4 text-center sticky left-0 z-20 font-bold border-r border-slate-200 shadow-sm ${info.color} ${info.text}`}>
-                            <div className="text-2xl mb-1">{info.emoji}</div>
-                            <div className="text-[11px] font-black leading-tight break-keep">{name}</div>
+                          <td rowSpan={7} className={`p-4 text-center sticky left-0 z-20 font-bold border-r-[3px] ${info.color} ${info.text}`}>
+                            <div className="text-3xl mb-1">{info.emoji}</div>
+                            <div className="leading-tight text-sm font-black mb-1 break-keep">{name}</div>
+                            <div className="text-[9px] font-black opacity-70 uppercase">{info.house}</div>
+                            {/* 3. 비밀번호 변경 버튼 (본인/관리자) */}
+                            <button onClick={async () => {
+                              const newPw = prompt("새 비밀번호를 입력하세요 (4자리)");
+                              if(newPw) await handleChange(name, '월', 'password', newPw);
+                            }} className="mt-2 text-[8px] underline opacity-50 hover:opacity-100">PW 변경</button>
                           </td>
                         )}
-                        <td className="text-center font-black bg-slate-50 border-r border-slate-200 text-[10px] text-slate-400">{row.l}</td>
+                        <td className="p-2 text-center font-black border-r bg-white text-slate-800 text-[11px] leading-tight">{row.l}</td>
                         {DAYS.map(day => {
                           const rec = records.find(r => r.student_name === name && r.day_of_week === day) || {};
                           const res = calc(rec);
-                          const getOffColor = (val: string) => {
-                            if (['반휴', '월반휴', '늦반휴', '늦월반휴'].includes(val)) return 'bg-orange-100 text-orange-700';
-                            if (['주휴', '월휴', '자율', '늦휴', '늦월휴'].includes(val)) return 'bg-blue-100 text-blue-700';
-                            if (val === '결석') return 'bg-red-100 text-red-700';
+                          const getCellBg = (val: string) => {
+                            if (['반휴','월반휴','늦반휴','늦월반휴'].includes(val)) return 'bg-green-100';
+                            if (['주휴','월휴','자율','늦휴','늦월휴'].includes(val)) return 'bg-blue-100';
+                            if (val === '결석') return 'bg-red-100';
                             return '';
                           };
                           return (
-                            <td key={day} className={`p-1 border-r border-slate-200 text-center ${row.f === 'off_type' ? getOffColor(rec.off_type || '-') : ''}`}>
+                            <td key={day} className={`p-1.5 text-center border-r border-slate-50 ${row.f === 'off_type' ? getCellBg(rec.off_type) : ''}`}>
                               {row.f === 'off_type' ? (
-                                <select className="w-full text-center bg-transparent font-black text-[10px] outline-none appearance-none" value={rec.off_type || '-'} onChange={e => handleChange(name, day, 'off_type', e.target.value)} disabled={!isAdmin}>
-                                  {OFF_OPTIONS.map(v => <option key={v} value={v} className="bg-white text-slate-800">{v}</option>)}
+                                <select className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-[10px]" value={rec.off_type || '-'} onChange={(e) => handleChange(name, day, 'off_type', e.target.value)} disabled={!isAdmin}>
+                                  {OFF_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
                                 </select>
                               ) : (row.f === 'is_late' || row.f === 'am_3h') ? (
-                                <input type="checkbox" className="w-4 h-4 mx-auto block cursor-pointer accent-slate-800" checked={!!rec[row.f]} onChange={e => handleChange(name, day, row.f, e.target.checked)} disabled={!isAdmin} />
+                                <input type="checkbox" className="w-5 h-5 accent-slate-800 cursor-pointer mx-auto block" checked={!!rec[row.f]} onChange={(e) => handleChange(name, day, row.f, e.target.checked)} disabled={!isAdmin} />
                               ) : row.f === 'study_time' ? (
-                                <input type="text" className="w-full text-center bg-transparent font-black text-xs outline-none" value={rec.study_time || ''} 
-                                  onChange={e => setRecords(prev => prev.map(r => (r.student_name === name && r.day_of_week === day) ? { ...r, study_time: e.target.value } : r))} 
-                                  onBlur={e => handleChange(name, day, 'study_time', e.target.value)} disabled={!isAdmin} />
+                                <input type="text" className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-sm placeholder-slate-200" placeholder="-" value={rec.study_time || ''} onChange={(e) => {
+                                  setRecords(prev => prev.map(r => (r.student_name === name && r.day_of_week === day) ? {...r, study_time: e.target.value} : r));
+                                }} onBlur={(e) => handleChange(name, day, 'study_time', e.target.value)} disabled={!isAdmin} />
                               ) : (
-                                <span className={`text-[11px] font-black ${row.f === 'penalty' && res.penalty < 0 ? 'text-red-500' : row.f === 'bonus' && res.bonus > 0 ? 'text-blue-600' : 'text-slate-800'}`}>
-                                  {res[row.f as keyof typeof res] === 0 ? (row.f === 'total' ? 0 : '') : res[row.f as keyof typeof res]}
-                                </span>
+                                <span className={`font-black text-sm ${row.f === 'penalty' && res.penalty < 0 ? 'text-red-500' : row.f === 'bonus' && res.bonus > 0 ? 'text-blue-600' : 'text-slate-900'}`}>{res[row.f as keyof typeof res] || (row.f === 'total' ? 0 : '')}</span>
                               )}
                             </td>
                           );
                         })}
-                        <td className="bg-slate-50 text-center font-black text-[11px] border-r border-slate-200">
-                          {row.f === 'study_time' ? (()=>{
+                        <td className="bg-slate-50 text-center font-black text-slate-900 border-l text-sm">
+                          {row.f === 'study_time' && (()=>{
                             let tm = 0; records.filter(r=>r.student_name===name).forEach(r=>{const[h,m]=(r.study_time||"").split(':').map(Number);tm+=(isNaN(h)?0:h*60)+(isNaN(m)?0:m);});
                             return tm > 0 ? `${Math.floor(tm/60)}:${(tm%60).toString().padStart(2,'0')}` : "";
-                          })() : ""}
+                          })()}
                         </td>
                         {rIdx === 0 && (
-                          <td rowSpan={7} className="p-2 bg-white text-center">
-                            <div className={`flex flex-col gap-1 items-center ${isAdmin ? 'cursor-pointer' : ''}`} onClick={() => isAdmin && handleChange(name, '월', 'monthly_off_count', offCount > 0 ? offCount - 1 : 0)}>
+                          <td rowSpan={7} className="p-2 bg-white border-l text-center">
+                            {/* 4. 잔여월휴 게이지 차감 로직 */}
+                            <div className="flex flex-col items-center gap-1.5">
                               {[1, 2, 3, 4].map((n) => (
-                                <div key={n} className={`w-6 h-3 rounded-sm border ${offCount >= (5-n) ? info.accent : 'bg-slate-50 border-slate-100'}`} />
+                                <div key={n} onClick={() => isAdmin && handleChange(name, '월', 'monthly_off_count', offCount >= (5-n) ? (5-n)-1 : offCount)} 
+                                     className={`w-7 h-5 rounded-md border-2 ${isAdmin ? 'cursor-pointer hover:brightness-90' : ''} ${offCount >= (5-n) ? info.accent : 'bg-slate-50 border-slate-200'}`} />
                               ))}
+                              {/* 4. 리셋 버튼 */}
+                              {isAdmin && <button onClick={() => confirm("월휴를 4개로 리셋할까요?") && handleChange(name, '월', 'monthly_off_count', 4)} className="mt-2 px-1 py-0.5 bg-slate-800 text-[8px] text-white rounded font-bold uppercase">Reset</button>}
                             </div>
-                            {isAdmin && <button onClick={(e) => { e.stopPropagation(); handleChange(name, '월', 'monthly_off_count', 4); }} className="mt-2 text-[8px] bg-slate-50 p-1 px-2 rounded-full font-black border border-slate-200">RESET</button>}
                           </td>
                         )}
                       </tr>
