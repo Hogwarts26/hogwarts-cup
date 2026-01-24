@@ -103,6 +103,7 @@ export default function HogwartsApp() {
     }
   };
 
+  // [수정] 비밀번호 변경 시 기존 데이터의 '값'들은 절대 건드리지 않고 비밀번호만 업데이트함
   const changePassword = async () => {
     const newPw = prompt("새로운 4자리 숫자를 입력하세요.");
     if (!newPw || newPw.length !== 4 || isNaN(Number(newPw))) { 
@@ -112,30 +113,23 @@ export default function HogwartsApp() {
     
     setIsSaving(true);
     try {
-      // 1. 기존 데이터가 있는지 확인
       const { data: existing } = await supabase
         .from('study_records')
-        .select('id')
+        .select('*')
         .eq('student_name', selectedName);
 
       if (!existing || existing.length === 0) {
-        // [핵심 수정] 월~일 모든 요일의 초기 데이터를 생성하여 지각 자동 체크 방지
-        const initialRows = DAYS.map(day => ({
-          student_name: selectedName,
-          day_of_week: day,
-          password: newPw,
-          is_late: false,
-          am_3h: false,
-          study_time: '0:00',
-          off_type: '-'
-        }));
-
+        // 데이터가 아예 없는 학생이면 최소한의 로그인용 '월요일' 행만 생성 (값은 전부 빈 상태로)
         const { error: insError } = await supabase
           .from('study_records')
-          .insert(initialRows);
+          .insert({ 
+            student_name: selectedName, 
+            day_of_week: '월', 
+            password: newPw 
+          });
         if (insError) throw insError;
       } else {
-        // 기존 데이터가 있으면 비밀번호만 일괄 업데이트
+        // 이미 데이터가 있는 학생이면 모든 행의 비밀번호만 일괄 수정 (다른 값은 유지)
         const { error: updError } = await supabase
           .from('study_records')
           .update({ password: newPw })
@@ -153,8 +147,8 @@ export default function HogwartsApp() {
   };
 
   const calc = (r: any) => {
-    // [UI 수정] 데이터가 없거나 초기 상태('-')이면 지각 벌점을 계산하지 않음
-    if (!r || (!r.study_time && !r.off_type) || (r.study_time === '0:00' && r.off_type === '-')) {
+    // [중요] 데이터가 없거나, 공부시간이 없으면서 휴무도 지정 안 된 초기상태는 벌점 계산 제외
+    if (!r || (!r.study_time && !r.off_type) || (r.study_time === '0:00' && (r.off_type === '-' || !r.off_type))) {
       return { penalty: 0, bonus: 0, total: 0, studyH: 0 };
     }
     if (r.off_type === '결석') return { penalty: -5, bonus: 0, total: -5, studyH: 0 };
@@ -196,7 +190,7 @@ export default function HogwartsApp() {
     const latestPw = records.filter(r => r.student_name === name).find(r => r.password && r.password !== "0000")?.password || "0000";
     
     const updatedData = { 
-      ...(existing || { student_name: name, day_of_week: day, password: latestPw, is_late: false, am_3h: false, study_time: '0:00' }), 
+      ...(existing || { student_name: name, day_of_week: day, password: latestPw }), 
       [field]: value 
     };
     await supabase.from('study_records').upsert(updatedData, { onConflict: 'student_name,day_of_week' });
@@ -268,7 +262,7 @@ export default function HogwartsApp() {
               <tr className="bg-slate-50 text-slate-500 uppercase font-black text-[11px] border-b-2">
                 <th className="w-28 p-2 sticky left-0 bg-slate-50 z-20 border-r">Witch/Wizard</th>
                 <th className="w-16 p-2 border-r">Field</th>
-                {DAYS.map(d => <th key={d} className="w-14 p-2 text-slate-900">{d}</th>)}
+                {DAYS.map(d => <th key={d} className="get-14 p-2 text-slate-900">{d}</th>)}
                 <th className="w-20 p-2 bg-slate-100 text-slate-900 text-center text-[10px]">총 시간</th>
                 <th className="w-16 p-2 bg-slate-100 border-l text-[10px]">잔여월휴</th>
               </tr>
