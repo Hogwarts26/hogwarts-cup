@@ -29,12 +29,11 @@ const studentData: { [key: string]: { house: string; emoji: string; color: strin
   "🐈‍⬛깜냥": { house: "후플푸프", emoji: "🐈‍⬛", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🦊여우": { house: "후플푸프", emoji: "🦊", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🧄마늘": { house: "후플푸프", emoji: "🧄", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
-  "Rex🦖공룡": { house: "후플푸프", emoji: "Rex🦖", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
+  "🦖공룡": { house: "후플푸프", emoji: "🦖", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🐿️다람": { house: "후플푸프", emoji: "🐿️", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" }
 };
 
 const HOUSE_ORDER = ["슬리데린", "래번클로", "그리핀도르", "후플푸프"];
-
 const HOUSE_CONFIG = {
   "슬리데린": { bg: "bg-emerald-600", border: "border-emerald-700", icon: "🐍" },
   "래번클로": { bg: "bg-blue-700", border: "border-blue-800", icon: "🦅" },
@@ -75,18 +74,41 @@ export default function HogwartsApp() {
   const handleLogin = async () => {
     if (password === "8888") { setIsAdmin(true); setIsLoggedIn(true); return; }
     if (!selectedName) { alert("이름을 선택해주세요."); return; }
-    const { data } = await supabase.from('study_records').select('password').eq('student_name', selectedName).limit(1);
-    const dbPassword = data?.[0]?.password || "0000";
-    if (password === dbPassword) { setIsAdmin(false); setIsLoggedIn(true); } else { alert("비밀번호 불일치"); }
+    
+    // DB에서 비밀번호 조회
+    const { data } = await supabase.from('study_records').select('password').eq('student_name', selectedName);
+    
+    // 기록이 아예 없는 학생은 기본값 '0000', 기록이 있으면 저장된 비밀번호 사용
+    const validPassword = (data && data.length > 0) ? data[0].password : "0000";
+
+    if (password === validPassword) {
+      setIsAdmin(false);
+      setIsLoggedIn(true);
+    } else {
+      alert("비밀번호가 일치하지 않습니다.");
+    }
   };
 
   const changePassword = async () => {
     const newPw = prompt("새로운 4자리 숫자를 입력하세요.");
     if (!newPw || newPw.length !== 4 || isNaN(Number(newPw))) { alert("4자리 숫자로 입력해주세요."); return; }
+    
     setIsSaving(true);
-    const { error } = await supabase.from('study_records').update({ password: newPw }).eq('student_name', selectedName);
-    if (!error) { alert("변경 완료"); fetchRecords(); } else { alert("실패: " + error.message); }
+    
+    // 1. 현재 테이블에 학생 기록이 있는지 확인
+    const { data: existing } = await supabase.from('study_records').select('*').eq('student_name', selectedName);
+
+    if (!existing || existing.length === 0) {
+      // 기록이 없으면 '월'요일 데이터로 하나 생성하며 비밀번호 저장
+      await supabase.from('study_records').insert([{ student_name: selectedName, day_of_week: '월', password: newPw }]);
+    } else {
+      // 기록이 있으면 모든 해당 학생 행의 비밀번호 업데이트
+      await supabase.from('study_records').update({ password: newPw }).eq('student_name', selectedName);
+    }
+
+    alert("비밀번호가 변경되었습니다. 이제 새 비밀번호로 로그인하세요!");
     setIsSaving(false);
+    fetchRecords();
   };
 
   const calc = (r: any) => {
@@ -127,7 +149,11 @@ export default function HogwartsApp() {
     if (!isAdmin) return;
     setIsSaving(true);
     const existing = records.find(r => r.student_name === name && r.day_of_week === day);
-    const updatedData = { ...(existing || { student_name: name, day_of_week: day, password: existing?.password || "0000" }), [field]: value };
+    const sameStudentRec = records.find(r => r.student_name === name && r.password);
+    const updatedData = { 
+      ...(existing || { student_name: name, day_of_week: day, password: sameStudentRec?.password || "0000" }), 
+      [field]: value 
+    };
     await supabase.from('study_records').upsert(updatedData, { onConflict: 'student_name,day_of_week' });
     fetchRecords();
     setIsSaving(false);
@@ -135,16 +161,16 @@ export default function HogwartsApp() {
 
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 text-slate-800">
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
         <div className="bg-white p-10 rounded-[2.5rem] w-full max-w-md shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-2 bg-yellow-500"></div>
-          <h1 className="text-4xl font-serif font-black text-center mb-10 italic">Hogwarts</h1>
+          <h1 className="text-4xl font-serif font-black text-center mb-10 text-slate-800 italic">Hogwarts</h1>
           <div className="space-y-6">
-            <select className="w-full p-5 border-2 rounded-2xl font-bold bg-slate-50 outline-none" value={selectedName} onChange={(e)=>setSelectedName(e.target.value)}>
+            <select className="w-full p-5 border-2 rounded-2xl font-bold bg-slate-50 outline-none text-slate-800" value={selectedName} onChange={(e)=>setSelectedName(e.target.value)}>
               <option value="">이름을 선택하세요.</option>
               {Object.keys(studentData).sort(sortKorean).map(n => <option key={n} value={n}>{n}</option>)}
             </select>
-            <input type="password" placeholder="비밀번호 입력" className="w-full p-5 border-2 rounded-2xl font-bold bg-slate-50 outline-none" value={password} onChange={(e)=>setPassword(e.target.value)} onKeyDown={(e)=>e.key==='Enter' && handleLogin()} />
+            <input type="password" placeholder="비밀번호 입력" className="w-full p-5 border-2 rounded-2xl font-bold bg-slate-50 outline-none text-slate-800" value={password} onChange={(e)=>setPassword(e.target.value)} onKeyDown={(e)=>e.key==='Enter' && handleLogin()} />
             <button onClick={handleLogin} className="w-full bg-slate-900 text-yellow-500 py-5 rounded-2xl font-black text-xl uppercase">Enter Castle</button>
           </div>
         </div>
@@ -188,7 +214,7 @@ export default function HogwartsApp() {
               <button onClick={changePassword} className="text-[9px] font-black bg-slate-700 text-slate-300 px-2 py-1 rounded hover:text-white">비밀번호 변경</button>
             )}
           </div>
-          {isSaving && <div className="text-[9px] text-yellow-500 font-bold animate-bounce">SAVING...</div>}
+          {isSaving && <div className="text-[9px] text-yellow-500 font-bold animate-bounce uppercase">Saving...</div>}
         </div>
         
         <div className="w-full overflow-x-auto">
