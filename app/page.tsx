@@ -158,18 +158,19 @@ export default function HogwartsApp() {
           <button onClick={() => window.location.reload()} className="text-[10px] md:text-xs font-black text-slate-400 bg-white border-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full shadow-sm hover:bg-slate-50 transition-colors">LOGOUT</button>
         </div>
         
-        <div className="grid grid-cols-4 gap-2 md:gap-4">
+        <div className="grid grid-cols-4 gap-1.5 md:gap-4">
           {houseRankings.map((item, index) => {
             const config = (HOUSE_CONFIG as any)[item.house];
             return (
-              <div key={item.house} className={`${config.bg} ${config.border} border-b-4 md:border-b-8 p-2 md:p-5 rounded-2xl md:rounded-[2rem] text-white shadow-xl transition-all duration-500 transform ${index === 0 ? 'scale-105 ring-2 md:ring-4 ring-yellow-400/50' : ''}`}>
-                <div className="flex flex-col md:flex-row justify-between items-start mb-1 md:mb-2">
-                  <span className="text-[8px] md:text-xs font-black opacity-90 uppercase tracking-tighter md:tracking-widest">{index + 1}st {item.house.slice(0,2)}</span>
-                  <span className="text-sm md:text-2xl">{index === 0 ? '🏆' : config.icon}</span>
+              <div key={item.house} className={`${config.bg} ${config.border} border-b-4 md:border-b-8 p-1.5 md:p-5 rounded-xl md:rounded-[2rem] text-white shadow-xl transition-all duration-500 transform ${index === 0 ? 'scale-105 ring-2 md:ring-4 ring-yellow-400/50' : ''}`}>
+                <div className="flex flex-col md:flex-row justify-between items-start mb-0.5 md:mb-2">
+                  {/* slice(0,2) 제거 및 폰트 크기 조정 */}
+                  <span className="text-[7px] md:text-xs font-black opacity-90 uppercase tracking-tighter">{index + 1}st {item.house}</span>
+                  <span className="text-xs md:text-2xl">{index === 0 ? '🏆' : config.icon}</span>
                 </div>
-                <div className="text-sm md:text-4xl font-black truncate">
+                <div className="text-[11px] md:text-4xl font-black truncate">
                   {item.finalPoint.toFixed(1)}
-                  <span className="text-[8px] md:text-sm ml-0.5 opacity-80 uppercase">pts</span>
+                  <span className="text-[6px] md:text-sm ml-0.5 opacity-80 uppercase">pts</span>
                 </div>
               </div>
             );
@@ -183,7 +184,6 @@ export default function HogwartsApp() {
           {isSaving && <div className="flex items-center gap-2 text-[9px] text-yellow-500 font-bold uppercase"><div className="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-ping"></div>Magic...</div>}
         </div>
         
-        {/* 핵심 수정 부분: overflow-x-auto와 명시적 너비 설정 */}
         <div className="w-full overflow-x-auto touch-pan-x">
           <table className="min-w-[800px] w-full table-fixed border-collapse">
             <thead>
