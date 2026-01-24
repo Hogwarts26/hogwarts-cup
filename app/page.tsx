@@ -259,7 +259,6 @@ export default function HogwartsApp() {
                   totalPointsSum += res.total;
                 });
 
-                // 이름에서 이모지 분리
                 const emoji = name.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]|\uD83D[\uDC00-\uDE4F]|[\u2000-\u3300]/g)?.[0] || "";
                 const displayName = name.replace(emoji, "");
 
@@ -316,12 +315,12 @@ export default function HogwartsApp() {
                         })}
                         <td className="bg-slate-50 text-center font-black border-l">
                           {rIdx === 3 && (
-                            <div className="text-sm text-slate-900">
+                            <div className={`text-sm font-black ${totalTimeMinutes < 1200 ? 'text-red-600' : 'text-slate-900'}`}>
                               {totalTimeMinutes > 0 ? `${Math.floor(totalTimeMinutes/60)}:${(totalTimeMinutes%60).toString().padStart(2,'0')}` : "-"}
                             </div>
                           )}
                           {rIdx === 6 && (
-                            <div className="text-[10px] text-blue-700 bg-blue-50 py-1 rounded">
+                            <div className={`text-[10px] font-black py-1 rounded ${totalPointsSum <= -10 ? 'text-red-600 bg-red-50' : 'text-blue-700 bg-blue-50'}`}>
                               합계: {totalPointsSum}
                             </div>
                           )}
