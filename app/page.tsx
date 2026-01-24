@@ -112,25 +112,30 @@ export default function HogwartsApp() {
     
     setIsSaving(true);
     try {
+      // 1. 기존 데이터가 있는지 확인
       const { data: existing } = await supabase
         .from('study_records')
         .select('id')
         .eq('student_name', selectedName);
 
       if (!existing || existing.length === 0) {
-        // [수정] 새 행을 생성할 때 is_late와 am_3h를 명시적으로 false로 설정
+        // [핵심 수정] 월~일 모든 요일의 초기 데이터를 생성하여 지각 자동 체크 방지
+        const initialRows = DAYS.map(day => ({
+          student_name: selectedName,
+          day_of_week: day,
+          password: newPw,
+          is_late: false,
+          am_3h: false,
+          study_time: '0:00',
+          off_type: '-'
+        }));
+
         const { error: insError } = await supabase
           .from('study_records')
-          .insert({ 
-            student_name: selectedName, 
-            day_of_week: '월', 
-            password: newPw,
-            is_late: false,
-            am_3h: false,
-            study_time: '0:00'
-          });
+          .insert(initialRows);
         if (insError) throw insError;
       } else {
+        // 기존 데이터가 있으면 비밀번호만 일괄 업데이트
         const { error: updError } = await supabase
           .from('study_records')
           .update({ password: newPw })
@@ -148,7 +153,10 @@ export default function HogwartsApp() {
   };
 
   const calc = (r: any) => {
-    if (!r) return { penalty: -5, bonus: 0, total: -5, studyH: 0 };
+    // [UI 수정] 데이터가 없거나 초기 상태('-')이면 지각 벌점을 계산하지 않음
+    if (!r || (!r.study_time && !r.off_type) || (r.study_time === '0:00' && r.off_type === '-')) {
+      return { penalty: 0, bonus: 0, total: 0, studyH: 0 };
+    }
     if (r.off_type === '결석') return { penalty: -5, bonus: 0, total: -5, studyH: 0 };
     const [h, m] = (r.study_time || "0:00").split(':').map(Number);
     const studyH = (isNaN(h) ? 0 : h) + (isNaN(m) ? 0 : m / 60);
@@ -157,8 +165,8 @@ export default function HogwartsApp() {
     const isFullOff = ['주휴', '월휴', '자율', '늦휴', '늦월휴'].includes(r.off_type);
     if (['늦반휴', '늦휴', '늦월반휴', '늦월휴'].includes(r.off_type)) penalty -= 1;
     if (r.is_late && !isFullOff) penalty -= 1;
-    if (!isFullOff && !isHalfOff && r.off_type !== '자율' && !r.am_3h) penalty -= 1;
-    if (!isFullOff && r.off_type !== '자율') {
+    if (!isFullOff && !isHalfOff && r.off_type !== '자율' && r.off_type !== '-' && !r.am_3h) penalty -= 1;
+    if (!isFullOff && r.off_type !== '자율' && r.off_type !== '-') {
       const target = isHalfOff ? 4 : 9;
       if (studyH < target) penalty -= Math.ceil((target - studyH) - 0.001);
       else if (!isHalfOff) bonus += Math.floor(studyH - target);
@@ -188,7 +196,7 @@ export default function HogwartsApp() {
     const latestPw = records.filter(r => r.student_name === name).find(r => r.password && r.password !== "0000")?.password || "0000";
     
     const updatedData = { 
-      ...(existing || { student_name: name, day_of_week: day, password: latestPw }), 
+      ...(existing || { student_name: name, day_of_week: day, password: latestPw, is_late: false, am_3h: false, study_time: '0:00' }), 
       [field]: value 
     };
     await supabase.from('study_records').upsert(updatedData, { onConflict: 'student_name,day_of_week' });
