@@ -151,9 +151,9 @@ export default function HogwartsApp() {
     setIsSaving(true);
     const existing = records.find(r => r.student_name === name && r.day_of_week === day);
     const latestPw = records.filter(r => r.student_name === name).find(r => r.password && r.password !== "0000")?.password || "0000";
-    const updatedData = { ...(existing || { student_name: name, day_of_week: day, password: latestPw, is_late: false, am_3h: false }), [field]: value };
+    const updatedData = { ...(existing || { student_name: name, day_of_week: day, password: latestPw, is_late: false, am_3h: false, study_time: '0:00', off_type: '-' }), [field]: value };
     await supabase.from('study_records').upsert(updatedData, { onConflict: 'student_name,day_of_week' });
-    fetchRecords();
+    await fetchRecords(); // 즉시 새로고침
     setIsSaving(false);
   };
 
@@ -230,7 +230,9 @@ export default function HogwartsApp() {
               {(isAdmin ? adminSortedNames : [selectedName]).map(name => {
                 const info = studentData[name];
                 const monRec = records.find(r => r.student_name === name && r.day_of_week === '월') || {};
-                const offCount = monRec.monthly_off_count === undefined ? 4 : monRec.monthly_off_count;
+                // [중요] DB에 데이터가 없거나 monthly_off_count가 null이면 4로 간주
+                const offCount = (monRec.monthly_off_count === null || monRec.monthly_off_count === undefined) ? 4 : monRec.monthly_off_count;
+                
                 const rows = [{l:'휴무',f:'off_type'},{l:'지각',f:'is_late'},{l:'오전3H',f:'am_3h'},{l:'공부시간',f:'study_time'},{l:'벌점',f:'penalty'},{l:'상점',f:'bonus'},{l:'총점',f:'total'}];
                 return (
                   <React.Fragment key={name}>
@@ -269,18 +271,27 @@ export default function HogwartsApp() {
                         {rIdx === 0 && (
                           <td rowSpan={7} className="p-2 bg-white border-l">
                             <div className="flex flex-col items-center gap-2">
-                              {/* [수정] 게이지바 클릭 시 하나씩 감소 + 리셋 버튼 추가 */}
+                              {/* 게이지 영역: 클릭 시 -1 처리 */}
                               <div 
                                 className={`flex flex-col gap-1 ${isAdmin ? 'cursor-pointer hover:opacity-80' : ''}`}
-                                onClick={() => isAdmin && handleChange(name, '월', 'monthly_off_count', offCount > 0 ? offCount - 1 : 0)}
+                                onClick={() => {
+                                  if(isAdmin) {
+                                    const nextVal = offCount > 0 ? offCount - 1 : 0;
+                                    handleChange(name, '월', 'monthly_off_count', nextVal);
+                                  }
+                                }}
                               >
                                 {[1, 2, 3, 4].map((n) => (
                                   <div key={n} className={`w-8 h-4 rounded-md border-2 ${offCount >= (5-n) ? info.accent : 'bg-slate-50 border-slate-200'}`} />
                                 ))}
                               </div>
+                              {/* 리셋 버튼: 4로 초기화 */}
                               {isAdmin && (
                                 <button 
-                                  onClick={() => handleChange(name, '월', 'monthly_off_count', 4)}
+                                  onClick={(e) => {
+                                    e.stopPropagation(); // 게이지 클릭 이벤트 전파 방지
+                                    handleChange(name, '월', 'monthly_off_count', 4);
+                                  }}
                                   className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-500 p-1 px-2 rounded-full font-black flex items-center gap-1"
                                 >
                                   <span>↺</span> RESET
