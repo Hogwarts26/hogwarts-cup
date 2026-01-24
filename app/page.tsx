@@ -44,10 +44,23 @@ const HOUSE_CONFIG = {
 const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
 const OFF_OPTIONS = ['-', '반휴', '주휴', '월휴', '월반휴', '자율', '결석', '늦반휴', '늦휴', '늦월반휴', '늦월휴'];
 
+// [가나다순 정렬] - 로그인 화면용
 const sortKorean = (a: string, b: string) => {
-  const cleanA = a.replace(/[^\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/g, "");
-  const cleanB = b.replace(/[^\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/g, "");
+  const cleanA = a.replace(/[^\uAC00-\uD7AF]/g, "");
+  const cleanB = b.replace(/[^\uAC00-\uD7AF]/g, "");
   return cleanA.localeCompare(cleanB, 'ko');
+};
+
+// [기숙사순 정렬] - 관리자 화면용
+const sortStudentsByHouse = (names: string[]) => {
+  return [...names].sort((a, b) => {
+    const houseA = studentData[a].house;
+    const houseB = studentData[b].house;
+    if (houseA !== houseB) {
+      return HOUSE_ORDER.indexOf(houseA) - HOUSE_ORDER.indexOf(houseB);
+    }
+    return sortKorean(a, b);
+  });
 };
 
 export default function HogwartsApp() {
@@ -69,9 +82,7 @@ export default function HogwartsApp() {
       const { data, error } = await supabase.from('study_records').select('*');
       if (error) throw error;
       if (data) setRecords(data);
-    } catch (err) {
-      console.error("데이터 로드 실패:", err);
-    }
+    } catch (err) { console.error("데이터 로드 실패:", err); }
   };
 
   useEffect(() => { if (isLoggedIn) fetchRecords(); }, [isLoggedIn]);
@@ -79,78 +90,33 @@ export default function HogwartsApp() {
   const handleLogin = async () => {
     if (password === "8888") { setIsAdmin(true); setIsLoggedIn(true); return; }
     if (!selectedName) { alert("이름을 선택해주세요."); return; }
-    
     const { data } = await supabase.from('study_records').select('password').eq('student_name', selectedName);
-    
-    if (!data || data.length === 0) {
-      if (password === "0000") {
-        setIsAdmin(false);
-        setIsLoggedIn(true);
-      } else {
-        alert("비밀번호가 일치하지 않습니다. (초기 비번 0000)");
-      }
-      return;
-    }
-
-    const customPw = data.find(r => r.password && r.password !== "0000")?.password;
-    const finalValidPw = customPw || "0000";
-
-    if (password === finalValidPw) {
-      setIsAdmin(false);
-      setIsLoggedIn(true);
-    } else {
-      alert("비밀번호가 일치하지 않습니다.");
-    }
+    const customPw = data?.find(r => r.password && r.password !== "0000")?.password || "0000";
+    if (password === customPw) { setIsAdmin(false); setIsLoggedIn(true); } 
+    else { alert("비밀번호가 일치하지 않습니다."); }
   };
 
   const changePassword = async () => {
     const newPw = prompt("새로운 4자리 숫자를 입력하세요.");
-    if (!newPw || newPw.length !== 4 || isNaN(Number(newPw))) { 
-      alert("4자리 숫자로 입력해주세요."); 
-      return; 
-    }
-    
+    if (!newPw || newPw.length !== 4 || isNaN(Number(newPw))) { alert("4자리 숫자로 입력해주세요."); return; }
     setIsSaving(true);
     try {
-      const { data: existing } = await supabase
-        .from('study_records')
-        .select('*')
-        .eq('student_name', selectedName);
-
+      const { data: existing } = await supabase.from('study_records').select('*').eq('student_name', selectedName);
       if (!existing || existing.length === 0) {
-        // [강력 수정] 데이터가 없을 때 생성 시, 모든 체크박스 값을 강제로 false로 고정
-        const { error: insError } = await supabase
-          .from('study_records')
-          .insert({ 
-            student_name: selectedName, 
-            day_of_week: '월', 
-            password: newPw,
-            is_late: false, // 명시적으로 false
-            am_3h: false,   // 명시적으로 false
-            study_time: '0:00',
-            off_type: '-'
-          });
-        if (insError) throw insError;
+        await supabase.from('study_records').insert({ 
+          student_name: selectedName, day_of_week: '월', password: newPw,
+          is_late: false, am_3h: false, study_time: '0:00', off_type: '-'
+        });
       } else {
-        // 기존 데이터 수정 시에도 비밀번호만 건드림
-        const { error: updError } = await supabase
-          .from('study_records')
-          .update({ password: newPw })
-          .eq('student_name', selectedName);
-        if (updError) throw updError;
+        await supabase.from('study_records').update({ password: newPw }).eq('student_name', selectedName);
       }
-
       alert(`비밀번호가 [${newPw}]로 변경되었습니다.\n다시 로그인해주세요!`);
       window.location.reload(); 
-    } catch (err: any) {
-      console.error("비밀번호 변경 실패:", err);
-      alert(`변경 실패: ${err.message}`);
-    }
+    } catch (err: any) { alert(`변경 실패: ${err.message}`); }
     setIsSaving(false);
   };
 
   const calc = (r: any) => {
-    // [UI 보호] r.is_late가 명확히 true일 때만 벌점을 계산함 (undefined나 null은 무시)
     if (!r || (!r.study_time && !r.off_type) || (r.study_time === '0:00' && (r.off_type === '-' || !r.off_type))) {
       return { penalty: 0, bonus: 0, total: 0, studyH: 0 };
     }
@@ -161,20 +127,12 @@ export default function HogwartsApp() {
     const isHalfOff = ['반휴', '월반휴', '늦반휴', '늦월반휴'].includes(r.off_type);
     const isFullOff = ['주휴', '월휴', '자율', '늦휴', '늦월휴'].includes(r.off_type);
     if (['늦반휴', '늦휴', '늦월반휴', '늦월휴'].includes(r.off_type)) penalty -= 1;
-    
-    // [수정] 명확하게 true일 때만 차감
     if (r.is_late === true && !isFullOff) penalty -= 1;
-    if (!isFullOff && !isHalfOff && r.off_type !== '자율' && r.off_type !== '-' && r.am_3h === false) {
-        if (studyH > 0) penalty -= 1;
-    }
-
+    if (!isFullOff && !isHalfOff && r.off_type !== '자율' && r.off_type !== '-' && r.am_3h === false) { if (studyH > 0) penalty -= 1; }
     if (!isFullOff && r.off_type !== '자율' && r.off_type !== '-') {
       const target = isHalfOff ? 4 : 9;
-      if (studyH < target && studyH > 0) {
-        penalty -= Math.ceil((target - studyH) - 0.001);
-      } else if (studyH >= target) {
-        if (!isHalfOff) bonus += Math.floor(studyH - target);
-      }
+      if (studyH < target && studyH > 0) penalty -= Math.ceil((target - studyH) - 0.001);
+      else if (studyH >= target && !isHalfOff) bonus += Math.floor(studyH - target);
     }
     return { penalty: Math.max(penalty, -5), bonus, total: Math.max(penalty, -5) + bonus, studyH };
   };
@@ -199,15 +157,15 @@ export default function HogwartsApp() {
     setIsSaving(true);
     const existing = records.find(r => r.student_name === name && r.day_of_week === day);
     const latestPw = records.filter(r => r.student_name === name).find(r => r.password && r.password !== "0000")?.password || "0000";
-    
-    const updatedData = { 
-      ...(existing || { student_name: name, day_of_week: day, password: latestPw, is_late: false, am_3h: false }), 
-      [field]: value 
-    };
+    const updatedData = { ...(existing || { student_name: name, day_of_week: day, password: latestPw, is_late: false, am_3h: false }), [field]: value };
     await supabase.from('study_records').upsert(updatedData, { onConflict: 'student_name,day_of_week' });
     fetchRecords();
     setIsSaving(false);
   };
+
+  // 정렬 리스트 두 가지 준비
+  const loginSortedNames = useMemo(() => Object.keys(studentData).sort(sortKorean), []);
+  const adminSortedNames = useMemo(() => sortStudentsByHouse(Object.keys(studentData)), []);
 
   if (!isLoggedIn) {
     return (
@@ -218,7 +176,8 @@ export default function HogwartsApp() {
           <div className="space-y-6">
             <select className="w-full p-5 border-2 rounded-2xl font-bold bg-slate-50 outline-none text-slate-800" value={selectedName} onChange={(e)=>setSelectedName(e.target.value)}>
               <option value="">이름을 선택하세요.</option>
-              {Object.keys(studentData).sort(sortKorean).map(n => <option key={n} value={n}>{n}</option>)}
+              {/* [로그인 화면] 가나다순 유지 */}
+              {loginSortedNames.map(n => <option key={n} value={n}>{n}</option>)}
             </select>
             <input type="password" placeholder="비밀번호 입력" className="w-full p-5 border-2 rounded-2xl font-bold bg-slate-50 outline-none text-slate-800" value={password} onChange={(e)=>setPassword(e.target.value)} onKeyDown={(e)=>e.key==='Enter' && handleLogin()} />
             <button onClick={handleLogin} className="w-full bg-slate-900 text-yellow-500 py-5 rounded-2xl font-black text-xl uppercase">Enter Castle</button>
@@ -235,7 +194,6 @@ export default function HogwartsApp() {
           <h2 className="text-2xl md:text-3xl font-serif font-black text-slate-800 italic">Hogwarts House Cup</h2>
           <button onClick={() => window.location.reload()} className="text-[10px] md:text-xs font-black text-slate-400 bg-white border-2 px-4 py-2 rounded-full">LOGOUT</button>
         </div>
-        
         <div className="grid grid-cols-4 gap-1.5 md:gap-4">
           {houseRankings.map((item, index) => {
             const config = (HOUSE_CONFIG as any)[item.house];
@@ -260,9 +218,7 @@ export default function HogwartsApp() {
               {isAdmin ? "Headmaster Console" : currentTime.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}
               {!isAdmin && <span className="ml-2 text-white">{currentTime.toLocaleTimeString('ko-KR', { hour12: false })}</span>}
             </span>
-            {!isAdmin && (
-              <button onClick={changePassword} className="text-[9px] font-black bg-slate-700 text-slate-300 px-2 py-1 rounded hover:text-white">비밀번호 변경</button>
-            )}
+            {!isAdmin && <button onClick={changePassword} className="text-[9px] font-black bg-slate-700 text-slate-300 px-2 py-1 rounded hover:text-white">비밀번호 변경</button>}
           </div>
           {isSaving && <div className="text-[9px] text-yellow-500 font-bold animate-bounce uppercase">Saving...</div>}
         </div>
@@ -279,7 +235,8 @@ export default function HogwartsApp() {
               </tr>
             </thead>
             <tbody>
-              {(isAdmin ? Object.keys(studentData).sort(sortKorean) : [selectedName]).map(name => {
+              {/* [관리자 화면] 기숙사별 정렬 리스트 사용 */}
+              {(isAdmin ? adminSortedNames : [selectedName]).map(name => {
                 const info = studentData[name];
                 const monRec = records.find(r => r.student_name === name && r.day_of_week === '월') || {};
                 const offCount = monRec.monthly_off_count === undefined ? 4 : monRec.monthly_off_count;
@@ -310,9 +267,7 @@ export default function HogwartsApp() {
                                 <input type="checkbox" className="w-5 h-5 accent-slate-800 mx-auto block" checked={rec[row.f] === true} onChange={(e) => handleChange(name, day, row.f, e.target.checked)} disabled={!isAdmin} />
                               ) : row.f === 'study_time' ? (
                                 <input type="text" className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-sm" value={rec.study_time || '0:00'} onBlur={(e) => handleChange(name, day, 'study_time', e.target.value)} disabled={!isAdmin} />
-                              ) : (
-                                <span className={`font-black text-sm ${row.f === 'penalty' ? 'text-red-500' : row.f === 'bonus' ? 'text-blue-600' : 'text-slate-900'}`}>{res[row.f as keyof typeof res]}</span>
-                              )}
+                              ) : <span className={`font-black text-sm ${row.f === 'penalty' ? 'text-red-500' : row.f === 'bonus' ? 'text-blue-600' : 'text-slate-900'}`}>{res[row.f as keyof typeof res]}</span>}
                             </td>
                           );
                         })}
