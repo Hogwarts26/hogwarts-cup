@@ -29,11 +29,19 @@ const studentData: { [key: string]: { house: string; emoji: string; color: strin
   "🐈‍⬛깜냥": { house: "후플푸프", emoji: "🐈‍⬛", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🦊여우": { house: "후플푸프", emoji: "🦊", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🧄마늘": { house: "후플푸프", emoji: "🧄", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
-  "🦖공룡": { house: "후플푸프", emoji: "🦖", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
+  "Rex🦖공룡": { house: "후플푸프", emoji: "Rex🦖", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🐿️다람": { house: "후플푸프", emoji: "🐿️", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" }
 };
 
 const HOUSE_ORDER = ["슬리데린", "래번클로", "그리핀도르", "후플푸프"];
+
+const HOUSE_CONFIG = {
+  "슬리데린": { bg: "bg-emerald-600", border: "border-emerald-700", icon: "🐍" },
+  "래번클로": { bg: "bg-blue-700", border: "border-blue-800", icon: "🦅" },
+  "그리핀도르": { bg: "bg-red-700", border: "border-red-800", icon: "🦁" },
+  "후플푸프": { bg: "bg-amber-500", border: "border-amber-600", icon: "🦡" }
+};
+
 const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
 const OFF_OPTIONS = ['-', '반휴', '주휴', '월휴', '월반휴', '자율', '결석', '늦반휴', '늦휴', '늦월반휴', '늦월휴'];
 
@@ -64,56 +72,20 @@ export default function HogwartsApp() {
 
   useEffect(() => { if (isLoggedIn) fetchRecords(); }, [isLoggedIn]);
 
-  // 로그인 로직 수정: DB 비밀번호 확인
   const handleLogin = async () => {
-    if (password === "8888") {
-      setIsAdmin(true);
-      setIsLoggedIn(true);
-      return;
-    }
-
-    if (!selectedName) {
-      alert("이름을 선택해주세요.");
-      return;
-    }
-
-    // DB에서 해당 학생의 비밀번호 확인
-    const { data } = await supabase
-      .from('study_records')
-      .select('password')
-      .eq('student_name', selectedName)
-      .limit(1);
-
+    if (password === "8888") { setIsAdmin(true); setIsLoggedIn(true); return; }
+    if (!selectedName) { alert("이름을 선택해주세요."); return; }
+    const { data } = await supabase.from('study_records').select('password').eq('student_name', selectedName).limit(1);
     const dbPassword = data?.[0]?.password || "0000";
-
-    if (password === dbPassword) {
-      setIsAdmin(false);
-      setIsLoggedIn(true);
-    } else {
-      alert("비밀번호가 일치하지 않습니다.");
-    }
+    if (password === dbPassword) { setIsAdmin(false); setIsLoggedIn(true); } else { alert("비밀번호 불일치"); }
   };
 
-  // 비밀번호 변경 함수
   const changePassword = async () => {
-    const newPw = prompt("새로운 4자리 비밀번호를 입력하세요.");
-    if (!newPw || newPw.length !== 4 || isNaN(Number(newPw))) {
-      alert("4자리 숫자로 입력해주세요.");
-      return;
-    }
-
+    const newPw = prompt("새로운 4자리 숫자를 입력하세요.");
+    if (!newPw || newPw.length !== 4 || isNaN(Number(newPw))) { alert("4자리 숫자로 입력해주세요."); return; }
     setIsSaving(true);
-    const { error } = await supabase
-      .from('study_records')
-      .update({ password: newPw })
-      .eq('student_name', selectedName);
-
-    if (!error) {
-      alert("비밀번호가 성공적으로 변경되었습니다.");
-      fetchRecords();
-    } else {
-      alert("변경 실패: " + error.message);
-    }
+    const { error } = await supabase.from('study_records').update({ password: newPw }).eq('student_name', selectedName);
+    if (!error) { alert("변경 완료"); fetchRecords(); } else { alert("실패: " + error.message); }
     setIsSaving(false);
   };
 
@@ -143,8 +115,7 @@ export default function HogwartsApp() {
       students.forEach(name => {
         DAYS.forEach(day => {
           const res = calc(records.find(r => r.student_name === name && r.day_of_week === day));
-          totalScore += res.total;
-          totalStudyH += res.studyH;
+          totalScore += res.total; totalStudyH += res.studyH;
         });
       });
       const count = students.length || 1;
@@ -156,10 +127,7 @@ export default function HogwartsApp() {
     if (!isAdmin) return;
     setIsSaving(true);
     const existing = records.find(r => r.student_name === name && r.day_of_week === day);
-    const updatedData = { 
-      ...(existing || { student_name: name, day_of_week: day, password: existing?.password || "0000" }), 
-      [field]: value 
-    };
+    const updatedData = { ...(existing || { student_name: name, day_of_week: day, password: existing?.password || "0000" }), [field]: value };
     await supabase.from('study_records').upsert(updatedData, { onConflict: 'student_name,day_of_week' });
     fetchRecords();
     setIsSaving(false);
@@ -167,17 +135,17 @@ export default function HogwartsApp() {
 
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 text-slate-800">
         <div className="bg-white p-10 rounded-[2.5rem] w-full max-w-md shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-2 bg-yellow-500"></div>
-          <h1 className="text-4xl font-serif font-black text-center mb-10 text-slate-800 italic">Hogwarts</h1>
+          <h1 className="text-4xl font-serif font-black text-center mb-10 italic">Hogwarts</h1>
           <div className="space-y-6">
-            <select className="w-full p-5 border-2 rounded-2xl font-bold bg-slate-50 outline-none text-lg" value={selectedName} onChange={(e)=>setSelectedName(e.target.value)}>
+            <select className="w-full p-5 border-2 rounded-2xl font-bold bg-slate-50 outline-none" value={selectedName} onChange={(e)=>setSelectedName(e.target.value)}>
               <option value="">이름을 선택하세요.</option>
               {Object.keys(studentData).sort(sortKorean).map(n => <option key={n} value={n}>{n}</option>)}
             </select>
-            <input type="password" placeholder="비밀번호 입력" className="w-full p-5 border-2 rounded-2xl font-bold bg-slate-50 outline-none text-lg" value={password} onChange={(e)=>setPassword(e.target.value)} onKeyDown={(e)=>e.key==='Enter' && handleLogin()} />
-            <button onClick={handleLogin} className="w-full bg-slate-900 text-yellow-500 py-5 rounded-2xl font-black text-xl active:scale-95 transition-transform uppercase">Enter Castle</button>
+            <input type="password" placeholder="비밀번호 입력" className="w-full p-5 border-2 rounded-2xl font-bold bg-slate-50 outline-none" value={password} onChange={(e)=>setPassword(e.target.value)} onKeyDown={(e)=>e.key==='Enter' && handleLogin()} />
+            <button onClick={handleLogin} className="w-full bg-slate-900 text-yellow-500 py-5 rounded-2xl font-black text-xl uppercase">Enter Castle</button>
           </div>
         </div>
       </div>
@@ -189,16 +157,22 @@ export default function HogwartsApp() {
       <div className="max-w-[1100px] mx-auto mb-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl md:text-3xl font-serif font-black text-slate-800 italic">Hogwarts House Cup</h2>
-          <button onClick={() => window.location.reload()} className="text-[10px] md:text-xs font-black text-slate-400 bg-white border-2 px-4 py-2 rounded-full hover:bg-slate-50">LOGOUT</button>
+          <button onClick={() => window.location.reload()} className="text-[10px] md:text-xs font-black text-slate-400 bg-white border-2 px-4 py-2 rounded-full">LOGOUT</button>
         </div>
         
         <div className="grid grid-cols-4 gap-1.5 md:gap-4">
-          {houseRankings.map((item, index) => (
-            <div key={item.house} className={`bg-slate-800 p-1.5 md:p-5 rounded-xl md:rounded-[2rem] text-white shadow-xl ${index === 0 ? 'ring-4 ring-yellow-400 scale-105' : ''}`}>
-              <div className="text-[7px] md:text-xs font-black opacity-80 uppercase">{index + 1}st {item.house}</div>
-              <div className="text-[11px] md:text-4xl font-black">{item.finalPoint.toFixed(1)}<span className="text-[6px] md:text-sm ml-1">pts</span></div>
-            </div>
-          ))}
+          {houseRankings.map((item, index) => {
+            const config = (HOUSE_CONFIG as any)[item.house];
+            return (
+              <div key={item.house} className={`${config.bg} ${config.border} border-b-4 md:border-b-8 p-1.5 md:p-5 rounded-xl md:rounded-[2rem] text-white shadow-xl transform ${index === 0 ? 'scale-105 ring-4 ring-yellow-400/50' : ''}`}>
+                <div className="flex flex-col md:flex-row justify-between items-start mb-0.5 md:mb-2">
+                  <span className="text-[7px] md:text-xs font-black opacity-90 uppercase">{index + 1}st {item.house}</span>
+                  <span className="text-xs md:text-2xl">{index === 0 ? '🏆' : config.icon}</span>
+                </div>
+                <div className="text-[11px] md:text-4xl font-black">{item.finalPoint.toFixed(1)}<span className="text-[6px] md:text-sm ml-1 opacity-80 uppercase">pts</span></div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -210,12 +184,11 @@ export default function HogwartsApp() {
               {isAdmin ? "Headmaster Console" : currentTime.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}
               {!isAdmin && <span className="ml-2 text-white">{currentTime.toLocaleTimeString('ko-KR', { hour12: false })}</span>}
             </span>
-            {/* 학생용 비밀번호 변경 버튼 */}
             {!isAdmin && (
-              <button onClick={changePassword} className="text-[9px] font-black bg-slate-700 text-slate-300 px-2 py-1 rounded hover:text-white transition-colors">비밀번호 변경</button>
+              <button onClick={changePassword} className="text-[9px] font-black bg-slate-700 text-slate-300 px-2 py-1 rounded hover:text-white">비밀번호 변경</button>
             )}
           </div>
-          {isSaving && <div className="text-[9px] text-yellow-500 font-bold animate-bounce uppercase">Saving...</div>}
+          {isSaving && <div className="text-[9px] text-yellow-500 font-bold animate-bounce">SAVING...</div>}
         </div>
         
         <div className="w-full overflow-x-auto">
@@ -225,7 +198,7 @@ export default function HogwartsApp() {
                 <th className="w-28 p-2 sticky left-0 bg-slate-50 z-20 border-r">Witch/Wizard</th>
                 <th className="w-16 p-2 border-r">Field</th>
                 {DAYS.map(d => <th key={d} className="w-14 p-2 text-slate-900">{d}</th>)}
-                <th className="w-20 p-2 bg-slate-100 text-slate-900 text-center">총 시간</th>
+                <th className="w-20 p-2 bg-slate-100 text-slate-900 text-center text-[10px]">총 시간</th>
                 <th className="w-16 p-2 bg-slate-100 border-l text-[10px]">잔여월휴</th>
               </tr>
             </thead>
@@ -243,7 +216,7 @@ export default function HogwartsApp() {
                           <td rowSpan={7} className={`p-4 text-center sticky left-0 z-20 font-bold border-r-[3px] shadow-lg ${info.color} ${info.text}`}>
                             <div className="text-3xl mb-1">{info.emoji}</div>
                             <div className="text-sm font-black mb-1">{name}</div>
-                            <div className="text-[9px] font-black opacity-70 uppercase tracking-tighter">{info.house}</div>
+                            <div className="text-[9px] font-black opacity-70 uppercase">{info.house}</div>
                           </td>
                         )}
                         <td className="p-2 text-center font-black border-r bg-white text-slate-800 text-[11px]">{row.l}</td>
