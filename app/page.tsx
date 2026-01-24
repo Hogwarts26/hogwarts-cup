@@ -103,7 +103,6 @@ export default function HogwartsApp() {
     }
   };
 
-  // [수정] 비밀번호 변경 시 기존 데이터의 '값'들은 절대 건드리지 않고 비밀번호만 업데이트함
   const changePassword = async () => {
     const newPw = prompt("새로운 4자리 숫자를 입력하세요.");
     if (!newPw || newPw.length !== 4 || isNaN(Number(newPw))) { 
@@ -119,17 +118,21 @@ export default function HogwartsApp() {
         .eq('student_name', selectedName);
 
       if (!existing || existing.length === 0) {
-        // 데이터가 아예 없는 학생이면 최소한의 로그인용 '월요일' 행만 생성 (값은 전부 빈 상태로)
+        // [강력 수정] 데이터가 없을 때 생성 시, 모든 체크박스 값을 강제로 false로 고정
         const { error: insError } = await supabase
           .from('study_records')
           .insert({ 
             student_name: selectedName, 
             day_of_week: '월', 
-            password: newPw 
+            password: newPw,
+            is_late: false, // 명시적으로 false
+            am_3h: false,   // 명시적으로 false
+            study_time: '0:00',
+            off_type: '-'
           });
         if (insError) throw insError;
       } else {
-        // 이미 데이터가 있는 학생이면 모든 행의 비밀번호만 일괄 수정 (다른 값은 유지)
+        // 기존 데이터 수정 시에도 비밀번호만 건드림
         const { error: updError } = await supabase
           .from('study_records')
           .update({ password: newPw })
@@ -147,7 +150,7 @@ export default function HogwartsApp() {
   };
 
   const calc = (r: any) => {
-    // [중요] 데이터가 없거나, 공부시간이 없으면서 휴무도 지정 안 된 초기상태는 벌점 계산 제외
+    // [UI 보호] r.is_late가 명확히 true일 때만 벌점을 계산함 (undefined나 null은 무시)
     if (!r || (!r.study_time && !r.off_type) || (r.study_time === '0:00' && (r.off_type === '-' || !r.off_type))) {
       return { penalty: 0, bonus: 0, total: 0, studyH: 0 };
     }
@@ -158,12 +161,20 @@ export default function HogwartsApp() {
     const isHalfOff = ['반휴', '월반휴', '늦반휴', '늦월반휴'].includes(r.off_type);
     const isFullOff = ['주휴', '월휴', '자율', '늦휴', '늦월휴'].includes(r.off_type);
     if (['늦반휴', '늦휴', '늦월반휴', '늦월휴'].includes(r.off_type)) penalty -= 1;
-    if (r.is_late && !isFullOff) penalty -= 1;
-    if (!isFullOff && !isHalfOff && r.off_type !== '자율' && r.off_type !== '-' && !r.am_3h) penalty -= 1;
+    
+    // [수정] 명확하게 true일 때만 차감
+    if (r.is_late === true && !isFullOff) penalty -= 1;
+    if (!isFullOff && !isHalfOff && r.off_type !== '자율' && r.off_type !== '-' && r.am_3h === false) {
+        if (studyH > 0) penalty -= 1;
+    }
+
     if (!isFullOff && r.off_type !== '자율' && r.off_type !== '-') {
       const target = isHalfOff ? 4 : 9;
-      if (studyH < target) penalty -= Math.ceil((target - studyH) - 0.001);
-      else if (!isHalfOff) bonus += Math.floor(studyH - target);
+      if (studyH < target && studyH > 0) {
+        penalty -= Math.ceil((target - studyH) - 0.001);
+      } else if (studyH >= target) {
+        if (!isHalfOff) bonus += Math.floor(studyH - target);
+      }
     }
     return { penalty: Math.max(penalty, -5), bonus, total: Math.max(penalty, -5) + bonus, studyH };
   };
@@ -190,7 +201,7 @@ export default function HogwartsApp() {
     const latestPw = records.filter(r => r.student_name === name).find(r => r.password && r.password !== "0000")?.password || "0000";
     
     const updatedData = { 
-      ...(existing || { student_name: name, day_of_week: day, password: latestPw }), 
+      ...(existing || { student_name: name, day_of_week: day, password: latestPw, is_late: false, am_3h: false }), 
       [field]: value 
     };
     await supabase.from('study_records').upsert(updatedData, { onConflict: 'student_name,day_of_week' });
@@ -262,7 +273,7 @@ export default function HogwartsApp() {
               <tr className="bg-slate-50 text-slate-500 uppercase font-black text-[11px] border-b-2">
                 <th className="w-28 p-2 sticky left-0 bg-slate-50 z-20 border-r">Witch/Wizard</th>
                 <th className="w-16 p-2 border-r">Field</th>
-                {DAYS.map(d => <th key={d} className="get-14 p-2 text-slate-900">{d}</th>)}
+                {DAYS.map(d => <th key={d} className="w-14 p-2 text-slate-900">{d}</th>)}
                 <th className="w-20 p-2 bg-slate-100 text-slate-900 text-center text-[10px]">총 시간</th>
                 <th className="w-16 p-2 bg-slate-100 border-l text-[10px]">잔여월휴</th>
               </tr>
@@ -296,7 +307,7 @@ export default function HogwartsApp() {
                                   {OFF_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
                                 </select>
                               ) : (row.f === 'is_late' || row.f === 'am_3h') ? (
-                                <input type="checkbox" className="w-5 h-5 accent-slate-800 mx-auto block" checked={!!rec[row.f]} onChange={(e) => handleChange(name, day, row.f, e.target.checked)} disabled={!isAdmin} />
+                                <input type="checkbox" className="w-5 h-5 accent-slate-800 mx-auto block" checked={rec[row.f] === true} onChange={(e) => handleChange(name, day, row.f, e.target.checked)} disabled={!isAdmin} />
                               ) : row.f === 'study_time' ? (
                                 <input type="text" className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-sm" value={rec.study_time || '0:00'} onBlur={(e) => handleChange(name, day, 'study_time', e.target.value)} disabled={!isAdmin} />
                               ) : (
