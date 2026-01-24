@@ -131,7 +131,8 @@ export default function HogwartsApp() {
           <div className="space-y-6">
             <select className="w-full p-5 border-2 rounded-2xl font-bold text-slate-800 bg-slate-50 outline-none text-lg cursor-pointer" value={selectedName} onChange={(e)=>setSelectedName(e.target.value)}>
               <option value="">이름을 선택하세요.</option>
-              {Object.keys(studentData).sort((a,b)=>a.localeCompare(b,'ko')).map(n => <option key={n} value={n}>{n}</option>)}
+              {/* 로그인 화면 이름 ㄱㄴㄷ 정렬 적용 */}
+              {Object.keys(studentData).sort((a, b) => a.localeCompare(b, 'ko')).map(n => <option key={n} value={n}>{n}</option>)}
             </select>
             <input type="password" placeholder="비밀번호 입력" className="w-full p-5 border-2 rounded-2xl font-bold text-slate-800 bg-slate-50 outline-none text-lg" value={password} onChange={(e)=>setPassword(e.target.value)} onKeyDown={(e)=>e.key==='Enter' && (password === "8888" ? (setIsAdmin(true), setIsLoggedIn(true)) : (password === "0000" && selectedName ? (setIsAdmin(false), setIsLoggedIn(true)) : alert("정보 확인")))} />
             <button onClick={() => password === "8888" ? (setIsAdmin(true), setIsLoggedIn(true)) : (password === "0000" && selectedName ? (setIsAdmin(false), setIsLoggedIn(true)) : alert("정보 확인"))} className="w-full bg-slate-900 text-yellow-500 py-5 rounded-2xl font-black shadow-lg uppercase text-xl active:scale-95 transition-transform">Enter Castle</button>
@@ -141,13 +142,9 @@ export default function HogwartsApp() {
     );
   }
 
+  /* 관리자 화면 이름 ㄱㄴㄷ 정렬 적용 */
   const displayList = isAdmin 
-    ? Object.keys(studentData).sort((a, b) => {
-        const houseA = studentData[a].house;
-        const houseB = studentData[b].house;
-        if (houseA !== houseB) return HOUSE_ORDER.indexOf(houseA) - HOUSE_ORDER.indexOf(houseB);
-        return a.localeCompare(b);
-      }) 
+    ? Object.keys(studentData).sort((a, b) => a.localeCompare(b, 'ko')) 
     : [selectedName];
 
   return (
@@ -164,7 +161,6 @@ export default function HogwartsApp() {
             return (
               <div key={item.house} className={`${config.bg} ${config.border} border-b-4 md:border-b-8 p-1.5 md:p-5 rounded-xl md:rounded-[2rem] text-white shadow-xl transition-all duration-500 transform ${index === 0 ? 'scale-105 ring-2 md:ring-4 ring-yellow-400/50' : ''}`}>
                 <div className="flex flex-col md:flex-row justify-between items-start mb-0.5 md:mb-2">
-                  {/* slice(0,2) 제거 및 폰트 크기 조정 */}
                   <span className="text-[7px] md:text-xs font-black opacity-90 uppercase tracking-tighter">{index + 1}st {item.house}</span>
                   <span className="text-xs md:text-2xl">{index === 0 ? '🏆' : config.icon}</span>
                 </div>
