@@ -80,8 +80,6 @@ export default function HogwartsApp() {
     if (r.off_type === '결석') return { penalty: -5, bonus: 0, total: -5, studyH: 0 };
     if (['늦반휴', '늦휴', '늦월반휴', '늦월휴'].includes(r.off_type)) penalty -= 1;
     if (r.is_late && !isFullOff) penalty -= 1;
-    
-    // 오전 3시간 미체크 벌점 (일반 상황에서만)
     if (r.off_type === '-' && r.am_3h === false && studyH > 0) penalty -= 1;
 
     if (!isFullOff && r.off_type !== '자율') {
@@ -137,14 +135,7 @@ export default function HogwartsApp() {
             <option value="">이름 선택</option>
             {Object.keys(studentData).sort().map(n => <option key={n} value={n}>{n}</option>)}
           </select>
-          <input type="password" placeholder="PASSWORD" className="w-full p-4 border-2 rounded-xl mb-6 font-bold" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && (async () => {
-             let admin = password === "8888";
-             if(!admin) {
-               const { data } = await supabase.from('study_records').select('password').eq('student_name', selectedName);
-               if(password !== (data?.find(r=>r.password && r.password !== "0000")?.password || "0000")) { alert("비밀번호 오류"); return; }
-             }
-             setIsAdmin(admin); setIsLoggedIn(true); sessionStorage.setItem('hg_session_v4', JSON.stringify({ name: selectedName, admin }));
-          })()} />
+          <input type="password" placeholder="PASSWORD" className="w-full p-4 border-2 rounded-xl mb-6 font-bold" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter'} />
           <button onClick={async () => {
              let admin = password === "8888";
              if(!admin) {
@@ -167,7 +158,7 @@ export default function HogwartsApp() {
         </div>
         <div className="grid grid-cols-4 gap-2 md:gap-4">
           {houseRankings.map((h) => (
-            <div key={h.house} className={`${(HOUSE_CONFIG as any)[h.house].bg} p-3 md:p-5 rounded-2xl text-white shadow-lg border-b-4 border-black/20 relative overflow-hidden`}>
+            <div key={h.house} className={`${(HOUSE_CONFIG as any)[h.house].bg} p-3 md:p-5 rounded-2xl text-white shadow-lg relative overflow-hidden`}>
               <div className="absolute right-[-10px] bottom-[-10px] text-5xl opacity-20">{(HOUSE_CONFIG as any)[h.house].icon}</div>
               <div className="text-[9px] font-black uppercase mb-1 opacity-80">{h.house} {(HOUSE_CONFIG as any)[h.house].icon}</div>
               <div className="text-lg md:text-3xl font-black">{h.finalPoint.toFixed(1)}</div>
@@ -176,21 +167,21 @@ export default function HogwartsApp() {
         </div>
       </div>
 
-      <div className="max-w-[1100px] mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border-2 border-slate-300">
+      <div className="max-w-[1100px] mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200">
         <div className="bg-slate-900 p-4 px-6 flex justify-between items-center text-white">
           <span className="text-xs font-black uppercase tracking-widest">{isAdmin ? "Headmaster Console" : `${selectedName} Info`}</span>
           {isSaving && <span className="text-[10px] text-yellow-500 font-bold animate-pulse uppercase">Recording...</span>}
         </div>
 
         <div className="w-full overflow-x-auto">
-          <table className="min-w-[850px] w-full table-fixed border-collapse border border-slate-300">
+          <table className="w-full table-fixed border-collapse">
             <thead>
-              <tr className="bg-slate-100 text-[11px] font-black text-slate-600 uppercase">
-                <th className="w-24 p-3 sticky left-0 bg-slate-100 z-20 border border-slate-300">Wizard</th>
-                <th className="w-16 border border-slate-300">Field</th>
-                {DAYS.map(d => <th key={d} className="w-14 text-slate-900 border border-slate-300">{d}</th>)}
-                <th className="w-20 bg-slate-200 border border-slate-300">Total</th>
-                <th className="w-20 bg-slate-200 border border-slate-300">잔여월휴</th>
+              <tr className="bg-slate-50 text-[11px] font-black text-slate-500 uppercase border-b border-slate-200">
+                <th className="w-[100px] p-3 sticky left-0 bg-slate-50 z-20 border-r border-slate-200">Wizard</th>
+                <th className="w-[70px] border-r border-slate-200">Field</th>
+                {DAYS.map(d => <th key={d} className="w-[65px] text-slate-900 border-r border-slate-200">{d}</th>)}
+                <th className="w-[80px] bg-slate-100 border-r border-slate-200">Total</th>
+                <th className="w-[80px] bg-slate-100">잔여월휴</th>
               </tr>
             </thead>
             <tbody>
@@ -198,19 +189,22 @@ export default function HogwartsApp() {
                 const info = studentData[name];
                 const monRec = records.find(r => r.student_name === name && r.day_of_week === '월') || {};
                 const offCount = monRec.monthly_off_count ?? 4;
-                const rows = [{ l: '휴무', f: 'off_type' }, { l: '지각', f: 'is_late' }, { l: '오전3H', f: 'am_3h' }, { l: '공부시간', f: 'study_time' }, { l: '벌점', f: 'penalty' }, { l: '상점', f: 'bonus' }, { l: '총점', f: 'total' }];
+                const rows = [
+                  { l: '휴무', f: 'off_type' }, { l: '지각', f: 'is_late' }, { l: '오전3H', f: 'am_3h' }, 
+                  { l: '공부시간', f: 'study_time' }, { l: '벌점', f: 'penalty' }, { l: '상점', f: 'bonus' }, { l: '총점', f: 'total' }
+                ];
 
                 return (
                   <React.Fragment key={name}>
                     {rows.map((row, rIdx) => (
-                      <tr key={row.l} className="border-b border-slate-300">
+                      <tr key={row.l} className="border-b border-slate-100">
                         {rIdx === 0 && (
-                          <td rowSpan={7} className={`p-4 text-center sticky left-0 z-20 font-bold border-r border-slate-300 ${info.color} ${info.text}`}>
+                          <td rowSpan={7} className={`p-4 text-center sticky left-0 z-20 font-bold border-r border-slate-200 shadow-sm ${info.color} ${info.text}`}>
                             <div className="text-2xl mb-1">{info.emoji}</div>
-                            <div className="text-[11px] font-black">{name}</div>
+                            <div className="text-[11px] font-black leading-tight break-keep">{name}</div>
                           </td>
                         )}
-                        <td className="text-center font-black bg-slate-50 border border-slate-300 text-[10px] text-slate-500">{row.l}</td>
+                        <td className="text-center font-black bg-slate-50 border-r border-slate-200 text-[10px] text-slate-400">{row.l}</td>
                         {DAYS.map(day => {
                           const rec = records.find(r => r.student_name === name && r.day_of_week === day) || {};
                           const res = calc(rec);
@@ -221,15 +215,17 @@ export default function HogwartsApp() {
                             return '';
                           };
                           return (
-                            <td key={day} className={`p-1 border border-slate-300 text-center ${row.f === 'off_type' ? getOffColor(rec.off_type || '-') : ''}`}>
+                            <td key={day} className={`p-1 border-r border-slate-200 text-center ${row.f === 'off_type' ? getOffColor(rec.off_type || '-') : ''}`}>
                               {row.f === 'off_type' ? (
-                                <select className="w-full text-center bg-transparent font-black text-[10px] outline-none" value={rec.off_type || '-'} onChange={e => handleChange(name, day, 'off_type', e.target.value)} disabled={!isAdmin}>
+                                <select className="w-full text-center bg-transparent font-black text-[10px] outline-none appearance-none" value={rec.off_type || '-'} onChange={e => handleChange(name, day, 'off_type', e.target.value)} disabled={!isAdmin}>
                                   {OFF_OPTIONS.map(v => <option key={v} value={v} className="bg-white text-slate-800">{v}</option>)}
                                 </select>
                               ) : (row.f === 'is_late' || row.f === 'am_3h') ? (
                                 <input type="checkbox" className="w-4 h-4 mx-auto block cursor-pointer accent-slate-800" checked={!!rec[row.f]} onChange={e => handleChange(name, day, row.f, e.target.checked)} disabled={!isAdmin} />
                               ) : row.f === 'study_time' ? (
-                                <input type="text" className="w-full text-center bg-transparent font-black text-xs outline-none" value={rec.study_time || ''} onChange={e => setRecords(prev => prev.map(r => (r.student_name === name && r.day_of_week === day) ? { ...r, study_time: e.target.value } : r))} onBlur={e => handleChange(name, day, 'study_time', e.target.value)} disabled={!isAdmin} />
+                                <input type="text" className="w-full text-center bg-transparent font-black text-xs outline-none" value={rec.study_time || ''} 
+                                  onChange={e => setRecords(prev => prev.map(r => (r.student_name === name && r.day_of_week === day) ? { ...r, study_time: e.target.value } : r))} 
+                                  onBlur={e => handleChange(name, day, 'study_time', e.target.value)} disabled={!isAdmin} />
                               ) : (
                                 <span className={`text-[11px] font-black ${row.f === 'penalty' && res.penalty < 0 ? 'text-red-500' : row.f === 'bonus' && res.bonus > 0 ? 'text-blue-600' : 'text-slate-800'}`}>
                                   {res[row.f as keyof typeof res] === 0 ? (row.f === 'total' ? 0 : '') : res[row.f as keyof typeof res]}
@@ -238,20 +234,20 @@ export default function HogwartsApp() {
                             </td>
                           );
                         })}
-                        <td className="bg-slate-50 text-center font-black text-[11px] border border-slate-300">
+                        <td className="bg-slate-50 text-center font-black text-[11px] border-r border-slate-200">
                           {row.f === 'study_time' ? (()=>{
                             let tm = 0; records.filter(r=>r.student_name===name).forEach(r=>{const[h,m]=(r.study_time||"").split(':').map(Number);tm+=(isNaN(h)?0:h*60)+(isNaN(m)?0:m);});
                             return tm > 0 ? `${Math.floor(tm/60)}:${(tm%60).toString().padStart(2,'0')}` : "";
                           })() : ""}
                         </td>
                         {rIdx === 0 && (
-                          <td rowSpan={7} className="p-2 bg-white border border-slate-300 text-center">
+                          <td rowSpan={7} className="p-2 bg-white text-center">
                             <div className={`flex flex-col gap-1 items-center ${isAdmin ? 'cursor-pointer' : ''}`} onClick={() => isAdmin && handleChange(name, '월', 'monthly_off_count', offCount > 0 ? offCount - 1 : 0)}>
                               {[1, 2, 3, 4].map((n) => (
-                                <div key={n} className={`w-6 h-3 rounded-sm border ${offCount >= (5-n) ? info.accent : 'bg-slate-50 border-slate-200'}`} />
+                                <div key={n} className={`w-6 h-3 rounded-sm border ${offCount >= (5-n) ? info.accent : 'bg-slate-50 border-slate-100'}`} />
                               ))}
                             </div>
-                            {isAdmin && <button onClick={(e) => { e.stopPropagation(); handleChange(name, '월', 'monthly_off_count', 4); }} className="mt-2 text-[8px] bg-slate-100 p-1 px-2 rounded-full font-black border">RESET</button>}
+                            {isAdmin && <button onClick={(e) => { e.stopPropagation(); handleChange(name, '월', 'monthly_off_count', 4); }} className="mt-2 text-[8px] bg-slate-50 p-1 px-2 rounded-full font-black border border-slate-200">RESET</button>}
                           </td>
                         )}
                       </tr>
