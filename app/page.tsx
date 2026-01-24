@@ -65,7 +65,7 @@ export default function HogwartsApp() {
   }, []);
 
   const fetchRecords = async () => {
-    const { data, error } = await supabase.from('study_records').select('*');
+    const { data } = await supabase.from('study_records').select('*');
     if (data) setRecords(data);
   };
 
@@ -75,10 +75,7 @@ export default function HogwartsApp() {
     if (password === "8888") { setIsAdmin(true); setIsLoggedIn(true); return; }
     if (!selectedName) { alert("이름을 선택해주세요."); return; }
     
-    // DB에서 해당 학생의 데이터를 모두 긁어옴
     const { data } = await supabase.from('study_records').select('password').eq('student_name', selectedName);
-    
-    // 0000이 아닌 다른 비밀번호가 하나라도 있는지 체크
     const customPw = data?.find(r => r.password && r.password !== "0000")?.password;
     const finalValidPw = customPw || "0000";
 
@@ -99,24 +96,35 @@ export default function HogwartsApp() {
     
     setIsSaving(true);
     try {
-      // 핵심: 데이터 유무 상관없이 '월요일' 자리에 비밀번호를 강제 주입(Upsert)
-      const { error: upsertError } = await supabase.from('study_records').upsert({
-        student_name: selectedName,
-        day_of_week: '월',
-        password: newPw,
-        study_time: '0:00'
-      }, { onConflict: 'student_name,day_of_week' });
+      // 1. 기존 데이터들의 비번을 일괄 업데이트
+      const { error: updateError } = await supabase
+        .from('study_records')
+        .update({ password: newPw })
+        .eq('student_name', selectedName);
 
-      if (upsertError) throw upsertError;
+      if (updateError) throw updateError;
 
-      // 이미 생성된 다른 요일 데이터가 있다면 그것들도 비번 통일
-      await supabase.from('study_records').update({ password: newPw }).eq('student_name', selectedName);
+      // 2. 데이터가 아예 없는 학생일 경우 첫 데이터(월요일) 생성
+      const { data: existing } = await supabase
+        .from('study_records')
+        .select('id')
+        .eq('student_name', selectedName)
+        .limit(1);
+
+      if (!existing || existing.length === 0) {
+        await supabase.from('study_records').insert({
+          student_name: selectedName,
+          day_of_week: '월',
+          password: newPw,
+          study_time: '0:00'
+        });
+      }
 
       alert(`비밀번호가 [${newPw}]로 변경되었습니다.\n다시 로그인해주세요!`);
       window.location.reload(); 
     } catch (err) {
       console.error(err);
-      alert("변경 실패: Supabase 연결을 확인해주세요.");
+      alert("변경 실패: Supabase 연결 및 RLS 설정을 확인해주세요.");
     }
     setIsSaving(false);
   };
