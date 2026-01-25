@@ -2,21 +2,33 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from './supabase';
 
-// [수정사항] 폰트 및 애니메이션을 위한 스타일 정의
+// [수정사항] 1등 기숙사를 위한 ✨ 반짝임 마법 효과 추가
 const GLOVAL_STYLE = `
   @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
   body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif; }
-  .gold-glow { animation: gold-pulse 2s infinite; }
-  .silver-glow { animation: silver-pulse 2s infinite; }
-  @keyframes gold-pulse {
-    0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.4); }
-    70% { box-shadow: 0 0 0 15px rgba(234, 179, 8, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
+  
+  .winner-sparkle {
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 20px rgba(234, 179, 8, 0.3);
   }
-  @keyframes silver-pulse {
-    0% { box-shadow: 0 0 0 0 rgba(148, 163, 184, 0.4); }
-    70% { box-shadow: 0 0 0 10px rgba(148, 163, 184, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(148, 163, 184, 0); }
+
+  .winner-sparkle::before, .winner-sparkle::after {
+    content: '✨';
+    position: absolute;
+    font-size: 1.2rem;
+    opacity: 0;
+    animation: sparkle-magic 2.5s infinite;
+    pointer-events: none;
+  }
+
+  .winner-sparkle::before { top: 10%; left: 15%; animation-delay: 0s; }
+  .winner-sparkle::after { bottom: 15%; right: 20%; animation-delay: 1.2s; }
+
+  @keyframes sparkle-magic {
+    0% { transform: scale(0) rotate(0deg); opacity: 0; }
+    50% { transform: scale(1.2) rotate(180deg); opacity: 1; }
+    100% { transform: scale(0) rotate(360deg); opacity: 0; }
   }
 `;
 
@@ -246,7 +258,7 @@ export default function HogwartsApp() {
           <h1 className="text-4xl font-serif font-black text-center mb-10 text-slate-800 tracking-tighter italic uppercase">Hogwarts</h1>
           <div className="space-y-6">
             <select className="w-full p-5 border-2 rounded-2xl font-bold text-slate-800 bg-slate-50 outline-none text-lg" value={selectedName} onChange={(e)=>setSelectedName(e.target.value)}>
-              <option value="">이름을 선택하세요</option>
+              <option value="">이름 선택</option>
               {Object.keys(studentData).sort(sortKorean).map(n => <option key={n} value={n}>{n}</option>)}
             </select>
             <input type="password" placeholder="PASSWORD" className="w-full p-5 border-2 rounded-2xl font-bold text-slate-800 bg-slate-50 outline-none text-lg" value={password} onChange={(e)=>setPassword(e.target.value)} onKeyDown={(e)=>e.key==='Enter' && handleLogin()} />
@@ -300,11 +312,11 @@ export default function HogwartsApp() {
           {houseRankings.map((item, idx) => {
             const config = (HOUSE_CONFIG as any)[item.house];
             const rankLabel = ["1st", "2nd", "3rd", "4th"][idx];
-            // [수정사항] 순위별 애니메이션 클래스 할당
-            const rankAnimation = idx === 0 ? "gold-glow ring-2 ring-yellow-400 ring-offset-2 scale-105 z-10" : idx === 1 ? "silver-glow ring-1 ring-slate-300" : "";
+            // [수정사항] 1등 카드만 winner-sparkle 마법 효과 적용
+            const specialEffect = idx === 0 ? "winner-sparkle ring-4 ring-yellow-400/50 scale-105 z-10" : idx === 1 ? "ring-1 ring-slate-300" : "opacity-80";
             
             return (
-              <div key={item.house} onClick={() => setSelectedHouseNotice(item.house)} className={`${config.bg} ${config.border} ${rankAnimation} border-b-4 p-1.5 md:p-5 rounded-xl md:rounded-[2rem] text-white shadow-xl relative overflow-hidden cursor-pointer active:scale-95 transition-all hover:brightness-110`}>
+              <div key={item.house} onClick={() => setSelectedHouseNotice(item.house)} className={`${config.bg} ${config.border} ${specialEffect} border-b-4 p-1.5 md:p-5 rounded-xl md:rounded-[2rem] text-white shadow-xl relative overflow-hidden cursor-pointer active:scale-95 transition-all hover:brightness-110`}>
                 <div className="absolute right-[-10px] bottom-[-10px] text-5xl opacity-20">{config.icon}</div>
                 <div className="flex justify-between items-start mb-1">
                   <div className="text-[7px] md:text-xs font-black opacity-90 uppercase">{item.house}</div>
