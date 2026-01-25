@@ -319,7 +319,7 @@ export default function HogwartsApp() {
       {/* 대시보드 */}
       <div className="max-w-[1100px] mx-auto mb-8">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight uppercase">Hogwarts House Cup</h2>
+          <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight uppercase">Hogwarts  House  Cup</h2>
           <div className="flex gap-2">
             {isAdmin && <button onClick={resetWeeklyData} className="text-[10px] font-black text-white bg-red-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-red-700 transition-colors">WEEKLY RESET</button>}
             <button onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full shadow-sm">LOGOUT</button>
