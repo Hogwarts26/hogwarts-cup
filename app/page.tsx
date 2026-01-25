@@ -192,7 +192,7 @@ export default function HogwartsApp() {
         DAYS.map(d => ({ student_name: name, day_of_week: d, password: value })),
         { onConflict: 'student_name,day_of_week' }
       );
-      if (!error) { setRecords(prev => prev.map(r => r.student_name === name ? { ...r, password: value } : r)); alert("비밀번호 변경 완료"); }
+      if (!error) { setRecords(prev => prev.map(r => r.student_name === name ? { ...r, password: value } : r)); alert("비밀번호가 변경되었습니다다"); }
     } else {
       const newRecords = [...records];
       const idx = newRecords.findIndex(r => r.student_name === name && r.day_of_week === day);
@@ -228,7 +228,7 @@ export default function HogwartsApp() {
           <h1 className="text-4xl font-serif font-black text-center mb-10 text-slate-800 tracking-tighter italic uppercase">Hogwarts</h1>
           <div className="space-y-6">
             <select className="w-full p-5 border-2 rounded-2xl font-bold text-slate-800 bg-slate-50 outline-none text-lg" value={selectedName} onChange={(e)=>setSelectedName(e.target.value)}>
-              <option value="">이름 선택</option>
+              <option value="">이름을 선택하세요</option>
               {Object.keys(studentData).sort(sortKorean).map(n => <option key={n} value={n}>{n}</option>)}
             </select>
             <input type="password" placeholder="PASSWORD" className="w-full p-5 border-2 rounded-2xl font-bold text-slate-800 bg-slate-50 outline-none text-lg" value={password} onChange={(e)=>setPassword(e.target.value)} onKeyDown={(e)=>e.key==='Enter' && handleLogin()} />
@@ -310,10 +310,10 @@ export default function HogwartsApp() {
           <table className="min-w-[850px] w-full table-fixed border-collapse">
             <thead>
               <tr className="bg-slate-50 text-slate-500 uppercase font-black text-[11px] border-b-2">
-                <th className="w-28 p-2 sticky left-0 bg-slate-50 z-20 border-r">Witch/Wizard</th>
-                <th className="w-20 p-2 border-r">Field</th>
+                <th className="w-28 p-2 sticky left-0 bg-slate-50 z-20 border-r">학생명</th>
+                <th className="w-20 p-2 border-r"> </th>
                 {DAYS.map(d => <th key={d} className="w-16 p-2 text-slate-900">{d}</th>)}
-                <th className="w-24 p-2 bg-slate-100 text-[10px]">총 공부시간</th>
+                <th className="w-24 p-2 bg-slate-100 text-[10px]">공부시간</th>
                 <th className="w-16 p-2 bg-slate-100 border-l text-[10px]">잔여월휴</th>
               </tr>
             </thead>
@@ -354,7 +354,7 @@ export default function HogwartsApp() {
                             <div className="leading-tight text-sm font-black mb-1 break-keep">{displayName}</div>
                             <div className="text-[9px] font-black opacity-70 uppercase mb-2">{info.house}</div>
                             <button onClick={async () => {
-                              const newPw = prompt("새 비밀번호 입력 (4자리)");
+                              const newPw = prompt("새 비밀번호를 입력하세요 (4자리숫자)");
                               if(newPw && newPw.length >= 4) await handleChange(name, '월', 'password', newPw);
                             }} className="text-[8px] underline opacity-40 hover:opacity-100 block mx-auto">PW 변경</button>
                           </td>
