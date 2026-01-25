@@ -146,6 +146,10 @@ export default function HogwartsApp() {
   const [isSaving, setIsSaving] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedHouseNotice, setSelectedHouseNotice] = useState<string | null>(null);
+  
+  // 오늘의 다짐 관련 상태
+  const [dailyGoal, setDailyGoal] = useState("");
+  const [isEditingGoal, setIsEditingGoal] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -159,10 +163,16 @@ export default function HogwartsApp() {
 
   const fetchRecords = async () => {
     const { data } = await supabase.from('study_records').select('*');
-    if (data) setRecords(data);
+    if (data) {
+      setRecords(data);
+      // 현재 날짜의 본인 다짐 가져오기 (필드명 goal)
+      const todayStr = DAYS[(new Date().getDay() + 6) % 7];
+      const myTodayRec = data.find(r => r.student_name === selectedName && r.day_of_week === todayStr);
+      if (myTodayRec?.goal) setDailyGoal(myTodayRec.goal);
+    }
   };
 
-  useEffect(() => { if (isLoggedIn) fetchRecords(); }, [isLoggedIn]);
+  useEffect(() => { if (isLoggedIn) fetchRecords(); }, [isLoggedIn, selectedName]);
 
   const handleLogin = async () => {
     if (!selectedName) { alert("학생을 선택해주세요."); return; }
@@ -187,12 +197,13 @@ export default function HogwartsApp() {
         const existing = records.find(r => r.student_name === name && r.day_of_week === day) || {};
         resetData.push({
           student_name: name, day_of_week: day, off_type: '-', is_late: false, am_3h: false, study_time: '',
-          password: existing.password || '0000', monthly_off_count: existing.monthly_off_count ?? 4
+          password: existing.password || '0000', monthly_off_count: existing.monthly_off_count ?? 4,
+          goal: ''
         });
       }
     }
     const { error } = await supabase.from('study_records').upsert(resetData, { onConflict: 'student_name,day_of_week' });
-    if (!error) { setRecords(resetData); alert("✅ 초기화되었습니다."); }
+    if (!error) { setRecords(resetData); setDailyGoal(""); alert("✅ 초기화되었습니다."); }
     setIsSaving(false);
   };
 
@@ -232,7 +243,7 @@ export default function HogwartsApp() {
   }, [records]);
 
   const handleChange = async (name: string, day: string, field: string, value: any) => {
-    if (!isAdmin && field !== 'password') return;
+    if (!isAdmin && field !== 'password' && field !== 'goal') return;
     setIsSaving(true);
     if (field === 'password') {
       const { error } = await supabase.from('study_records').upsert(
@@ -346,13 +357,62 @@ export default function HogwartsApp() {
 
       {/* 기록 테이블 */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
-        <div className="bg-slate-900 p-4 px-6 md:px-8 flex justify-between items-center text-white">
-          <span className="text-[10px] md:text-xs font-black text-yellow-500 uppercase tracking-widest flex items-center gap-2">
-            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-            {isAdmin ? "Headmaster Console" : currentTime.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}
-            {!isAdmin && <span className="text-white ml-2">{currentTime.toLocaleTimeString('ko-KR', { hour12: false })}</span>}
-          </span>
-          {isSaving && <div className="text-[9px] text-yellow-500 font-bold uppercase animate-bounce">Magic occurring...</div>}
+        <div className="bg-slate-900 p-4 px-6 md:px-8 flex justify-between items-center text-white min-h-[60px]">
+          <div className="flex flex-col md:flex-row md:items-center gap-2">
+            <span className="text-[10px] md:text-xs font-black text-yellow-500 uppercase tracking-widest flex items-center gap-2">
+              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+              {isAdmin ? "Headmaster Console" : currentTime.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}
+              {!isAdmin && <span className="text-white ml-2">{currentTime.toLocaleTimeString('ko-KR', { hour12: false })}</span>}
+            </span>
+          </div>
+
+          {/* 오늘의 다짐 입력란 (학생 로그인 시에만 표시) */}
+          {!isAdmin && (
+            <div className="flex items-center gap-3 flex-1 justify-end ml-4">
+              {isEditingGoal ? (
+                <div className="flex items-center gap-2 w-full max-w-[300px]">
+                  <input 
+                    type="text" 
+                    className="bg-slate-900 border-b border-white/30 text-white text-xs p-1 outline-none w-full placeholder:text-white/20"
+                    placeholder="오늘의 목표나 다짐을 입력하세요"
+                    value={dailyGoal}
+                    onChange={(e) => setDailyGoal(e.target.value)}
+                  />
+                  <button 
+                    onClick={() => {
+                      const todayStr = DAYS[(new Date().getDay() + 6) % 7];
+                      handleChange(selectedName, todayStr, 'goal', dailyGoal);
+                      setIsEditingGoal(false);
+                    }}
+                    className="text-[10px] font-black text-yellow-500 shrink-0"
+                  >저장</button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-medium text-white/90 italic truncate max-w-[200px]">
+                    {dailyGoal || "오늘의 다짐이 없습니다."}
+                  </span>
+                  <div className="flex gap-2 shrink-0">
+                    <button onClick={() => setIsEditingGoal(true)} className="text-[9px] text-white/40 hover:text-white transition-colors">수정</button>
+                    {dailyGoal && (
+                      <button 
+                        onClick={() => {
+                          if (confirm("정말 삭제하시겠습니까?")) {
+                            const todayStr = DAYS[(new Date().getDay() + 6) % 7];
+                            handleChange(selectedName, todayStr, 'goal', '');
+                            setDailyGoal("");
+                            alert("삭제되었습니다.");
+                          }
+                        }}
+                        className="text-[9px] text-red-400/60 hover:text-red-400 transition-colors"
+                      >삭제</button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {isSaving && <div className="text-[9px] text-yellow-500 font-bold uppercase animate-bounce ml-4">Magic occurring...</div>}
         </div>
 
         <div className="w-full overflow-x-auto">
