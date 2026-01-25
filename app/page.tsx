@@ -2,7 +2,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from './supabase';
 
-// [수정사항] 1등 기숙사를 위한 역동적인 ✨ 반짝임(Sparkle) 효과 강화
+/* 상단 GLOVAL_STYLE 내 관련 부분만 추출하여 교체된 내용입니다 */
+
 const GLOVAL_STYLE = `
   @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
   body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif; }
@@ -13,36 +14,52 @@ const GLOVAL_STYLE = `
     animation: winner-glow 2s infinite alternate;
   }
 
-  /* 별 모양 빛줄기 공통 스타일 - 더 화려하게 */
+  /* 세련된 빛 입자 효과 - 촌스러운 회전 별 모양 제거 */
   .winner-sparkle::before, .winner-sparkle::after, .sparkle-extra {
     content: '';
     position: absolute;
-    width: 16px;
-    height: 16px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
     background: white;
-    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
     opacity: 0;
-    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 1));
+    filter: blur(1px) drop-shadow(0 0 6px rgba(255, 255, 255, 0.8));
     pointer-events: none;
     z-index: 5;
   }
 
-  .winner-sparkle::before { top: 10%; left: 15%; animation: sparkle-flash 1.5s infinite; }
-  .winner-sparkle::after { bottom: 15%; right: 10%; animation: sparkle-flash 2.1s infinite 0.4s; }
-  .sparkle-extra { top: 45%; left: 75%; animation: sparkle-flash 1.8s infinite 0.8s; }
+  /* 여러 개의 빛 파편들이 다른 위치에서 부드럽게 피어오름 */
+  .winner-sparkle::before { 
+    top: 20%; left: 20%; 
+    animation: magic-dust 2.5s infinite; 
+  }
+  .winner-sparkle::after { 
+    bottom: 30%; right: 25%; 
+    width: 3px; height: 3px;
+    animation: magic-dust 3.2s infinite 0.7s; 
+  }
+  .sparkle-extra { 
+    top: 50%; left: 70%; 
+    width: 5px; height: 5px;
+    animation: magic-dust 2.8s infinite 1.4s; 
+  }
 
-  @keyframes sparkle-flash {
-    0% { transform: scale(0) rotate(0deg); opacity: 0; }
-    50% { transform: scale(1.3) rotate(144deg); opacity: 1; filter: drop-shadow(0 0 10px white); }
-    100% { transform: scale(0) rotate(288deg); opacity: 0; }
+  @keyframes magic-dust {
+    0% { transform: translateY(10px) scale(0); opacity: 0; }
+    40% { opacity: 0.8; transform: translateY(0px) scale(1.2); }
+    100% { transform: translateY(-15px) scale(0); opacity: 0; }
   }
 
   @keyframes winner-glow {
-    from { box-shadow: 0 0 10px rgba(255, 215, 0, 0.4), inset 0 0 5px rgba(255, 255, 255, 0.2); }
-    to { box-shadow: 0 0 30px rgba(255, 215, 0, 0.7), inset 0 0 15px rgba(255, 255, 255, 0.4); }
+    from { 
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.3), inset 0 0 8px rgba(255, 255, 255, 0.1); 
+    }
+    to { 
+      box-shadow: 0 0 35px rgba(255, 215, 0, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.2); 
+    }
   }
 
-  /* [수정사항] 모바일 드롭다운 텍스트 쳐짐 방지 및 중앙 정렬 */
+  /* 모바일 드롭다운 텍스트 쳐짐 방지 및 중앙 정렬 */
   select {
     appearance: none;
     -webkit-appearance: none;
