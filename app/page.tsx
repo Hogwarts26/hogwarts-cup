@@ -6,7 +6,7 @@ const GLOVAL_STYLE = `
   @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
   body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif; }
   
-  /* 영롱한 은하수 입자 효과 */
+  /* 디즈니 마법 가루(Pixie Dust) 효과 */
   .winner-sparkle {
     position: relative;
     overflow: hidden;
@@ -16,38 +16,37 @@ const GLOVAL_STYLE = `
   .winner-sparkle::before, .winner-sparkle::after {
     content: '';
     position: absolute;
-    width: 2px;
-    height: 2px;
-    border-radius: 50%;
-    background: white;
+    inset: -50px;
+    background-image: 
+      radial-gradient(1.5px 1.5px at 20px 30px, white, rgba(255,255,255,0)),
+      radial-gradient(2px 2px at 50px 80px, white, rgba(255,255,255,0)),
+      radial-gradient(1px 1px at 90px 20px, white, rgba(255,255,255,0)),
+      radial-gradient(2px 2px at 130px 60px, white, rgba(255,255,255,0)),
+      radial-gradient(1.5px 1.5px at 160px 110px, white, rgba(255,255,255,0)),
+      radial-gradient(1px 1px at 210px 40px, white, rgba(255,255,255,0)),
+      radial-gradient(2px 2px at 240px 100px, white, rgba(255,255,255,0)),
+      radial-gradient(1.5px 1.5px at 280px 20px, white, rgba(255,255,255,0));
+    background-size: 300px 150px;
     opacity: 0;
     pointer-events: none;
     z-index: 5;
-    filter: blur(0.5px) drop-shadow(0 0 4px white);
   }
 
   .winner-sparkle::before {
-    top: 0; left: 0;
-    box-shadow: 
-      20px 30px white, 50px 80px white, 90px 20px white, 120px 60px white, 160px 40px white, 
-      40px 110px white, 80px 140px white, 140px 120px white, 180px 90px white, 220px 30px white;
-    animation: galaxy-dust 3s infinite linear;
+    animation: pixie-dust 3s infinite linear;
   }
 
   .winner-sparkle::after {
-    top: 10px; left: 10px;
-    box-shadow: 
-      30px 60px white, 70px 20px white, 110px 90px white, 150px 130px white, 190px 40px white,
-      60px 140px white, 100px 50px white, 140px 10px white, 200px 110px white, 240px 70px white;
-    animation: galaxy-dust 4s infinite linear 1.5s;
+    background-position: 150px 75px;
+    animation: pixie-dust 4s infinite linear reverse;
   }
 
-  @keyframes galaxy-dust {
-    0% { transform: translateY(10px); opacity: 0; }
-    20% { opacity: 0.7; }
-    50% { opacity: 0.9; transform: translateY(-5px) scale(1.2); }
-    80% { opacity: 0.4; }
-    100% { transform: translateY(-15px) scale(0); opacity: 0; }
+  @keyframes pixie-dust {
+    0% { transform: scale(0.8) translate(0, 0); opacity: 0; }
+    20% { opacity: 0.8; }
+    50% { transform: scale(1.1) translate(5px, -10px); opacity: 1; filter: brightness(1.5) blur(0.5px); }
+    80% { opacity: 0.8; }
+    100% { transform: scale(1.2) translate(10px, -20px); opacity: 0; }
   }
 
   @keyframes winner-glow {
