@@ -2,6 +2,24 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from './supabase';
 
+// [수정사항] 폰트 및 애니메이션을 위한 스타일 정의
+const GLOVAL_STYLE = `
+  @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+  body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif; }
+  .gold-glow { animation: gold-pulse 2s infinite; }
+  .silver-glow { animation: silver-pulse 2s infinite; }
+  @keyframes gold-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.4); }
+    70% { box-shadow: 0 0 0 15px rgba(234, 179, 8, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
+  }
+  @keyframes silver-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(148, 163, 184, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(148, 163, 184, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(148, 163, 184, 0); }
+  }
+`;
+
 const studentData: { [key: string]: { house: string; emoji: string; color: string; accent: string, text: string } } = {
   "🧃피크닉": { house: "슬리데린", emoji: "🧃", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🤖로봇": { house: "슬리데린", emoji: "🤖", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
@@ -205,7 +223,6 @@ export default function HogwartsApp() {
       
       if (field === 'monthly_off_count') {
         setRecords(prev => prev.map(r => r.student_name === name ? { ...r, monthly_off_count: value } : r));
-        // 월휴 게이지 데이터 저장
         await supabase.from('study_records').upsert(updatedData, { onConflict: 'student_name,day_of_week' });
       } else if (idx > -1) {
         newRecords[idx] = { ...newRecords[idx], ...updatedData };
@@ -223,6 +240,7 @@ export default function HogwartsApp() {
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
+        <style>{GLOVAL_STYLE}</style>
         <div className="bg-white p-10 rounded-[2.5rem] w-full max-w-md shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-2 bg-yellow-500"></div>
           <h1 className="text-4xl font-serif font-black text-center mb-10 text-slate-800 tracking-tighter italic uppercase">Hogwarts</h1>
@@ -248,7 +266,8 @@ export default function HogwartsApp() {
 
   return (
     <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 font-sans relative">
-      {/* 마법 공지사항 팝업 (모바일 최적화) */}
+      <style>{GLOVAL_STYLE}</style>
+      {/* 마법 공지사항 팝업 */}
       {selectedHouseNotice && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setSelectedHouseNotice(null)}>
           <div className="relative bg-[#f4e4bc] p-6 md:p-12 w-full max-w-2xl rounded-sm shadow-[0_0_50px_rgba(0,0,0,0.3)] overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()} style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.05) 100%)' }}>
@@ -281,8 +300,11 @@ export default function HogwartsApp() {
           {houseRankings.map((item, idx) => {
             const config = (HOUSE_CONFIG as any)[item.house];
             const rankLabel = ["1st", "2nd", "3rd", "4th"][idx];
+            // [수정사항] 순위별 애니메이션 클래스 할당
+            const rankAnimation = idx === 0 ? "gold-glow ring-2 ring-yellow-400 ring-offset-2 scale-105 z-10" : idx === 1 ? "silver-glow ring-1 ring-slate-300" : "";
+            
             return (
-              <div key={item.house} onClick={() => setSelectedHouseNotice(item.house)} className={`${config.bg} ${config.border} border-b-4 p-1.5 md:p-5 rounded-xl md:rounded-[2rem] text-white shadow-xl relative overflow-hidden cursor-pointer active:scale-95 transition-all hover:brightness-110`}>
+              <div key={item.house} onClick={() => setSelectedHouseNotice(item.house)} className={`${config.bg} ${config.border} ${rankAnimation} border-b-4 p-1.5 md:p-5 rounded-xl md:rounded-[2rem] text-white shadow-xl relative overflow-hidden cursor-pointer active:scale-95 transition-all hover:brightness-110`}>
                 <div className="absolute right-[-10px] bottom-[-10px] text-5xl opacity-20">{config.icon}</div>
                 <div className="flex justify-between items-start mb-1">
                   <div className="text-[7px] md:text-xs font-black opacity-90 uppercase">{item.house}</div>
