@@ -392,14 +392,14 @@ export default function HogwartsApp() {
               ) : (
                 <div className="flex items-center gap-3 flex-1 overflow-hidden">
                   <span className="text-xs font-medium text-white/90 italic truncate flex-1">
-                    {dailyGoal || "클릭하여 목표나 다짐을 입력하세요."}
+                    {dailyGoal || "수정버튼을 클릭하여 목표나 다짐을 입력하세요."}
                   </span>
                   <div className="flex gap-3 shrink-0">
                     <button onClick={() => setIsEditingGoal(true)} className="text-[9px] font-bold text-white/40 hover:text-white transition-colors uppercase">수정</button>
                     {dailyGoal && (
                       <button 
                         onClick={() => {
-                          if (confirm("오늘의 다짐을 삭제하시겠습니까?")) {
+                          if (confirm("삭제하시겠습니까?")) {
                             const todayStr = DAYS[(new Date().getDay() + 6) % 7];
                             handleChange(selectedName, todayStr, 'goal', '');
                             setDailyGoal("");
