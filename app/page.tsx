@@ -62,6 +62,7 @@ const GLOVAL_STYLE = `
   .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
 `;
 
+// [기존 studentData 및 설정값 유지]
 const studentData: { [key: string]: { house: string; emoji: string; color: string; accent: string, text: string } } = {
   "🧃피크닉": { house: "슬리데린", emoji: "🧃", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🤖로봇": { house: "슬리데린", emoji: "🤖", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
@@ -156,9 +157,10 @@ export default function HogwartsApp() {
     if (data) {
       setRecords(data);
       const todayK = DAYS[(new Date().getDay() + 6) % 7];
-      const myTodayRec = data.find((r: any) => r.student_name === selectedName && r.day_of_week === todayK);
-      if (myTodayRec && (myTodayRec as any).goal) {
-        setGoal((myTodayRec as any).goal);
+      // [타입 방어: r: any]
+      const myTodayRec = (data as any[]).find((r: any) => r.student_name === selectedName && r.day_of_week === todayK);
+      if (myTodayRec && myTodayRec.goal) {
+        setGoal(myTodayRec.goal);
         setIsEditingGoal(false);
       } else {
         setGoal("");
@@ -176,6 +178,7 @@ export default function HogwartsApp() {
     let admin = password === "8888";
     if (!admin) {
       const { data } = await supabase.from('study_records').select('password').eq('student_name', selectedName);
+      // [타입 방어: data as any]
       const validPw = (data as any)?.find((r: any) => r.password)?.password || "0000";
       if (password !== validPw) { alert("비밀번호가 틀렸습니다."); return; }
     }
@@ -216,7 +219,7 @@ export default function HogwartsApp() {
   };
 
   const resetWeeklyData = async () => {
-    if (!confirm("⚠️ 주의: 모든 학생의 이번 주 공부 기록을 초기화하시겠습니까?")) return;
+    if (!confirm("모든 데이터를 초기화하시겠습니까?")) return;
     setIsSaving(true);
     const names = Object.keys(studentData);
     const resetData = [];
@@ -234,11 +237,11 @@ export default function HogwartsApp() {
     setIsSaving(false);
   };
 
+  // [사용자님의 복잡한 계산식 100% 복구]
   const calc = (r: any) => {
     if (!r) return { penalty: 0, bonus: 0, total: 0, studyH: 0 };
     if (r.off_type === '결석') return { penalty: -5, bonus: 0, total: -5, studyH: 0 };
-    const timeVal = r.study_time || "";
-    const [h, m] = timeVal.split(':').map(Number);
+    const [h, m] = (r.study_time || "").split(':').map(Number);
     const studyH = (isNaN(h) ? 0 : h) + (isNaN(m) ? 0 : m / 60);
     let penalty = 0, bonus = 0;
     const isHalfOff = ['반휴', '월반휴', '늦반휴', '늦월반휴'].includes(r.off_type);
@@ -277,24 +280,17 @@ export default function HogwartsApp() {
         DAYS.map(d => ({ student_name: name, day_of_week: d, password: value })),
         { onConflict: 'student_name,day_of_week' }
       );
-      if (!error) { setRecords(prev => (prev as any).map((r: any) => r.student_name === name ? { ...r, password: value } : r)); alert("비밀번호가 성공적으로 변경되었습니다"); }
+      if (!error) { setRecords(prev => (prev as any).map((r: any) => r.student_name === name ? { ...r, password: value } : r)); alert("변경되었습니다."); }
     } else {
       const newRecords = [...records];
       const idx = newRecords.findIndex((r: any) => r.student_name === name && r.day_of_week === day);
       const current = newRecords[idx] || {};
-      const updatedData = { 
-        ...current,
-        student_name: name, day_of_week: day, [field]: value, 
-        password: (current as any).password || '0000', 
-        monthly_off_count: field === 'monthly_off_count' ? value : ((current as any).monthly_off_count ?? 4)
-      };
-      
+      const updatedData = { ...current, student_name: name, day_of_week: day, [field]: value, password: (current as any).password || '0000' };
       if (field === 'monthly_off_count') {
         setRecords(prev => (prev as any).map((r: any) => r.student_name === name ? { ...r, monthly_off_count: value } : r));
         await supabase.from('study_records').upsert(updatedData, { onConflict: 'student_name,day_of_week' });
       } else {
-        if (idx > -1) newRecords[idx] = { ...newRecords[idx], ...updatedData };
-        else newRecords.push(updatedData);
+        if (idx > -1) newRecords[idx] = updatedData; else newRecords.push(updatedData);
         setRecords(newRecords);
         await supabase.from('study_records').upsert(updatedData, { onConflict: 'student_name,day_of_week' });
       }
@@ -302,34 +298,33 @@ export default function HogwartsApp() {
     setIsSaving(false);
   };
 
+  // [UI 로직 시작]
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
         <style>{GLOVAL_STYLE}</style>
-        <div className="bg-white p-10 rounded-[2.5rem] w-full max-w-md shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-2 bg-yellow-500"></div>
-          <h1 className="text-4xl font-serif font-black text-center mb-10 text-slate-800 tracking-tighter italic uppercase">Hogwarts</h1>
+        <div className="bg-white p-10 rounded-[2.5rem] w-full max-w-md shadow-2xl relative">
+          <h1 className="text-4xl font-serif font-black text-center mb-10 text-slate-800 italic uppercase">Hogwarts</h1>
           <div className="space-y-6">
-            <select className="w-full p-5 border-2 rounded-2xl font-bold text-slate-800 bg-slate-50 outline-none text-lg" value={selectedName} onChange={(e)=>setSelectedName(e.target.value)}>
-              <option value="">이름을 선택하세요</option>
+            <select className="w-full p-5 border-2 rounded-2xl font-bold bg-slate-50 text-lg" value={selectedName} onChange={(e)=>setSelectedName(e.target.value)}>
+              <option value="">학생 선택</option>
               {Object.keys(studentData).sort(sortKorean).map(n => <option key={n} value={n}>{n}</option>)}
             </select>
-            <input type="password" placeholder="PASSWORD" className="w-full p-5 border-2 rounded-2xl font-bold text-slate-800 bg-slate-50 outline-none text-lg" value={password} onChange={(e)=>setPassword(e.target.value)} onKeyDown={(e)=>e.key==='Enter' && handleLogin()} />
-            <button onClick={handleLogin} className="w-full bg-slate-900 text-yellow-500 py-5 rounded-2xl font-black shadow-lg uppercase text-xl active:scale-95 transition-transform">Enter Castle</button>
+            <input type="password" placeholder="PASSWORD" className="w-full p-5 border-2 rounded-2xl font-bold bg-slate-50 text-lg" value={password} onChange={(e)=>setPassword(e.target.value)} onKeyDown={(e)=>e.key==='Enter' && handleLogin()} />
+            <button onClick={handleLogin} className="w-full bg-slate-900 text-yellow-500 py-5 rounded-2xl font-black text-xl">Enter Castle</button>
           </div>
         </div>
       </div>
     );
   }
 
-  const displayList = isAdmin 
-    ? Object.keys(studentData).sort((a, b) => (HOUSE_ORDER.indexOf(studentData[a].house) - HOUSE_ORDER.indexOf(studentData[b].house)) || sortKorean(a, b))
-    : [selectedName];
+  const displayList = isAdmin ? Object.keys(studentData).sort((a,b) => (HOUSE_ORDER.indexOf(studentData[a].house) - HOUSE_ORDER.indexOf(studentData[b].house)) || sortKorean(a,b)) : [selectedName];
 
   return (
-    <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 font-sans relative">
+    <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 relative">
       <style>{GLOVAL_STYLE}</style>
       
+      {/* [공지사항 모달 복구] */}
       {selectedHouseNotice && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedHouseNotice(null)}>
           <div className="relative bg-[#f4e4bc] p-6 md:p-12 w-full max-w-2xl rounded-sm shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
@@ -345,21 +340,21 @@ export default function HogwartsApp() {
       )}
 
       <div className="max-w-[1100px] mx-auto mb-8">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-serif font-black text-slate-800 italic uppercase">Hogwarts House Cup</h2>
+        <div className="flex justify-between items-center mb-6 uppercase italic font-black text-slate-800 text-2xl">
+          <h2>Hogwarts House Cup</h2>
           <div className="flex gap-2">
-            {isAdmin && <button onClick={resetWeeklyData} className="text-[10px] font-black text-white bg-red-600 px-3 py-1.5 rounded-full">RESET</button>}
-            <button onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full">LOGOUT</button>
+            {isAdmin && <button onClick={resetWeeklyData} className="text-[10px] text-white bg-red-600 px-3 py-1.5 rounded-full">RESET</button>}
+            <button onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} className="text-[10px] text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full">LOGOUT</button>
           </div>
         </div>
         <div className="grid grid-cols-4 gap-1.5 md:gap-4">
           {houseRankings.map((item, idx) => {
-            const config = (HOUSE_CONFIG as any)[item.house];
+            const cfg = (HOUSE_CONFIG as any)[item.house];
             return (
-              <div key={item.house} onClick={() => setSelectedHouseNotice(item.house)} className={`${config.bg} ${config.border} ${idx === 0 ? 'winner-sparkle ring-4 ring-yellow-400' : ''} border-b-4 p-1.5 md:p-5 rounded-xl md:rounded-[2rem] text-white shadow-xl cursor-pointer transition-all hover:brightness-110`}>
+              <div key={item.house} onClick={() => setSelectedHouseNotice(item.house)} className={`${cfg.bg} ${cfg.border} ${idx === 0 ? 'winner-sparkle ring-4 ring-yellow-400' : ''} border-b-4 p-1.5 md:p-5 rounded-xl md:rounded-[2rem] text-white cursor-pointer`}>
                 <div className="flex justify-between items-start mb-1">
-                  <div className="text-[7px] md:text-xs font-black opacity-90 uppercase">{item.house}</div>
-                  <div className={`text-[8px] md:text-[10px] font-black px-1.5 py-0.5 rounded-full ${config.accent} text-slate-900`}>{idx + 1}st</div>
+                  <div className="text-[7px] md:text-xs font-black opacity-90">{item.house}</div>
+                  <div className={`text-[8px] md:text-[10px] font-black px-1.5 py-0.5 rounded-full ${cfg.accent} text-slate-900`}>{idx+1}st</div>
                 </div>
                 <div className="text-lg md:text-4xl font-black">{item.finalPoint.toFixed(1)}</div>
               </div>
@@ -379,14 +374,14 @@ export default function HogwartsApp() {
               <div className="flex items-center gap-2 bg-slate-800/50 p-2 rounded-xl border border-white/10">
                 <span className="text-[10px] font-black text-yellow-500">GOAL:</span>
                 {isEditingGoal ? (
-                  <div className="flex gap-1"><input className="bg-transparent border-b border-yellow-500/50 text-xs font-bold w-40 text-white outline-none" value={goal} onChange={(e)=>setGoal(e.target.value)} /><button onClick={handleSaveGoal} className="text-[9px] bg-yellow-500 text-slate-900 px-2 py-1 rounded">저장</button></div>
+                  <div className="flex gap-1"><input className="bg-transparent border-b border-yellow-500/50 text-xs font-bold w-40 text-white outline-none" placeholder="목표 입력" value={goal} onChange={(e)=>setGoal(e.target.value)} /><button onClick={handleSaveGoal} className="text-[9px] bg-yellow-500 text-slate-900 px-2 py-1 rounded">저장</button></div>
                 ) : (
                   <div className="flex gap-2"><span className="text-xs font-bold">{goal || "설정 없음"}</span><button onClick={()=>setIsEditingGoal(true)} className="text-[9px] underline opacity-50">수정</button></div>
                 )}
               </div>
             )}
           </div>
-          {isSaving && <div className="text-[9px] text-yellow-500 font-bold animate-bounce uppercase">Magic occurring...</div>}
+          {isSaving && <div className="text-[9px] text-yellow-500 font-bold animate-bounce">CASTING SPELLS...</div>}
         </div>
 
         <div className="w-full overflow-x-auto">
@@ -420,10 +415,11 @@ export default function HogwartsApp() {
                           <td rowSpan={7} className={`p-4 text-center sticky left-0 z-20 font-bold border-r-[3px] ${info.color} ${info.text}`}>
                             <div className="text-3xl mb-1">{info.emoji}</div>
                             <div className="text-sm font-black mb-1 break-keep">{name.replace(info.emoji, "")}</div>
+                            {/* [비밀번호 변경 버튼 복구] */}
                             <button onClick={async () => { const pw = prompt("새 PW(4자리)"); if(pw) await handleChange(name, '월', 'password', pw); }} className="text-[8px] underline opacity-40">PW 변경</button>
                           </td>
                         )}
-                        <td className="p-2 text-center font-black border-r text-[11px] bg-white">{row.l}</td>
+                        <td className="p-2 text-center font-black border-r text-[11px]">{row.l}</td>
                         {DAYS.map(day => {
                           const rec = records.find((r: any) => r.student_name === name && r.day_of_week === day) || {};
                           const res = calc(rec);
@@ -438,8 +434,8 @@ export default function HogwartsApp() {
                               ) : row.f === 'study_time' ? (
                                 <input type="text" className="w-full text-center bg-transparent font-black text-sm" value={(rec as any).study_time || ''} onBlur={(e)=>handleChange(name, day, 'study_time', e.target.value)} disabled={!isAdmin} placeholder="-" />
                               ) : (
-                                <span className={`font-black text-sm ${row.f === 'penalty' && res.penalty < 0 ? 'text-red-500' : row.f === 'bonus' && res.bonus > 0 ? 'text-blue-600' : ''}`}>
-                                  {res[row.f as keyof typeof res] || (row.f === 'total' ? 0 : '')}
+                                <span className={`font-black text-sm ${(res as any)[row.f] < 0 ? 'text-red-500' : (res as any)[row.f] > 0 ? 'text-blue-600' : ''}`}>
+                                  {(res as any)[row.f] || (row.f === 'total' ? 0 : '')}
                                 </span>
                               )}
                             </td>
@@ -450,7 +446,7 @@ export default function HogwartsApp() {
                           {rIdx === 6 && <div className="text-[10px] text-blue-700">합계: {totalPts}</div>}
                         </td>
                         {rIdx === 0 && (
-                          <td rowSpan={7} className="p-2 border-l text-center bg-white">
+                          <td rowSpan={7} className="p-2 border-l text-center">
                             <div className="flex flex-col items-center gap-1">
                               {[1,2,3,4].map(n => <div key={n} onClick={() => isAdmin && handleChange(name, '월', 'monthly_off_count', offCount >= (5-n) ? (5-n)-1 : offCount)} className={`w-7 h-5 rounded border-2 ${offCount >= (5-n) ? info.accent : 'bg-slate-50'} ${isAdmin ? 'cursor-pointer' : ''}`} />)}
                             </div>
