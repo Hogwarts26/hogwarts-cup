@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from './supabase';
 
-// [수정사항] 1. 은하수 효과 애니메이션 추가 | 2. 드롭다운 중앙 정렬 스타일 추가
 const GLOVAL_STYLE = `
   @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
   body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif; }
@@ -56,18 +55,15 @@ const GLOVAL_STYLE = `
     to { box-shadow: 0 0 35px rgba(255, 215, 0, 0.7), inset 0 0 20px rgba(255, 255, 255, 0.3); }
   }
 
-  /* 드롭다운 중앙 정렬 교정 */
-  select {
+  /* 테이블 내 휴무 드롭다운만 정중앙 정렬 */
+  table select {
     appearance: none;
     -webkit-appearance: none;
-    text-align-last: center; /* 텍스트 중앙 */
+    text-align-last: center;
     padding: 0 !important;
     margin: 0 !important;
-    line-height: 1 !important; /* 세로 쏠림 방지 */
+    line-height: 1.2 !important;
     height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
 
   .custom-scrollbar::-webkit-scrollbar { width: 4px; }
@@ -334,7 +330,6 @@ export default function HogwartsApp() {
           {houseRankings.map((item, idx) => {
             const config = (HOUSE_CONFIG as any)[item.house];
             const rankLabel = ["1st", "2nd", "3rd", "4th"][idx];
-            // 1위 카드에만 winner-sparkle 클래스 추가
             const isWinner = idx === 0;
             return (
               <div key={item.house} onClick={() => setSelectedHouseNotice(item.house)} className={`${config.bg} ${config.border} ${isWinner ? 'winner-sparkle ring-4 ring-yellow-400 ring-offset-2' : ''} border-b-4 p-1.5 md:p-5 rounded-xl md:rounded-[2rem] text-white shadow-xl relative overflow-hidden cursor-pointer active:scale-95 transition-all hover:brightness-110`}>
