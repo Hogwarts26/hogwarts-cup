@@ -62,7 +62,6 @@ const GLOVAL_STYLE = `
   .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
 `;
 
-// [기존 studentData 및 설정값 유지]
 const studentData: { [key: string]: { house: string; emoji: string; color: string; accent: string, text: string } } = {
   "🧃피크닉": { house: "슬리데린", emoji: "🧃", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🤖로봇": { house: "슬리데린", emoji: "🤖", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
@@ -157,7 +156,6 @@ export default function HogwartsApp() {
     if (data) {
       setRecords(data);
       const todayK = DAYS[(new Date().getDay() + 6) % 7];
-      // [타입 방어: r: any]
       const myTodayRec = (data as any[]).find((r: any) => r.student_name === selectedName && r.day_of_week === todayK);
       if (myTodayRec && myTodayRec.goal) {
         setGoal(myTodayRec.goal);
@@ -178,7 +176,6 @@ export default function HogwartsApp() {
     let admin = password === "8888";
     if (!admin) {
       const { data } = await supabase.from('study_records').select('password').eq('student_name', selectedName);
-      // [타입 방어: data as any]
       const validPw = (data as any)?.find((r: any) => r.password)?.password || "0000";
       if (password !== validPw) { alert("비밀번호가 틀렸습니다."); return; }
     }
@@ -237,7 +234,6 @@ export default function HogwartsApp() {
     setIsSaving(false);
   };
 
-  // [사용자님의 복잡한 계산식 100% 복구]
   const calc = (r: any) => {
     if (!r) return { penalty: 0, bonus: 0, total: 0, studyH: 0 };
     if (r.off_type === '결석') return { penalty: -5, bonus: 0, total: -5, studyH: 0 };
@@ -298,7 +294,6 @@ export default function HogwartsApp() {
     setIsSaving(false);
   };
 
-  // [UI 로직 시작]
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
@@ -324,7 +319,6 @@ export default function HogwartsApp() {
     <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 relative">
       <style>{GLOVAL_STYLE}</style>
       
-      {/* [공지사항 모달 복구] */}
       {selectedHouseNotice && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedHouseNotice(null)}>
           <div className="relative bg-[#f4e4bc] p-6 md:p-12 w-full max-w-2xl rounded-sm shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
@@ -415,7 +409,6 @@ export default function HogwartsApp() {
                           <td rowSpan={7} className={`p-4 text-center sticky left-0 z-20 font-bold border-r-[3px] ${info.color} ${info.text}`}>
                             <div className="text-3xl mb-1">{info.emoji}</div>
                             <div className="text-sm font-black mb-1 break-keep">{name.replace(info.emoji, "")}</div>
-                            {/* [비밀번호 변경 버튼 복구] */}
                             <button onClick={async () => { const pw = prompt("새 PW(4자리)"); if(pw) await handleChange(name, '월', 'password', pw); }} className="text-[8px] underline opacity-40">PW 변경</button>
                           </td>
                         )}
