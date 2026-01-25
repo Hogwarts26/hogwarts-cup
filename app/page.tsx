@@ -165,10 +165,11 @@ export default function HogwartsApp() {
     const { data } = await supabase.from('study_records').select('*');
     if (data) {
       setRecords(data);
-      // 현재 날짜의 본인 다짐 가져오기 (필드명 goal)
+      // 현재 날짜의 본인 다짐 가져오기
       const todayStr = DAYS[(new Date().getDay() + 6) % 7];
       const myTodayRec = data.find(r => r.student_name === selectedName && r.day_of_week === todayStr);
-      if (myTodayRec?.goal) setDailyGoal(myTodayRec.goal);
+      // 목표가 있으면 설정, 없으면 빈칸 유지
+      setDailyGoal(myTodayRec?.goal || "");
     }
   };
 
@@ -307,7 +308,8 @@ export default function HogwartsApp() {
   return (
     <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 font-sans relative">
       <style>{GLOVAL_STYLE}</style>
-      {/* 마법 공지사항 팝업 */}
+      
+      {/* 마법 공지사항 팝업 (코드 동일) */}
       {selectedHouseNotice && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setSelectedHouseNotice(null)}>
           <div className="relative bg-[#f4e4bc] p-6 md:p-12 w-full max-w-2xl rounded-sm shadow-[0_0_50px_rgba(0,0,0,0.3)] overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()} style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.05) 100%)' }}>
@@ -327,7 +329,7 @@ export default function HogwartsApp() {
         </div>
       )}
 
-      {/* 대시보드 */}
+      {/* 대시보드 (코드 동일) */}
       <div className="max-w-[1100px] mx-auto mb-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight uppercase">Hogwarts House Cup</h2>
@@ -357,26 +359,30 @@ export default function HogwartsApp() {
 
       {/* 기록 테이블 */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
-        <div className="bg-slate-900 p-4 px-6 md:px-8 flex justify-between items-center text-white min-h-[60px]">
-          <div className="flex flex-col md:flex-row md:items-center gap-2">
+        <div className="bg-slate-900 p-4 px-6 md:px-8 flex flex-col gap-2 text-white min-h-[60px]">
+          {/* 첫 번째 줄: 날짜, 시간, 로딩상태 */}
+          <div className="flex justify-between items-center w-full">
             <span className="text-[10px] md:text-xs font-black text-yellow-500 uppercase tracking-widest flex items-center gap-2">
               <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
               {isAdmin ? "Headmaster Console" : currentTime.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}
               {!isAdmin && <span className="text-white ml-2">{currentTime.toLocaleTimeString('ko-KR', { hour12: false })}</span>}
             </span>
+            {isSaving && <div className="text-[9px] text-yellow-500 font-bold uppercase animate-bounce">Magic occurring...</div>}
           </div>
 
-          {/* 오늘의 다짐 입력란 (학생 로그인 시에만 표시) */}
+          {/* 두 번째 줄: 오늘의 다짐 (모바일을 위해 아래에 배치) */}
           {!isAdmin && (
-            <div className="flex items-center gap-3 flex-1 justify-end ml-4">
+            <div className="flex items-center gap-3 pt-1 border-t border-white/10 mt-1">
+              <span className="text-[9px] font-black text-white/40 uppercase shrink-0">Today's Goal</span>
               {isEditingGoal ? (
-                <div className="flex items-center gap-2 w-full max-w-[300px]">
+                <div className="flex items-center gap-2 flex-1">
                   <input 
                     type="text" 
-                    className="bg-slate-900 border-b border-white/30 text-white text-xs p-1 outline-none w-full placeholder:text-white/20"
-                    placeholder="오늘의 목표나 다짐을 입력하세요"
+                    className="bg-transparent border-b border-white/30 text-white text-xs p-0 pb-0.5 outline-none flex-1 placeholder:text-white/20"
+                    placeholder="목표를 입력하세요"
                     value={dailyGoal}
                     onChange={(e) => setDailyGoal(e.target.value)}
+                    autoFocus
                   />
                   <button 
                     onClick={() => {
@@ -384,13 +390,13 @@ export default function HogwartsApp() {
                       handleChange(selectedName, todayStr, 'goal', dailyGoal);
                       setIsEditingGoal(false);
                     }}
-                    className="text-[10px] font-black text-yellow-500 shrink-0"
+                    className="text-[10px] font-black text-yellow-500 shrink-0 px-2"
                   >저장</button>
                 </div>
               ) : (
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-medium text-white/90 italic truncate max-w-[200px]">
-                    {dailyGoal || "오늘의 다짐이 없습니다."}
+                <div className="flex items-center gap-3 flex-1 overflow-hidden">
+                  <span className="text-xs font-medium text-white/90 italic truncate flex-1">
+                    {dailyGoal || "클릭하여 다짐을 입력하세요."}
                   </span>
                   <div className="flex gap-2 shrink-0">
                     <button onClick={() => setIsEditingGoal(true)} className="text-[9px] text-white/40 hover:text-white transition-colors">수정</button>
@@ -412,7 +418,6 @@ export default function HogwartsApp() {
               )}
             </div>
           )}
-          {isSaving && <div className="text-[9px] text-yellow-500 font-bold uppercase animate-bounce ml-4">Magic occurring...</div>}
         </div>
 
         <div className="w-full overflow-x-auto">
