@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from './supabase';
 
-// [수정사항] 1등 기숙사를 위한 역동적인 ✨ 반짝임(Sparkle) 효과 정의
+// [수정사항] 1등 기숙사를 위한 역동적인 ✨ 반짝임(Sparkle) 효과 강화
 const GLOVAL_STYLE = `
   @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
   body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif; }
@@ -13,32 +13,41 @@ const GLOVAL_STYLE = `
     animation: winner-glow 2s infinite alternate;
   }
 
-  /* 별 모양 빛줄기 공통 스타일 */
+  /* 별 모양 빛줄기 공통 스타일 - 더 화려하게 */
   .winner-sparkle::before, .winner-sparkle::after, .sparkle-extra {
     content: '';
     position: absolute;
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     background: white;
     clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
     opacity: 0;
-    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.9));
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 1));
     pointer-events: none;
     z-index: 5;
   }
 
-  .winner-sparkle::before { top: 15%; left: 15%; animation: sparkle-flash 2s infinite; }
-  .winner-sparkle::after { bottom: 20%; right: 20%; animation: sparkle-flash 2.3s infinite 0.7s; }
-  .sparkle-extra { top: 40%; left: 70%; animation: sparkle-flash 1.8s infinite 1.2s; }
+  .winner-sparkle::before { top: 10%; left: 15%; animation: sparkle-flash 1.5s infinite; }
+  .winner-sparkle::after { bottom: 15%; right: 10%; animation: sparkle-flash 2.1s infinite 0.4s; }
+  .sparkle-extra { top: 45%; left: 75%; animation: sparkle-flash 1.8s infinite 0.8s; }
 
   @keyframes sparkle-flash {
-    0%, 100% { transform: scale(0) rotate(0deg); opacity: 0; }
-    50% { transform: scale(1.2) rotate(180deg); opacity: 1; }
+    0% { transform: scale(0) rotate(0deg); opacity: 0; }
+    50% { transform: scale(1.3) rotate(144deg); opacity: 1; filter: drop-shadow(0 0 10px white); }
+    100% { transform: scale(0) rotate(288deg); opacity: 0; }
   }
 
   @keyframes winner-glow {
-    from { box-shadow: 0 0 10px rgba(255, 215, 0, 0.3), inset 0 0 10px rgba(255, 255, 255, 0.1); }
-    to { box-shadow: 0 0 25px rgba(255, 215, 0, 0.6), inset 0 0 20px rgba(255, 255, 255, 0.2); }
+    from { box-shadow: 0 0 10px rgba(255, 215, 0, 0.4), inset 0 0 5px rgba(255, 255, 255, 0.2); }
+    to { box-shadow: 0 0 30px rgba(255, 215, 0, 0.7), inset 0 0 15px rgba(255, 255, 255, 0.4); }
+  }
+
+  /* [수정사항] 모바일 드롭다운 텍스트 쳐짐 방지 및 중앙 정렬 */
+  select {
+    appearance: none;
+    -webkit-appearance: none;
+    text-align-last: center;
+    line-height: normal;
   }
 `;
 
@@ -322,7 +331,6 @@ export default function HogwartsApp() {
           {houseRankings.map((item, idx) => {
             const config = (HOUSE_CONFIG as any)[item.house];
             const rankLabel = ["1st", "2nd", "3rd", "4th"][idx];
-            // [수정사항] 1등 카드만 winner-sparkle 효과 및 추가 별빛 요소 적용
             const isFirst = idx === 0;
             const specialEffect = isFirst 
               ? "winner-sparkle scale-105 z-10 ring-4 ring-yellow-400" 
@@ -358,7 +366,8 @@ export default function HogwartsApp() {
           <table className="min-w-[850px] w-full table-fixed border-collapse">
             <thead>
               <tr className="bg-slate-50 text-slate-500 uppercase font-black text-[11px] border-b-2">
-                <th className="w-28 p-2 sticky left-0 bg-slate-50 z-20 border-r">Witch/Wizard</th>
+                {/* [수정사항] 너비 축소 및 명칭 변경 */}
+                <th className="w-24 p-2 sticky left-0 bg-slate-50 z-20 border-r">학생명</th>
                 <th className="w-20 p-2 border-r">Field</th>
                 {DAYS.map(d => <th key={d} className="w-16 p-2 text-slate-900">{d}</th>)}
                 <th className="w-24 p-2 bg-slate-100 text-[10px]">총 공부시간</th>
@@ -397,10 +406,10 @@ export default function HogwartsApp() {
                     {rows.map((row, rIdx) => (
                       <tr key={row.l} className={`${rIdx === 6 ? "border-b-[6px] border-slate-100" : "border-b border-slate-50"}`}>
                         {rIdx === 0 && (
-                          <td rowSpan={7} className={`p-4 text-center sticky left-0 z-20 font-bold border-r-[3px] ${info.color} ${info.text}`}>
-                            <div className="text-3xl mb-1">{emoji}</div>
-                            <div className="leading-tight text-sm font-black mb-1 break-keep">{displayName}</div>
-                            <div className="text-[9px] font-black opacity-70 uppercase mb-2">{info.house}</div>
+                          <td rowSpan={7} className={`p-3 text-center sticky left-0 z-20 font-bold border-r-[3px] ${info.color} ${info.text}`}>
+                            <div className="text-2xl mb-1">{emoji}</div>
+                            <div className="leading-tight text-[13px] font-black mb-1 break-keep">{displayName}</div>
+                            <div className="text-[8px] font-black opacity-70 uppercase mb-2">{info.house}</div>
                             <button onClick={async () => {
                               const newPw = prompt("새 비밀번호 입력 (4자리)");
                               if(newPw && newPw.length >= 4) await handleChange(name, '월', 'password', newPw);
@@ -420,7 +429,13 @@ export default function HogwartsApp() {
                           return (
                             <td key={day} className={`p-1.5 text-center border-r border-slate-50 ${row.f === 'off_type' ? getCellBg(rec.off_type) : ''}`}>
                               {row.f === 'off_type' ? (
-                                <select className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-[10px] cursor-pointer" value={rec.off_type || '-'} onChange={(e) => handleChange(name, day, 'off_type', e.target.value)} disabled={!isAdmin}>
+                                <select 
+                                  className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-[10px] cursor-pointer py-1" 
+                                  style={{ height: '100%', minHeight: '24px' }}
+                                  value={rec.off_type || '-'} 
+                                  onChange={(e) => handleChange(name, day, 'off_type', e.target.value)} 
+                                  disabled={!isAdmin}
+                                >
                                   {OFF_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
                                 </select>
                               ) : (row.f === 'is_late' || row.f === 'am_3h') ? (
