@@ -165,10 +165,8 @@ export default function HogwartsApp() {
     const { data } = await supabase.from('study_records').select('*');
     if (data) {
       setRecords(data);
-      // 현재 날짜의 본인 다짐 가져오기
       const todayStr = DAYS[(new Date().getDay() + 6) % 7];
       const myTodayRec = data.find(r => r.student_name === selectedName && r.day_of_week === todayStr);
-      // 목표가 있으면 설정, 없으면 빈칸 유지
       setDailyGoal(myTodayRec?.goal || "");
     }
   };
@@ -309,7 +307,7 @@ export default function HogwartsApp() {
     <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 font-sans relative">
       <style>{GLOVAL_STYLE}</style>
       
-      {/* 마법 공지사항 팝업 (코드 동일) */}
+      {/* 마법 공지사항 팝업 */}
       {selectedHouseNotice && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setSelectedHouseNotice(null)}>
           <div className="relative bg-[#f4e4bc] p-6 md:p-12 w-full max-w-2xl rounded-sm shadow-[0_0_50px_rgba(0,0,0,0.3)] overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()} style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.05) 100%)' }}>
@@ -329,7 +327,7 @@ export default function HogwartsApp() {
         </div>
       )}
 
-      {/* 대시보드 (코드 동일) */}
+      {/* 대시보드 */}
       <div className="max-w-[1100px] mx-auto mb-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight uppercase">Hogwarts House Cup</h2>
@@ -360,7 +358,6 @@ export default function HogwartsApp() {
       {/* 기록 테이블 */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
         <div className="bg-slate-900 p-4 px-6 md:px-8 flex flex-col gap-2 text-white min-h-[60px]">
-          {/* 첫 번째 줄: 날짜, 시간, 로딩상태 */}
           <div className="flex justify-between items-center w-full">
             <span className="text-[10px] md:text-xs font-black text-yellow-500 uppercase tracking-widest flex items-center gap-2">
               <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
@@ -370,7 +367,6 @@ export default function HogwartsApp() {
             {isSaving && <div className="text-[9px] text-yellow-500 font-bold uppercase animate-bounce">Magic occurring...</div>}
           </div>
 
-          {/* 두 번째 줄: 오늘의 다짐 (모바일을 위해 아래에 배치) */}
           {!isAdmin && (
             <div className="flex items-center gap-3 pt-1 border-t border-white/10 mt-1">
               <span className="text-[9px] font-black text-white/40 uppercase shrink-0">Today's Goal</span>
@@ -396,21 +392,21 @@ export default function HogwartsApp() {
               ) : (
                 <div className="flex items-center gap-3 flex-1 overflow-hidden">
                   <span className="text-xs font-medium text-white/90 italic truncate flex-1">
-                    {dailyGoal || "클릭하여 다짐을 입력하세요."}
+                    {dailyGoal || "클릭하여 목표나 다짐을 입력하세요."}
                   </span>
-                  <div className="flex gap-2 shrink-0">
-                    <button onClick={() => setIsEditingGoal(true)} className="text-[9px] text-white/40 hover:text-white transition-colors">수정</button>
+                  <div className="flex gap-3 shrink-0">
+                    <button onClick={() => setIsEditingGoal(true)} className="text-[9px] font-bold text-white/40 hover:text-white transition-colors uppercase">수정</button>
                     {dailyGoal && (
                       <button 
                         onClick={() => {
-                          if (confirm("정말 삭제하시겠습니까?")) {
+                          if (confirm("오늘의 다짐을 삭제하시겠습니까?")) {
                             const todayStr = DAYS[(new Date().getDay() + 6) % 7];
                             handleChange(selectedName, todayStr, 'goal', '');
                             setDailyGoal("");
                             alert("삭제되었습니다.");
                           }
                         }}
-                        className="text-[9px] text-red-400/60 hover:text-red-400 transition-colors"
+                        className="text-[9px] font-bold text-red-400/60 hover:text-red-400 transition-colors uppercase"
                       >삭제</button>
                     )}
                   </div>
