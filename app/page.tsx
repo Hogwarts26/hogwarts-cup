@@ -2,8 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from './supabase';
 
-/* GLOVAL_STYLE 내의 애니메이션 부분을 이 코드로 교체해 주세요 */
-
+// [수정사항] 1등 기숙사를 위한 역동적인 ✨ 반짝임(Sparkle) 효과 강화
 const GLOVAL_STYLE = `
   @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
   body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif; }
@@ -14,49 +13,36 @@ const GLOVAL_STYLE = `
     animation: winner-glow 2s infinite alternate;
   }
 
-  /* 카드 전체에 퍼지는 은하수 효과 */
-  .winner-sparkle::before, .winner-sparkle::after {
+  /* 별 모양 빛줄기 공통 스타일 - 더 화려하게 */
+  .winner-sparkle::before, .winner-sparkle::after, .sparkle-extra {
     content: '';
     position: absolute;
-    inset: -20px;
-    /* 다중 그림자를 이용해 수십 개의 입자를 한 번에 생성 */
-    box-shadow: 
-      20px 30px white, 50px 80px white, 90px 20px white, 120px 60px white, 160px 40px white, 
-      40px 110px white, 80px 140px white, 140px 120px white, 180px 90px white, 220px 30px white;
-    width: 2px;
-    height: 2px;
-    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    background: white;
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
     opacity: 0;
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 1));
     pointer-events: none;
     z-index: 5;
-    filter: blur(0.5px) drop-shadow(0 0 3px white);
   }
 
-  .winner-sparkle::before {
-    animation: galaxy-dust 3s infinite linear;
-  }
+  .winner-sparkle::before { top: 10%; left: 15%; animation: sparkle-flash 1.5s infinite; }
+  .winner-sparkle::after { bottom: 15%; right: 10%; animation: sparkle-flash 2.1s infinite 0.4s; }
+  .sparkle-extra { top: 45%; left: 75%; animation: sparkle-flash 1.8s infinite 0.8s; }
 
-  .winner-sparkle::after {
-    box-shadow: 
-      30px 60px white, 70px 20px white, 110px 90px white, 150px 130px white, 190px 40px white,
-      60px 140px white, 100px 50px white, 140px 10px white, 200px 110px white, 240px 70px white;
-    animation: galaxy-dust 4s infinite linear 1.5s; /* 타이밍을 엇갈리게 설정 */
-  }
-
-  @keyframes galaxy-dust {
-    0% { transform: translateY(0); opacity: 0; }
-    20% { opacity: 0.6; }
-    50% { opacity: 0.8; transform: translateY(-10px) scale(1.2); }
-    80% { opacity: 0.4; }
-    100% { transform: translateY(-20px) scale(0); opacity: 0; }
+  @keyframes sparkle-flash {
+    0% { transform: scale(0) rotate(0deg); opacity: 0; }
+    50% { transform: scale(1.3) rotate(144deg); opacity: 1; filter: drop-shadow(0 0 10px white); }
+    100% { transform: scale(0) rotate(288deg); opacity: 0; }
   }
 
   @keyframes winner-glow {
-    from { box-shadow: 0 0 15px rgba(255, 215, 0, 0.4), inset 0 0 8px rgba(255, 255, 255, 0.1); }
-    to { box-shadow: 0 0 35px rgba(255, 215, 0, 0.6), inset 0 0 20px rgba(255, 255, 255, 0.3); }
+    from { box-shadow: 0 0 10px rgba(255, 215, 0, 0.4), inset 0 0 5px rgba(255, 255, 255, 0.2); }
+    to { box-shadow: 0 0 30px rgba(255, 215, 0, 0.7), inset 0 0 15px rgba(255, 255, 255, 0.4); }
   }
 
-  /* 모바일 드롭다운 텍스트 쳐짐 방지 및 중앙 정렬 */
+  /* [수정사항] 모바일 드롭다운 텍스트 쳐짐 방지 및 중앙 정렬 */
   select {
     appearance: none;
     -webkit-appearance: none;
@@ -71,7 +57,7 @@ const studentData: { [key: string]: { house: string; emoji: string; color: strin
   "🐾발자국": { house: "슬리데린", emoji: "🐾", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🐆표범": { house: "슬리데린", emoji: "🐆", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🐡복어": { house: "슬리데린", emoji: "🐡", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
-  "🎂케이크크": { house: "슬리데린", emoji: "🎂", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
+  "🎂케이크": { house: "슬리데린", emoji: "🎂", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🐻곰돌": { house: "슬리데린", emoji: "🐻", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🍮푸딩": { house: "래번클로", emoji: "🍮", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
   "💫별": { house: "래번클로", emoji: "💫", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
@@ -255,7 +241,7 @@ export default function HogwartsApp() {
         DAYS.map(d => ({ student_name: name, day_of_week: d, password: value })),
         { onConflict: 'student_name,day_of_week' }
       );
-      if (!error) { setRecords(prev => prev.map(r => r.student_name === name ? { ...r, password: value } : r)); alert("비밀번호가 변경되었습니다"); }
+      if (!error) { setRecords(prev => prev.map(r => r.student_name === name ? { ...r, password: value } : r)); alert("비밀번호 변경 완료"); }
     } else {
       const newRecords = [...records];
       const idx = newRecords.findIndex(r => r.student_name === name && r.day_of_week === day);
@@ -381,10 +367,10 @@ export default function HogwartsApp() {
             <thead>
               <tr className="bg-slate-50 text-slate-500 uppercase font-black text-[11px] border-b-2">
                 {/* [수정사항] 너비 축소 및 명칭 변경 */}
-                <th className="w-22 p-2 sticky left-0 bg-slate-50 z-20 border-r">학생명</th>
-                <th className="w-18 p-2 border-r">Field</th>
+                <th className="w-24 p-2 sticky left-0 bg-slate-50 z-20 border-r">학생명</th>
+                <th className="w-20 p-2 border-r">Field</th>
                 {DAYS.map(d => <th key={d} className="w-16 p-2 text-slate-900">{d}</th>)}
-                <th className="w-16 p-2 bg-slate-100 text-[10px]">총 공부시간</th>
+                <th className="w-24 p-2 bg-slate-100 text-[10px]">총 공부시간</th>
                 <th className="w-16 p-2 bg-slate-100 border-l text-[10px]">잔여월휴</th>
               </tr>
             </thead>
@@ -425,7 +411,7 @@ export default function HogwartsApp() {
                             <div className="leading-tight text-[13px] font-black mb-1 break-keep">{displayName}</div>
                             <div className="text-[8px] font-black opacity-70 uppercase mb-2">{info.house}</div>
                             <button onClick={async () => {
-                              const newPw = prompt("새 비밀번호를 입력하세요 (숫자 4자리)");
+                              const newPw = prompt("새 비밀번호 입력 (4자리)");
                               if(newPw && newPw.length >= 4) await handleChange(name, '월', 'password', newPw);
                             }} className="text-[8px] underline opacity-40 hover:opacity-100 block mx-auto">PW 변경</button>
                           </td>
