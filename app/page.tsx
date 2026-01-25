@@ -241,7 +241,7 @@ export default function HogwartsApp() {
         DAYS.map(d => ({ student_name: name, day_of_week: d, password: value })),
         { onConflict: 'student_name,day_of_week' }
       );
-      if (!error) { setRecords(prev => prev.map(r => r.student_name === name ? { ...r, password: value } : r)); alert("비밀번호 변경 완료"); }
+      if (!error) { setRecords(prev => prev.map(r => r.student_name === name ? { ...r, password: value } : r)); alert("비밀번호가 변경되었습니다다"); }
     } else {
       const newRecords = [...records];
       const idx = newRecords.findIndex(r => r.student_name === name && r.day_of_week === day);
@@ -411,7 +411,7 @@ export default function HogwartsApp() {
                             <div className="leading-tight text-[13px] font-black mb-1 break-keep">{displayName}</div>
                             <div className="text-[8px] font-black opacity-70 uppercase mb-2">{info.house}</div>
                             <button onClick={async () => {
-                              const newPw = prompt("새 비밀번호 입력 (4자리)");
+                              const newPw = prompt("새 비밀번호를 입력하세요 (4자리숫자)");
                               if(newPw && newPw.length >= 4) await handleChange(name, '월', 'password', newPw);
                             }} className="text-[8px] underline opacity-40 hover:opacity-100 block mx-auto">PW 변경</button>
                           </td>
