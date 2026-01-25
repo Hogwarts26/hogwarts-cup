@@ -118,7 +118,7 @@ export default function HogwartsApp() {
   useEffect(() => { if (isLoggedIn) fetchRecords(); }, [isLoggedIn]);
 
   const handleLogin = async () => {
-    if (!selectedName) { alert("학생을 선택해주세요."); return; }
+    if (!selectedName) { alert("이름을 선택하세요"); return; }
     let admin = password === "8888";
     if (!admin) {
       const { data } = await supabase.from('study_records').select('password').eq('student_name', selectedName);
