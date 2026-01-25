@@ -307,7 +307,7 @@ export default function HogwartsApp() {
       }
     }
     else {
-      // 일반 기록 수정 (기존 로직 유지)
+      // 일반 기록 수정
       const newRecords = [...records];
       const idx = newRecords.findIndex(r => r.student_name === name && r.day_of_week === day);
       const current = newRecords[idx] || {};
@@ -329,7 +329,7 @@ export default function HogwartsApp() {
     setIsSaving(false);
   };
 
-  if (!isLoggedIn) {
+if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
         <style>{GLOVAL_STYLE}</style>
@@ -358,7 +358,32 @@ export default function HogwartsApp() {
 
   return (
     <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 font-sans relative">
-      <style>{GLOVAL_STYLE}</style>
+      <style>{`
+        ${GLOVAL_STYLE}
+        /* 동그란 지각 체크박스 스타일 */
+        .late-checkbox {
+          appearance: none;
+          -webkit-appearance: none;
+          width: 1.25rem;
+          height: 1.25rem;
+          border: 2px solid #cbd5e1;
+          border-radius: 50%;
+          cursor: pointer;
+          transition: background 0.2s, border-color 0.2s;
+          position: relative;
+          background: white;
+          outline: none;
+          margin: 0 auto;
+          display: block;
+        }
+        .late-checkbox:checked {
+          background: #f59e0b;
+          border-color: #f59e0b;
+        }
+        .late-checkbox:disabled {
+          cursor: default;
+        }
+      `}</style>
       
       {/* 마법 공지사항 팝업 */}
       {selectedHouseNotice && (
@@ -472,7 +497,6 @@ export default function HogwartsApp() {
             <thead>
               <tr className="bg-slate-50 text-slate-500 uppercase font-black text-[11px] border-b-2">
                 <th className="w-28 p-2 sticky left-0 bg-slate-50 z-20 border-r">학생명</th>
-                <th className="w-20 p-2 border-r"> </th>
                 {DAYS.map(d => <th key={d} className="w-16 p-2 text-slate-900">{d}</th>)}
                 <th className="w-24 p-2 bg-slate-100 text-[10px]">공부시간</th>
                 <th className="w-16 p-2 bg-slate-100 border-l text-[10px]">잔여월휴</th>
@@ -483,7 +507,7 @@ export default function HogwartsApp() {
                 const info = studentData[name];
                 const monRec = records.find(r => r.student_name === name && r.day_of_week === '월') || {};
                 const offCount = monRec.monthly_off_count ?? 4;
-                const rows = [{l:'휴무',f:'off_type'},{l:'지각',f:'is_late'},{l:'오전3H',f:'am_3h'},{l:'공부시간',f:'study_time'},{l:'벌점',f:'penalty'},{l:'상점',f:'bonus'},{l:'총점',f:'total'}];
+                const rows = [{f:'off_type'},{f:'is_late'},{f:'am_3h'},{f:'study_time'},{f:'penalty'},{f:'bonus'},{f:'total'}];
                 
                 let totalTimeMinutes = 0;
                 let totalPointsSum = 0;
@@ -502,13 +526,12 @@ export default function HogwartsApp() {
                     {isAdmin && (
                       <tr className="bg-slate-100/50 border-t-2 border-slate-200">
                         <td className="sticky left-0 bg-slate-100/50 z-20 border-r"></td>
-                        <td className="p-1 text-[8px] font-black text-slate-400 text-center border-r">DAYS</td>
-                        {DAYS.map(d => <td key={d} className="p-1 text-[10px] font-black text-slate-500 text-center">{d}</td>)}
+                        {DAYS.map(d => <td key={d} className="p-1 text-[10px] font-black text-slate-500 text-center uppercase">{d}</td>)}
                         <td colSpan={2} className="border-l"></td>
                       </tr>
                     )}
                     {rows.map((row, rIdx) => (
-                      <tr key={row.l} className={`${rIdx === 6 ? "border-b-[6px] border-slate-100" : "border-b border-slate-50"}`}>
+                      <tr key={row.f} className={`${rIdx === 6 ? "border-b-[6px] border-slate-100" : "border-b border-slate-50"}`}>
                         {rIdx === 0 && (
                           <td rowSpan={7} className={`p-4 text-center sticky left-0 z-20 font-bold border-r-[3px] ${info.color} ${info.text}`}>
                             <div className="text-3xl mb-1">{emoji}</div>
@@ -520,7 +543,6 @@ export default function HogwartsApp() {
                             }} className="text-[8px] underline opacity-40 hover:opacity-100 block mx-auto">PW 변경</button>
                           </td>
                         )}
-                        <td className="p-2 text-center font-black border-r bg-white text-slate-800 text-[11px] leading-tight">{row.l}</td>
                         {DAYS.map(day => {
                           const rec = records.find(r => r.student_name === name && r.day_of_week === day) || {};
                           const res = calc(rec);
@@ -536,8 +558,10 @@ export default function HogwartsApp() {
                                 <select className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-[10px] cursor-pointer" value={rec.off_type || '-'} onChange={(e) => handleChange(name, day, 'off_type', e.target.value)} disabled={!isAdmin}>
                                   {OFF_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
                                 </select>
-                              ) : (row.f === 'is_late' || row.f === 'am_3h') ? (
-                                <input type="checkbox" className={`w-3.5 h-3.5 ${row.f === 'is_late' ? 'accent-amber-400' : 'accent-slate-800'} cursor-pointer mx-auto block`} checked={!!rec[row.f]} onChange={(e) => handleChange(name, day, row.f, e.target.checked)} disabled={!isAdmin} />
+                              ) : row.f === 'is_late' ? (
+                                <input type="checkbox" className="late-checkbox" checked={!!rec.is_late} onChange={(e) => handleChange(name, day, 'is_late', e.target.checked)} disabled={!isAdmin} />
+                              ) : row.f === 'am_3h' ? (
+                                <input type="checkbox" className="w-3.5 h-3.5 accent-slate-800 cursor-pointer mx-auto block" checked={!!rec.am_3h} onChange={(e) => handleChange(name, day, 'am_3h', e.target.checked)} disabled={!isAdmin} />
                               ) : row.f === 'study_time' ? (
                                 <input type="text" className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-sm placeholder-slate-200" placeholder="-" value={rec.study_time || ''} 
                                   onChange={(e) => setRecords(prev => prev.map(r => (r.student_name === name && r.day_of_week === day) ? {...r, study_time: e.target.value} : r))}
