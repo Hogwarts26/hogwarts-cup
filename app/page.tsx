@@ -6,7 +6,6 @@ const GLOVAL_STYLE = `
   @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
   body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif; }
   
-  /* 디즈니 마법 가루(Pixie Dust) 효과 */
   .winner-sparkle {
     position: relative;
     overflow: hidden;
@@ -32,14 +31,8 @@ const GLOVAL_STYLE = `
     z-index: 5;
   }
 
-  .winner-sparkle::before {
-    animation: pixie-dust 3s infinite linear;
-  }
-
-  .winner-sparkle::after {
-    background-position: 150px 75px;
-    animation: pixie-dust 4s infinite linear reverse;
-  }
+  .winner-sparkle::before { animation: pixie-dust 3s infinite linear; }
+  .winner-sparkle::after { background-position: 150px 75px; animation: pixie-dust 4s infinite linear reverse; }
 
   @keyframes pixie-dust {
     0% { transform: scale(0.8) translate(0, 0); opacity: 0; }
@@ -54,7 +47,6 @@ const GLOVAL_STYLE = `
     to { box-shadow: 0 0 35px rgba(255, 215, 0, 0.7), inset 0 0 20px rgba(255, 255, 255, 0.3); }
   }
 
-  /* 테이블 내 휴무 드롭다운만 정중앙 정렬 */
   table select {
     appearance: none;
     -webkit-appearance: none;
@@ -146,6 +138,10 @@ export default function HogwartsApp() {
   const [isSaving, setIsSaving] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedHouseNotice, setSelectedHouseNotice] = useState<string | null>(null);
+  
+  // 목표 관련 상태
+  const [goal, setGoal] = useState("");
+  const [isEditingGoal, setIsEditingGoal] = useState(true);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -159,10 +155,19 @@ export default function HogwartsApp() {
 
   const fetchRecords = async () => {
     const { data } = await supabase.from('study_records').select('*');
-    if (data) setRecords(data);
+    if (data) {
+      setRecords(data);
+      // 로그인한 사용자의 오늘 목표 불러오기
+      const todayK = DAYS[(new Date().getDay() + 6) % 7];
+      const myTodayRec = data.find(r => r.student_name === selectedName && r.day_of_week === todayK);
+      if (myTodayRec?.goal) {
+        setGoal(myTodayRec.goal);
+        setIsEditingGoal(false);
+      }
+    }
   };
 
-  useEffect(() => { if (isLoggedIn) fetchRecords(); }, [isLoggedIn]);
+  useEffect(() => { if (isLoggedIn) fetchRecords(); }, [isLoggedIn, selectedName]);
 
   const handleLogin = async () => {
     if (!selectedName) { alert("학생을 선택해주세요."); return; }
@@ -176,6 +181,43 @@ export default function HogwartsApp() {
     localStorage.setItem('hg_auth', JSON.stringify({ name: selectedName, admin }));
   };
 
+  const handleSaveGoal = async () => {
+    if (!selectedName) return;
+    setIsSaving(true);
+    const todayK = DAYS[(new Date().getDay() + 6) % 7];
+    const { error } = await supabase.from('study_records').upsert({
+      student_name: selectedName,
+      day_of_week: todayK,
+      goal: goal
+    }, { onConflict: 'student_name,day_of_week' });
+
+    if (!error) {
+      alert("저장 되었습니다.");
+      setIsEditingGoal(false);
+      fetchRecords();
+    }
+    setIsSaving(false);
+  };
+
+  const handleDeleteGoal = async () => {
+    if (!confirm("삭제하시겠습니까?")) return;
+    setIsSaving(true);
+    const todayK = DAYS[(new Date().getDay() + 6) % 7];
+    const { error } = await supabase.from('study_records').upsert({
+      student_name: selectedName,
+      day_of_week: todayK,
+      goal: ""
+    }, { onConflict: 'student_name,day_of_week' });
+
+    if (!error) {
+      setGoal("");
+      setIsEditingGoal(true);
+      alert("삭제되었습니다.");
+      fetchRecords();
+    }
+    setIsSaving(false);
+  };
+
   const resetWeeklyData = async () => {
     if (!confirm("⚠️ 주의: 모든 학생의 이번 주 공부 기록을 초기화하시겠습니까?")) return;
     if (!confirm("정말로 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) return;
@@ -187,7 +229,7 @@ export default function HogwartsApp() {
         const existing = records.find(r => r.student_name === name && r.day_of_week === day) || {};
         resetData.push({
           student_name: name, day_of_week: day, off_type: '-', is_late: false, am_3h: false, study_time: '',
-          password: existing.password || '0000', monthly_off_count: existing.monthly_off_count ?? 4
+          password: existing.password || '0000', monthly_off_count: existing.monthly_off_count ?? 4, goal: ''
         });
       }
     }
@@ -264,6 +306,13 @@ export default function HogwartsApp() {
       }
     }
     setIsSaving(false);
+  };
+
+  const getCellBg = (val: string) => {
+    if (['반휴','월반휴','늦반휴','늦월반휴'].includes(val)) return 'bg-green-100';
+    if (['주휴','월휴','늦휴','늦월휴'].includes(val)) return 'bg-blue-100';
+    if (val === '결석') return 'bg-red-100';
+    return '';
   };
 
   if (!isLoggedIn) {
@@ -344,14 +393,42 @@ export default function HogwartsApp() {
         </div>
       </div>
 
-      {/* 기록 테이블 */}
+      {/* 기록 테이블 및 오늘의 목표 */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
-        <div className="bg-slate-900 p-4 px-6 md:px-8 flex justify-between items-center text-white">
-          <span className="text-[10px] md:text-xs font-black text-yellow-500 uppercase tracking-widest flex items-center gap-2">
-            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-            {isAdmin ? "Headmaster Console" : currentTime.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}
-            {!isAdmin && <span className="text-white ml-2">{currentTime.toLocaleTimeString('ko-KR', { hour12: false })}</span>}
-          </span>
+        <div className="bg-slate-900 p-4 px-6 md:px-8 flex flex-col md:flex-row justify-between items-start md:items-center text-white gap-4">
+          <div className="flex flex-col">
+            <span className="text-[10px] md:text-xs font-black text-yellow-500 uppercase tracking-widest flex items-center gap-2 mb-1">
+              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+              {isAdmin ? "Headmaster Console" : currentTime.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}
+              {!isAdmin && <span className="text-white ml-2">{currentTime.toLocaleTimeString('ko-KR', { hour12: false })}</span>}
+            </span>
+            {/* 오늘의 목표 영역 */}
+            {!isAdmin && (
+              <div className="flex items-center gap-2 mt-2 bg-slate-800/50 p-2 rounded-xl border border-white/10 w-full md:w-auto">
+                <span className="text-[10px] font-black text-yellow-500 shrink-0">GOAL:</span>
+                {isEditingGoal ? (
+                  <div className="flex gap-1 items-center">
+                    <input 
+                      type="text" 
+                      className="bg-transparent border-b border-yellow-500/50 text-xs font-bold outline-none px-1 w-40 md:w-64" 
+                      placeholder="오늘의 목표를 입력하세요" 
+                      value={goal}
+                      onChange={(e) => setGoal(e.target.value)}
+                    />
+                    <button onClick={handleSaveGoal} className="text-[9px] bg-yellow-500 text-slate-900 px-2 py-1 rounded font-black">저장</button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2 items-center">
+                    <span className="text-xs font-bold text-white/90">{goal || "설정된 목표가 없습니다."}</span>
+                    <div className="flex gap-1">
+                      <button onClick={() => setIsEditingGoal(true)} className="text-[9px] text-white/50 hover:text-white underline font-bold">수정</button>
+                      <button onClick={handleDeleteGoal} className="text-[9px] text-red-400/70 hover:text-red-400 underline font-bold">삭제</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
           {isSaving && <div className="text-[9px] text-yellow-500 font-bold uppercase animate-bounce">Magic occurring...</div>}
         </div>
 
@@ -412,12 +489,6 @@ export default function HogwartsApp() {
                         {DAYS.map(day => {
                           const rec = records.find(r => r.student_name === name && r.day_of_week === day) || {};
                           const res = calc(rec);
-                          const getCellBg = (val: string) => {
-                            if (['반휴','월반휴','늦반휴','늦월반휴'].includes(val)) return 'bg-green-100';
-                            if (['주휴','월휴','늦휴','늦월휴'].includes(val)) return 'bg-blue-100';
-                            if (val === '결석') return 'bg-red-100';
-                            return '';
-                          };
                           return (
                             <td key={day} className={`p-1.5 text-center border-r border-slate-50 ${row.f === 'off_type' ? getCellBg(rec.off_type) : ''}`}>
                               {row.f === 'off_type' ? (
