@@ -139,7 +139,6 @@ export default function HogwartsApp() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedHouseNotice, setSelectedHouseNotice] = useState<string | null>(null);
   
-  // 목표 관련 상태
   const [goal, setGoal] = useState("");
   const [isEditingGoal, setIsEditingGoal] = useState(true);
 
@@ -158,7 +157,7 @@ export default function HogwartsApp() {
     if (data) {
       setRecords(data);
       const todayK = DAYS[(new Date().getDay() + 6) % 7];
-      // [타입 수정] r: any 추가하여 빌드 에러 방지
+      // [타입 방어] find 내부 r에 any 지정
       const myTodayRec = data.find((r: any) => r.student_name === selectedName && r.day_of_week === todayK);
       if (myTodayRec && (myTodayRec as any).goal) {
         setGoal((myTodayRec as any).goal);
@@ -179,7 +178,7 @@ export default function HogwartsApp() {
     let admin = password === "8888";
     if (!admin) {
       const { data } = await supabase.from('study_records').select('password').eq('student_name', selectedName);
-      const validPw = data?.find(r => r.password)?.password || "0000";
+      const validPw = data?.find((r: any) => r.password)?.password || "0000";
       if (password !== validPw) { alert("비밀번호가 틀렸습니다."); return; }
     }
     setIsAdmin(admin); setIsLoggedIn(true);
@@ -190,6 +189,7 @@ export default function HogwartsApp() {
     if (!selectedName) return;
     setIsSaving(true);
     const todayK = DAYS[(new Date().getDay() + 6) % 7];
+    // [타입 방어] r: any 지정
     const existing = records.find((r: any) => r.student_name === selectedName && r.day_of_week === todayK) || {};
 
     const { error } = await supabase.from('study_records').upsert({
@@ -212,6 +212,7 @@ export default function HogwartsApp() {
     if (!confirm("삭제하시겠습니까?")) return;
     setIsSaving(true);
     const todayK = DAYS[(new Date().getDay() + 6) % 7];
+    // [타입 방어] r: any 지정
     const existing = records.find((r: any) => r.student_name === selectedName && r.day_of_week === todayK) || {};
 
     const { error } = await supabase.from('study_records').upsert({
@@ -239,6 +240,7 @@ export default function HogwartsApp() {
     const resetData = [];
     for (const name of names) {
       for (const day of DAYS) {
+        // [타입 방어] r: any 지정
         const existing = records.find((r: any) => r.student_name === name && r.day_of_week === day) || {};
         resetData.push({
           student_name: name, day_of_week: day, off_type: '-', is_late: false, am_3h: false, study_time: '',
@@ -277,7 +279,7 @@ export default function HogwartsApp() {
       let tScore = 0, tH = 0;
       students.forEach(name => {
         DAYS.forEach(day => {
-          // [타입 수정] r: any 추가
+          // [타입 방어] r: any 지정
           const res = calc(records.find((r: any) => r.student_name === name && r.day_of_week === day));
           tScore += res.total; tH += res.studyH;
         });
@@ -295,10 +297,10 @@ export default function HogwartsApp() {
         DAYS.map(d => ({ student_name: name, day_of_week: d, password: value })),
         { onConflict: 'student_name,day_of_week' }
       );
-      if (!error) { setRecords(prev => prev.map(r => r.student_name === name ? { ...r, password: value } : r)); alert("비밀번호가 성공적으로 변경되었습니다"); }
+      if (!error) { setRecords(prev => prev.map((r: any) => r.student_name === name ? { ...r, password: value } : r)); alert("비밀번호가 성공적으로 변경되었습니다"); }
     } else {
       const newRecords = [...records];
-      const idx = newRecords.findIndex(r => r.student_name === name && r.day_of_week === day);
+      const idx = newRecords.findIndex((r: any) => r.student_name === name && r.day_of_week === day);
       const current = newRecords[idx] || {};
       const updatedData = { 
         ...current,
@@ -308,7 +310,7 @@ export default function HogwartsApp() {
       };
       
       if (field === 'monthly_off_count') {
-        setRecords(prev => prev.map(r => r.student_name === name ? { ...r, monthly_off_count: value } : r));
+        setRecords(prev => prev.map((r: any) => r.student_name === name ? { ...r, monthly_off_count: value } : r));
         await supabase.from('study_records').upsert(updatedData, { onConflict: 'student_name,day_of_week' });
       } else if (idx > -1) {
         newRecords[idx] = { ...newRecords[idx], ...updatedData };
@@ -361,7 +363,6 @@ export default function HogwartsApp() {
     <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 font-sans relative">
       <style>{GLOVAL_STYLE}</style>
       
-      {/* 마법 공지사항 팝업 */}
       {selectedHouseNotice && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setSelectedHouseNotice(null)}>
           <div className="relative bg-[#f4e4bc] p-6 md:p-12 w-full max-w-2xl rounded-sm shadow-[0_0_50px_rgba(0,0,0,0.3)] overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()} style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.05) 100%)' }}>
@@ -383,7 +384,6 @@ export default function HogwartsApp() {
         </div>
       )}
 
-      {/* 대시보드 */}
       <div className="max-w-[1100px] mx-auto mb-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight uppercase">Hogwarts House Cup</h2>
@@ -411,7 +411,6 @@ export default function HogwartsApp() {
         </div>
       </div>
 
-      {/* 기록 테이블 및 오늘의 목표 */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
         <div className="bg-slate-900 p-4 px-6 md:px-8 flex flex-col md:flex-row justify-between items-start md:items-center text-white gap-4">
           <div className="flex flex-col">
@@ -463,14 +462,14 @@ export default function HogwartsApp() {
             <tbody>
               {displayList.map(name => {
                 const info = studentData[name];
-                // [타입 수정] r: any 추가
+                // [타입 방어] find 내부 r: any 지정
                 const monRec = records.find((r: any) => r.student_name === name && r.day_of_week === '월') || {};
                 const offCount = (monRec as any).monthly_off_count ?? 4;
                 const rows = [{l:'휴무',f:'off_type'},{l:'지각',f:'is_late'},{l:'오전3H',f:'am_3h'},{l:'공부시간',f:'study_time'},{l:'벌점',f:'penalty'},{l:'상점',f:'bonus'},{l:'총점',f:'total'}];
                 
                 let totalTimeMinutes = 0;
                 let totalPointsSum = 0;
-                // [타입 수정] r: any 추가
+                // [타입 방어] filter/forEach 내부 r: any 지정
                 records.filter((r: any) => r.student_name === name).forEach((r: any) => {
                   const res = calc(r);
                   const [h, m] = (r.study_time || "").split(':').map(Number);
@@ -506,7 +505,7 @@ export default function HogwartsApp() {
                         )}
                         <td className="p-2 text-center font-black border-r bg-white text-slate-800 text-[11px] leading-tight">{row.l}</td>
                         {DAYS.map(day => {
-                          // [타입 수정] r: any 추가
+                          // [타입 방어] find 내부 r: any 지정
                           const rec = records.find((r: any) => r.student_name === name && r.day_of_week === day) || {};
                           const res = calc(rec);
                           return (
@@ -519,7 +518,7 @@ export default function HogwartsApp() {
                                 <input type="checkbox" className={`w-3.5 h-3.5 ${row.f === 'is_late' ? 'accent-amber-400' : 'accent-slate-800'} cursor-pointer mx-auto block`} checked={!!(rec as any)[row.f]} onChange={(e) => handleChange(name, day, row.f, e.target.checked)} disabled={!isAdmin} />
                               ) : row.f === 'study_time' ? (
                                 <input type="text" className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-sm placeholder-slate-200" placeholder="-" value={(rec as any).study_time || ''} 
-                                  onChange={(e) => setRecords(prev => prev.map(r => (r.student_name === name && r.day_of_week === day) ? {...r, study_time: e.target.value} : r))}
+                                  onChange={(e) => setRecords(prev => prev.map((r: any) => (r.student_name === name && r.day_of_week === day) ? {...r, study_time: e.target.value} : r))}
                                   onBlur={(e) => handleChange(name, day, 'study_time', e.target.value)} disabled={!isAdmin} />
                               ) : (
                                 <span className={`font-black text-sm ${row.f === 'penalty' && res.penalty < 0 ? 'text-red-500' : row.f === 'bonus' && res.bonus > 0 ? 'text-blue-600' : 'text-slate-900'}`}>
