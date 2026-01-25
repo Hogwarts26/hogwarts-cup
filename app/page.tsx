@@ -302,7 +302,7 @@ export default function HogwartsApp() {
           <h1 className="text-4xl font-serif font-black text-center mb-10 text-slate-800 italic uppercase">Hogwarts</h1>
           <div className="space-y-6">
             <select className="w-full p-5 border-2 rounded-2xl font-bold bg-slate-50 text-lg" value={selectedName} onChange={(e)=>setSelectedName(e.target.value)}>
-              <option value="">학생 선택</option>
+              <option value="">이름을 선택하세요</option>
               {Object.keys(studentData).sort(sortKorean).map(n => <option key={n} value={n}>{n}</option>)}
             </select>
             <input type="password" placeholder="PASSWORD" className="w-full p-5 border-2 rounded-2xl font-bold bg-slate-50 text-lg" value={password} onChange={(e)=>setPassword(e.target.value)} onKeyDown={(e)=>e.key==='Enter' && handleLogin()} />
@@ -313,103 +313,7 @@ export default function HogwartsApp() {
     );
   }
 
-  const displayList = isAdmin ? Object.keys(studentData).sort((a,b) => (HOUSE_ORDER.indexOf(studentData[a].house) - HOUSE_ORDER.indexOf(studentData[b].house)) || sortKorean(a,b)) : [selectedName];
-
-  return (
-    <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 relative">
-      <style>{GLOVAL_STYLE}</style>
-      
-      {selectedHouseNotice && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedHouseNotice(null)}>
-          <div className="relative bg-[#f4e4bc] p-6 md:p-12 w-full max-w-2xl rounded-sm shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setSelectedHouseNotice(null)} className="absolute top-2 right-2 text-slate-800 p-2 text-2xl z-20">✕</button>
-            <h3 className="text-xl md:text-3xl font-black text-[#4a3728] mb-6 text-center italic border-b border-[#4a3728]/20 pb-4 shrink-0 px-4">
-              {HOUSE_NOTICES[selectedHouseNotice]?.title}
-            </h3>
-            <div className="overflow-y-auto pr-2 custom-scrollbar text-base md:text-lg leading-relaxed text-[#5d4037] whitespace-pre-wrap font-medium">
-              {HOUSE_NOTICES[selectedHouseNotice]?.content}
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="max-w-[1100px] mx-auto mb-8">
-        <div className="flex justify-between items-center mb-6 uppercase italic font-black text-slate-800 text-2xl">
-          <h2>Hogwarts House Cup</h2>
-          <div className="flex gap-2">
-            {isAdmin && <button onClick={resetWeeklyData} className="text-[10px] text-white bg-red-600 px-3 py-1.5 rounded-full">RESET</button>}
-            <button onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} className="text-[10px] text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full">LOGOUT</button>
-          </div>
-        </div>
-        <div className="grid grid-cols-4 gap-1.5 md:gap-4">
-          {houseRankings.map((item, idx) => {
-            const cfg = (HOUSE_CONFIG as any)[item.house];
-            return (
-              <div key={item.house} onClick={() => setSelectedHouseNotice(item.house)} className={`${cfg.bg} ${cfg.border} ${idx === 0 ? 'winner-sparkle ring-4 ring-yellow-400' : ''} border-b-4 p-1.5 md:p-5 rounded-xl md:rounded-[2rem] text-white cursor-pointer`}>
-                <div className="flex justify-between items-start mb-1">
-                  <div className="text-[7px] md:text-xs font-black opacity-90">{item.house}</div>
-                  <div className={`text-[8px] md:text-[10px] font-black px-1.5 py-0.5 rounded-full ${cfg.accent} text-slate-900`}>{idx+1}st</div>
-                </div>
-                <div className="text-lg md:text-4xl font-black">{item.finalPoint.toFixed(1)}</div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border">
-        <div className="bg-slate-900 p-4 px-6 md:px-8 flex flex-col md:flex-row justify-between items-center text-white gap-4">
-          <div className="flex flex-col w-full md:w-auto">
-            <span className="text-[10px] font-black text-yellow-500 uppercase flex items-center gap-2 mb-1">
-              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-              {isAdmin ? "Headmaster Console" : currentTime.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}
-            </span>
-            {!isAdmin && (
-              <div className="flex items-center gap-2 bg-slate-800/50 p-2 rounded-xl border border-white/10">
-                <span className="text-[10px] font-black text-yellow-500">GOAL:</span>
-                {isEditingGoal ? (
-                  <div className="flex gap-1"><input className="bg-transparent border-b border-yellow-500/50 text-xs font-bold w-40 text-white outline-none" placeholder="목표 입력" value={goal} onChange={(e)=>setGoal(e.target.value)} /><button onClick={handleSaveGoal} className="text-[9px] bg-yellow-500 text-slate-900 px-2 py-1 rounded">저장</button></div>
-                ) : (
-                  <div className="flex gap-2"><span className="text-xs font-bold">{goal || "설정 없음"}</span><button onClick={()=>setIsEditingGoal(true)} className="text-[9px] underline opacity-50">수정</button></div>
-                )}
-              </div>
-            )}
-          </div>
-          {isSaving && <div className="text-[9px] text-yellow-500 font-bold animate-bounce">CASTING SPELLS...</div>}
-        </div>
-
-        <div className="w-full overflow-x-auto">
-          <table className="min-w-[850px] w-full border-collapse table-fixed">
-            <thead>
-              <tr className="bg-slate-50 text-slate-500 uppercase font-black text-[11px] border-b-2">
-                <th className="w-28 p-2 sticky left-0 bg-slate-50 z-20 border-r">학생명</th>
-                <th className="w-20 p-2 border-r">항목</th>
-                {DAYS.map(d => <th key={d} className="w-16 p-2 text-slate-900">{d}</th>)}
-                <th className="w-24 p-2 bg-slate-100">공부시간</th>
-                <th className="w-16 p-2 bg-slate-100 border-l">월휴</th>
-              </tr>
-            </thead>
-            <tbody>
-              {displayList.map(name => {
-                const info = studentData[name];
-                const monRec = records.find((r: any) => r.student_name === name && r.day_of_week === '월') || {};
-                const offCount = (monRec as any).monthly_off_count ?? 4;
-                const rows = [{l:'휴무',f:'off_type'},{l:'지각',f:'is_late'},{l:'오전3H',f:'am_3h'},{l:'공부시간',f:'study_time'},{l:'벌점',f:'penalty'},{l:'상점',f:'bonus'},{l:'총점',f:'total'}];
-                let totalMin = 0, totalPts = 0;
-                records.filter((r: any) => r.student_name === name).forEach((r: any) => {
-                  const res = calc(r); const [h, m] = (r.study_time || "").split(':').map(Number);
-                  totalMin += (isNaN(h) ? 0 : h * 60) + (isNaN(m) ? 0 : m); totalPts += res.total;
-                });
-
-                return (
-                  <React.Fragment key={name}>
-                    {rows.map((row, rIdx) => (
-                      <tr key={row.l} className={`${rIdx === 6 ? "border-b-[6px] border-slate-100" : "border-b border-slate-50"}`}>
-                        {rIdx === 0 && (
-                          <td rowSpan={7} className={`p-4 text-center sticky left-0 z-20 font-bold border-r-[3px] ${info.color} ${info.text}`}>
-                            <div className="text-3xl mb-1">{info.emoji}</div>
-                            <div className="text-sm font-black mb-1 break-keep">{name.replace(info.emoji, "")}</div>
-                            <button onClick={async () => { const pw = prompt("새 PW(4자리)"); if(pw) await handleChange(name, '월', 'password', pw); }} className="text-[8px] underline opacity-40">PW 변경</button>
+  const displayList = isAdmin ? Object.keys(studentData).sort((a,b) => (HOUSE_ORDER.indexOf운 비밀번호를 입력하세요"); if(pw) await handleChange(name, '월', 'password', pw); }} className="text-[8px] underline opacity-40">PW 변경</button>
                           </td>
                         )}
                         <td className="p-2 text-center font-black border-r text-[11px]">{row.l}</td>
