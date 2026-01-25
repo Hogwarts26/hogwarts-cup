@@ -369,7 +369,7 @@ export default function HogwartsApp() {
 
           {!isAdmin && (
             <div className="flex items-center gap-3 pt-1 border-t border-white/10 mt-1">
-              <span className="text-[9px] font-black text-white/40 uppercase shrink-0">Today's Goal</span>
+              <span className="text-[9px] font-black text-white/40 uppercase shrink-0">Goal</span>
               {isEditingGoal ? (
                 <div className="flex items-center gap-2 flex-1">
                   <input 
