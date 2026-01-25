@@ -157,11 +157,11 @@ export default function HogwartsApp() {
     const { data } = await supabase.from('study_records').select('*');
     if (data) {
       setRecords(data);
-      // 로그인한 사용자의 오늘 목표 불러오기
       const todayK = DAYS[(new Date().getDay() + 6) % 7];
+      // [타입 수정] r: any 추가하여 빌드 에러 방지
       const myTodayRec = data.find((r: any) => r.student_name === selectedName && r.day_of_week === todayK);
-      if (myTodayRec && myTodayRec.goal) {
-        setGoal(myTodayRec.goal);
+      if (myTodayRec && (myTodayRec as any).goal) {
+        setGoal((myTodayRec as any).goal);
         setIsEditingGoal(false);
       } else {
         setGoal("");
@@ -190,8 +190,6 @@ export default function HogwartsApp() {
     if (!selectedName) return;
     setIsSaving(true);
     const todayK = DAYS[(new Date().getDay() + 6) % 7];
-    
-    // 기존 레코드 찾기 (다른 필드값 보존 위해)
     const existing = records.find((r: any) => r.student_name === selectedName && r.day_of_week === todayK) || {};
 
     const { error } = await supabase.from('study_records').upsert({
@@ -199,7 +197,7 @@ export default function HogwartsApp() {
       student_name: selectedName,
       day_of_week: todayK,
       goal: goal,
-      password: existing.password || '0000'
+      password: (existing as any).password || '0000'
     }, { onConflict: 'student_name,day_of_week' });
 
     if (!error) {
@@ -221,7 +219,7 @@ export default function HogwartsApp() {
       student_name: selectedName,
       day_of_week: todayK,
       goal: "",
-      password: existing.password || '0000'
+      password: (existing as any).password || '0000'
     }, { onConflict: 'student_name,day_of_week' });
 
     if (!error) {
@@ -244,7 +242,7 @@ export default function HogwartsApp() {
         const existing = records.find((r: any) => r.student_name === name && r.day_of_week === day) || {};
         resetData.push({
           student_name: name, day_of_week: day, off_type: '-', is_late: false, am_3h: false, study_time: '',
-          password: existing.password || '0000', monthly_off_count: existing.monthly_off_count ?? 4, goal: ''
+          password: (existing as any).password || '0000', monthly_off_count: (existing as any).monthly_off_count ?? 4, goal: ''
         });
       }
     }
@@ -279,6 +277,7 @@ export default function HogwartsApp() {
       let tScore = 0, tH = 0;
       students.forEach(name => {
         DAYS.forEach(day => {
+          // [타입 수정] r: any 추가
           const res = calc(records.find((r: any) => r.student_name === name && r.day_of_week === day));
           tScore += res.total; tH += res.studyH;
         });
@@ -304,8 +303,8 @@ export default function HogwartsApp() {
       const updatedData = { 
         ...current,
         student_name: name, day_of_week: day, [field]: value, 
-        password: current.password || '0000', 
-        monthly_off_count: field === 'monthly_off_count' ? value : (current.monthly_off_count ?? 4)
+        password: (current as any).password || '0000', 
+        monthly_off_count: field === 'monthly_off_count' ? value : ((current as any).monthly_off_count ?? 4)
       };
       
       if (field === 'monthly_off_count') {
@@ -421,7 +420,6 @@ export default function HogwartsApp() {
               {isAdmin ? "Headmaster Console" : currentTime.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}
               {!isAdmin && <span className="text-white ml-2">{currentTime.toLocaleTimeString('ko-KR', { hour12: false })}</span>}
             </span>
-            {/* 오늘의 목표 영역 */}
             {!isAdmin && (
               <div className="flex items-center gap-2 mt-2 bg-slate-800/50 p-2 rounded-xl border border-white/10 w-full md:w-auto">
                 <span className="text-[10px] font-black text-yellow-500 shrink-0">GOAL:</span>
@@ -465,12 +463,14 @@ export default function HogwartsApp() {
             <tbody>
               {displayList.map(name => {
                 const info = studentData[name];
+                // [타입 수정] r: any 추가
                 const monRec = records.find((r: any) => r.student_name === name && r.day_of_week === '월') || {};
-                const offCount = monRec.monthly_off_count ?? 4;
+                const offCount = (monRec as any).monthly_off_count ?? 4;
                 const rows = [{l:'휴무',f:'off_type'},{l:'지각',f:'is_late'},{l:'오전3H',f:'am_3h'},{l:'공부시간',f:'study_time'},{l:'벌점',f:'penalty'},{l:'상점',f:'bonus'},{l:'총점',f:'total'}];
                 
                 let totalTimeMinutes = 0;
                 let totalPointsSum = 0;
+                // [타입 수정] r: any 추가
                 records.filter((r: any) => r.student_name === name).forEach((r: any) => {
                   const res = calc(r);
                   const [h, m] = (r.study_time || "").split(':').map(Number);
@@ -506,18 +506,19 @@ export default function HogwartsApp() {
                         )}
                         <td className="p-2 text-center font-black border-r bg-white text-slate-800 text-[11px] leading-tight">{row.l}</td>
                         {DAYS.map(day => {
+                          // [타입 수정] r: any 추가
                           const rec = records.find((r: any) => r.student_name === name && r.day_of_week === day) || {};
                           const res = calc(rec);
                           return (
-                            <td key={day} className={`p-1.5 text-center border-r border-slate-50 ${row.f === 'off_type' ? getCellBg(rec.off_type) : ''}`}>
+                            <td key={day} className={`p-1.5 text-center border-r border-slate-50 ${row.f === 'off_type' ? getCellBg((rec as any).off_type) : ''}`}>
                               {row.f === 'off_type' ? (
-                                <select className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-[10px] cursor-pointer" value={rec.off_type || '-'} onChange={(e) => handleChange(name, day, 'off_type', e.target.value)} disabled={!isAdmin}>
+                                <select className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-[10px] cursor-pointer" value={(rec as any).off_type || '-'} onChange={(e) => handleChange(name, day, 'off_type', e.target.value)} disabled={!isAdmin}>
                                   {OFF_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
                                 </select>
                               ) : (row.f === 'is_late' || row.f === 'am_3h') ? (
-                                <input type="checkbox" className={`w-3.5 h-3.5 ${row.f === 'is_late' ? 'accent-amber-400' : 'accent-slate-800'} cursor-pointer mx-auto block`} checked={!!rec[row.f]} onChange={(e) => handleChange(name, day, row.f, e.target.checked)} disabled={!isAdmin} />
+                                <input type="checkbox" className={`w-3.5 h-3.5 ${row.f === 'is_late' ? 'accent-amber-400' : 'accent-slate-800'} cursor-pointer mx-auto block`} checked={!!(rec as any)[row.f]} onChange={(e) => handleChange(name, day, row.f, e.target.checked)} disabled={!isAdmin} />
                               ) : row.f === 'study_time' ? (
-                                <input type="text" className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-sm placeholder-slate-200" placeholder="-" value={rec.study_time || ''} 
+                                <input type="text" className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-sm placeholder-slate-200" placeholder="-" value={(rec as any).study_time || ''} 
                                   onChange={(e) => setRecords(prev => prev.map(r => (r.student_name === name && r.day_of_week === day) ? {...r, study_time: e.target.value} : r))}
                                   onBlur={(e) => handleChange(name, day, 'study_time', e.target.value)} disabled={!isAdmin} />
                               ) : (
