@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from './supabase';
 
-// [수정사항] 1등 기숙사를 위한 ✨ 반짝임 마법 효과 추가
+// [수정사항] 1등 기숙사를 위한 역동적인 ✨ 반짝임(Sparkle) 효과 정의
 const GLOVAL_STYLE = `
   @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
   body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif; }
@@ -10,25 +10,35 @@ const GLOVAL_STYLE = `
   .winner-sparkle {
     position: relative;
     overflow: hidden;
-    box-shadow: 0 0 20px rgba(234, 179, 8, 0.3);
+    animation: winner-glow 2s infinite alternate;
   }
 
-  .winner-sparkle::before, .winner-sparkle::after {
-    content: '✨';
+  /* 별 모양 빛줄기 공통 스타일 */
+  .winner-sparkle::before, .winner-sparkle::after, .sparkle-extra {
+    content: '';
     position: absolute;
-    font-size: 1.2rem;
+    width: 14px;
+    height: 14px;
+    background: white;
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
     opacity: 0;
-    animation: sparkle-magic 2.5s infinite;
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.9));
     pointer-events: none;
+    z-index: 5;
   }
 
-  .winner-sparkle::before { top: 10%; left: 15%; animation-delay: 0s; }
-  .winner-sparkle::after { bottom: 15%; right: 20%; animation-delay: 1.2s; }
+  .winner-sparkle::before { top: 15%; left: 15%; animation: sparkle-flash 2s infinite; }
+  .winner-sparkle::after { bottom: 20%; right: 20%; animation: sparkle-flash 2.3s infinite 0.7s; }
+  .sparkle-extra { top: 40%; left: 70%; animation: sparkle-flash 1.8s infinite 1.2s; }
 
-  @keyframes sparkle-magic {
-    0% { transform: scale(0) rotate(0deg); opacity: 0; }
+  @keyframes sparkle-flash {
+    0%, 100% { transform: scale(0) rotate(0deg); opacity: 0; }
     50% { transform: scale(1.2) rotate(180deg); opacity: 1; }
-    100% { transform: scale(0) rotate(360deg); opacity: 0; }
+  }
+
+  @keyframes winner-glow {
+    from { box-shadow: 0 0 10px rgba(255, 215, 0, 0.3), inset 0 0 10px rgba(255, 255, 255, 0.1); }
+    to { box-shadow: 0 0 25px rgba(255, 215, 0, 0.6), inset 0 0 20px rgba(255, 255, 255, 0.2); }
   }
 `;
 
@@ -312,11 +322,15 @@ export default function HogwartsApp() {
           {houseRankings.map((item, idx) => {
             const config = (HOUSE_CONFIG as any)[item.house];
             const rankLabel = ["1st", "2nd", "3rd", "4th"][idx];
-            // [수정사항] 1등 카드만 winner-sparkle 마법 효과 적용
-            const specialEffect = idx === 0 ? "winner-sparkle ring-4 ring-yellow-400/50 scale-105 z-10" : idx === 1 ? "ring-1 ring-slate-300" : "opacity-80";
+            // [수정사항] 1등 카드만 winner-sparkle 효과 및 추가 별빛 요소 적용
+            const isFirst = idx === 0;
+            const specialEffect = isFirst 
+              ? "winner-sparkle scale-105 z-10 ring-4 ring-yellow-400" 
+              : idx === 1 ? "ring-1 ring-slate-300" : "opacity-80";
             
             return (
               <div key={item.house} onClick={() => setSelectedHouseNotice(item.house)} className={`${config.bg} ${config.border} ${specialEffect} border-b-4 p-1.5 md:p-5 rounded-xl md:rounded-[2rem] text-white shadow-xl relative overflow-hidden cursor-pointer active:scale-95 transition-all hover:brightness-110`}>
+                {isFirst && <div className="sparkle-extra"></div>}
                 <div className="absolute right-[-10px] bottom-[-10px] text-5xl opacity-20">{config.icon}</div>
                 <div className="flex justify-between items-start mb-1">
                   <div className="text-[7px] md:text-xs font-black opacity-90 uppercase">{item.house}</div>
