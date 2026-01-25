@@ -185,13 +185,15 @@ export default function HogwartsApp() {
     return () => clearInterval(timer);
   }, []);
 
+  // 1. [수정] 목표 불러오기: 요일 필터 없이 학생의 데이터 중 목표가 있는 것을 찾아옵니다.
   const fetchRecords = async () => {
     const { data } = await supabase.from('study_records').select('*');
     if (data) {
       setRecords(data);
-      const todayStr = DAYS[(new Date().getDay() + 6) % 7];
-      const myTodayRec = data.find(r => r.student_name === selectedName && r.day_of_week === todayStr);
-      setDailyGoal(myTodayRec?.goal || "");
+      // 현재 학생의 모든 요일 기록 중 goal이 비어있지 않은 첫 번째 데이터를 찾음
+      const myRecords = data.filter(r => r.student_name === selectedName);
+      const savedGoal = myRecords.find(r => r.goal && r.goal !== "")?.goal || "";
+      setDailyGoal(savedGoal);
     }
   };
 
@@ -209,6 +211,7 @@ export default function HogwartsApp() {
     localStorage.setItem('hg_auth', JSON.stringify({ name: selectedName, admin }));
   };
 
+  // 2. [수정] 주간 리셋: 기록은 초기화하되 기존의 goal(목표)은 유지합니다.
   const resetWeeklyData = async () => {
     if (!confirm("⚠️ 주의: 모든 학생의 이번 주 공부 기록을 초기화하시겠습니까?")) return;
     if (!confirm("정말로 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) return;
@@ -219,14 +222,21 @@ export default function HogwartsApp() {
       for (const day of DAYS) {
         const existing = records.find(r => r.student_name === name && r.day_of_week === day) || {};
         resetData.push({
-          student_name: name, day_of_week: day, off_type: '-', is_late: false, am_3h: false, study_time: '',
-          password: existing.password || '0000', monthly_off_count: existing.monthly_off_count ?? 4,
-          goal: ''
+          student_name: name, 
+          day_of_week: day, 
+          off_type: '-', 
+          is_late: false, 
+          am_3h: false, 
+          study_time: '',
+          password: existing.password || '0000', 
+          monthly_off_count: existing.monthly_off_count ?? 4,
+          goal: existing.goal || '' // ★ 기존 목표가 있다면 유지, 없다면 공백
         });
       }
     }
     const { error } = await supabase.from('study_records').upsert(resetData, { onConflict: 'student_name,day_of_week' });
-    if (!error) { setRecords(resetData); setDailyGoal(""); alert("✅ 초기화되었습니다."); }
+    // 초기화 후 dailyGoal 상태를 ""로 만들지 않고 유지합니다.
+    if (!error) { setRecords(resetData); alert("✅ 기록이 초기화되었습니다. (목표 유지)"); }
     setIsSaving(false);
   };
 
@@ -265,37 +275,56 @@ export default function HogwartsApp() {
     }).sort((a, b) => b.finalPoint - a.finalPoint);
   }, [records]);
 
+  // 3. [수정] 데이터 변경: 목표(goal) 수정 시 모든 요일에 동일하게 저장합니다.
   const handleChange = async (name: string, day: string, field: string, value: any) => {
     if (!isAdmin && field !== 'password' && field !== 'goal') return;
     setIsSaving(true);
+
     if (field === 'password') {
       const { error } = await supabase.from('study_records').upsert(
         DAYS.map(d => ({ student_name: name, day_of_week: d, password: value })),
         { onConflict: 'student_name,day_of_week' }
       );
       if (!error) { setRecords(prev => prev.map(r => r.student_name === name ? { ...r, password: value } : r)); alert("비밀번호가 성공적으로 변경되었습니다"); }
-    } else {
+    } 
+    else if (field === 'goal') {
+      // ★ 목표 저장 로직: 학생의 모든 요일 레코드에 동일한 goal 저장
+      const updatePayload = DAYS.map(d => {
+        const existing = records.find(r => r.student_name === name && r.day_of_week === d) || {};
+        return { 
+          ...existing, 
+          student_name: name, 
+          day_of_week: d, 
+          goal: value,
+          password: existing.password || '0000',
+          monthly_off_count: existing.monthly_off_count ?? 4
+        };
+      });
+      const { error } = await supabase.from('study_records').upsert(updatePayload, { onConflict: 'student_name,day_of_week' });
+      if (!error) {
+        setRecords(prev => prev.map(r => r.student_name === name ? { ...r, goal: value } : r));
+        setDailyGoal(value);
+      }
+    }
+    else {
+      // 일반 기록 수정 (기존 로직 유지)
       const newRecords = [...records];
       const idx = newRecords.findIndex(r => r.student_name === name && r.day_of_week === day);
       const current = newRecords[idx] || {};
       const updatedData = { 
+        ...current,
         student_name: name, day_of_week: day, [field]: value, 
         password: current.password || '0000', 
         monthly_off_count: field === 'monthly_off_count' ? value : (current.monthly_off_count ?? 4)
       };
       
-      if (field === 'monthly_off_count') {
-        setRecords(prev => prev.map(r => r.student_name === name ? { ...r, monthly_off_count: value } : r));
-        await supabase.from('study_records').upsert(updatedData, { onConflict: 'student_name,day_of_week' });
-      } else if (idx > -1) {
-        newRecords[idx] = { ...newRecords[idx], ...updatedData };
-        setRecords(newRecords);
-        await supabase.from('study_records').upsert(updatedData, { onConflict: 'student_name,day_of_week' });
+      if (idx > -1) {
+        newRecords[idx] = updatedData;
       } else {
         newRecords.push(updatedData);
-        setRecords(newRecords);
-        await supabase.from('study_records').upsert(updatedData, { onConflict: 'student_name,day_of_week' });
       }
+      setRecords(newRecords);
+      await supabase.from('study_records').upsert(updatedData, { onConflict: 'student_name,day_of_week' });
     }
     setIsSaving(false);
   };
@@ -406,8 +435,7 @@ export default function HogwartsApp() {
                   />
                   <button 
                     onClick={() => {
-                      const todayStr = DAYS[(new Date().getDay() + 6) % 7];
-                      handleChange(selectedName, todayStr, 'goal', dailyGoal);
+                      handleChange(selectedName, '월', 'goal', dailyGoal);
                       setIsEditingGoal(false);
                     }}
                     className="text-[10px] font-black text-yellow-500 shrink-0 px-2"
@@ -424,8 +452,7 @@ export default function HogwartsApp() {
                       <button 
                         onClick={() => {
                           if (confirm("삭제하시겠습니까?")) {
-                            const todayStr = DAYS[(new Date().getDay() + 6) % 7];
-                            handleChange(selectedName, todayStr, 'goal', '');
+                            handleChange(selectedName, '월', 'goal', '');
                             setDailyGoal("");
                             alert("삭제되었습니다.");
                           }
