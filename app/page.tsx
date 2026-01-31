@@ -708,7 +708,6 @@ export default function HogwartsApp() {
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight">Hogwarts School</h2>
           <div className="flex gap-2">
-            
             {/* 음악 재생 버튼 추가 */}
             <button 
               onClick={toggleMusic} 
