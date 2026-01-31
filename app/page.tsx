@@ -605,21 +605,21 @@ export default function HogwartsApp() {
         </div>
       )}
 
-      {/* --- 학생 개인 주간 요약 카드 (레이아웃 최적화) --- */}
+      {/* --- 학생 개인 주간 요약 카드 (이모지 상단 배치 & 색상 톤 매칭 수정) --- */}
       {selectedStudentReport && studentData[selectedStudentReport] && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
           <div className="bg-white p-6 md:p-10 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-8 mb-8">
-              {/* 왼쪽: 로고 크게 배치 (첫 번째 이미지 스타일) */}
+              {/* 왼쪽: 로고 크게 배치 */}
               <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="Logo" className="w-28 h-28 object-contain drop-shadow-sm" />
               
-              {/* 오른쪽: 이름, 기숙사, 시간 세로 정렬 */}
+              {/* 오른쪽: 이모지 크게(위), 이름 작게(아래) 정렬 */}
               <div className="flex flex-col justify-center">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="font-black text-3xl text-slate-800 tracking-tight">{formatDisplayName(selectedStudentReport)}</span>
-                  <span className="text-2xl">{studentData[selectedStudentReport].emoji}</span>
+                <div className="flex flex-col mb-2">
+                  <span className="text-4xl mb-1">{studentData[selectedStudentReport].emoji}</span>
+                  <span className="font-black text-2xl text-slate-800 tracking-tight leading-none">{formatDisplayName(selectedStudentReport)}</span>
                 </div>
-                <div className="text-[14px] font-bold text-slate-400 mb-2">{studentData[selectedStudentReport].house}</div>
+                <div className="text-[13px] font-bold text-slate-400 mb-2">{studentData[selectedStudentReport].house}</div>
                 <div className="text-5xl font-black text-slate-900 tracking-tighter leading-tight">{calculateWeeklyTotal(selectedStudentReport)}</div>
                 <div className="text-[12px] font-bold text-slate-300 italic">{getWeeklyDateRange()}</div>
               </div>
@@ -628,17 +628,29 @@ export default function HogwartsApp() {
             <div className="grid grid-cols-4 gap-2.5 mb-2">
               {DAYS.map(day => {
                 const rec = records.find(r => r.student_name === selectedStudentReport && r.day_of_week === day) || {};
-                const getCellBg = (val: string) => {
-                  if (['반휴','월반휴','늦반휴','늦월반휴'].includes(val)) return 'bg-green-100/50';
-                  if (['주휴','월휴','늦휴','늦월휴'].includes(val)) return 'bg-blue-100/50';
-                  if (val === '결석') return 'bg-red-100/50';
-                  return 'bg-slate-50';
-                };
+                
+                // 배경색과 글자색 매칭 로직 (반휴:초록계열, 주휴:파란계열)
+                const isGreen = ['반휴','월반휴','늦반휴','늦월반휴'].includes(rec.off_type);
+                const isBlue = ['주휴','월휴','늦휴','늦월휴'].includes(rec.off_type);
+                const isRed = rec.off_type === '결석';
+                
+                const cellClass = isGreen ? 'bg-green-100/60 border-green-200' 
+                                : isBlue ? 'bg-blue-100/60 border-blue-200'
+                                : isRed ? 'bg-red-100/60 border-red-200'
+                                : 'bg-slate-50 border-slate-100';
+                                
+                const textClass = isGreen ? 'text-green-700'
+                                : isBlue ? 'text-blue-700'
+                                : isRed ? 'text-red-700'
+                                : 'text-slate-400';
+
                 return (
-                  <div key={day} className={`p-2.5 flex flex-col items-center justify-between h-24 rounded-2xl border border-slate-100 shadow-sm transition-all ${getCellBg(rec.off_type)}`}>
-                    <div className="text-[10px] font-bold text-slate-400">{getDayDate(day)} {day}</div>
+                  <div key={day} className={`p-2.5 flex flex-col items-center justify-between h-24 rounded-2xl border shadow-sm transition-all ${cellClass}`}>
+                    <div className={`text-[10px] font-bold ${textClass}`}>{getDayDate(day)} {day}</div>
                     <div className="text-[18px] font-black text-slate-800">{rec.study_time || "0:00"}</div>
-                    <div className="text-[9px] font-black text-indigo-500 h-3 leading-none uppercase">{['반휴','월반휴','주휴','결석'].includes(rec.off_type) ? rec.off_type : ""}</div>
+                    <div className={`text-[9px] font-black h-3 leading-none uppercase ${textClass}`}>
+                      {['반휴','월반휴','주휴','결석'].includes(rec.off_type) ? rec.off_type : ""}
+                    </div>
                   </div>
                 );
               })}
@@ -653,7 +665,7 @@ export default function HogwartsApp() {
         </div>
       )}
 
-      {/* --- 상단 기스크 점수판(대시보드) --- */}
+      {/* --- 이하 상단 점수판 및 메인 테이블 (수정 없음) --- */}
       <div className="max-w-[1100px] mx-auto mb-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight">Hogwarts House Cup</h2>
@@ -682,7 +694,6 @@ export default function HogwartsApp() {
         </div>
       </div>
 
-      {/* --- 학습 기록 메인 테이블 --- */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
         <div className="bg-slate-900 p-4 px-6 md:px-8 flex flex-col gap-2 text-white min-h-[60px]">
           <div className="flex justify-between items-center w-full">
