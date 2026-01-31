@@ -375,7 +375,8 @@ export default function HogwartsApp() {
     const diff = today.getDate() - (day === 0 ? 6 : day - 1);
     const monday = new Date(new Date().setDate(diff));
     const sunday = new Date(new Date().setDate(diff + 6));
-    return `${monday.getMonth() + 1}.${monday.getDate()} - ${sunday.getMonth() + 1}.${sunday.getDate()}`;
+    // 출력 형식 수정: M.D - M.D -> M월 D일 ~ M월 D일
+    return `${monday.getMonth() + 1}월 ${monday.getDate()}일 ~ ${sunday.getMonth() + 1}월 ${sunday.getDate()}일`;
   };
 
   const getDayDate = (targetDay: string) => {
@@ -614,33 +615,33 @@ export default function HogwartsApp() {
 {/* --- 학생 개인 주간 요약 카드 (레이아웃 고도화) --- */}
       {selectedStudentReport && studentData[selectedStudentReport] && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
-          <div className="bg-white p-5 md:px-10 md:py-6 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+          <div className="bg-white p-5 md:px-10 md:py-8 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             
-            {/* 가로 배치를 유지하며 모바일에서 요소들이 비율에 맞게 줄어들도록 설정 */}
-            <div className="flex items-center justify-center gap-1 md:gap-4 mb-4 w-full">
-              {/* 왼쪽: 로고 크기를 다시 크게(w-36) 설정하되, 모바일에서 최소 크기를 보장하며 유연하게 조절 */}
-              <div className="flex-shrink-0 w-[40%] flex justify-end">
+            {/* 상단: 로고와 텍스트 밀착 배치 (비율 조정 및 여백 제거) */}
+            <div className="flex items-center justify-center mb-6 w-full">
+              {/* 왼쪽: 로고를 이전보다 훨씬 크게(w-44) 설정하고 오른쪽으로 밀착 */}
+              <div className="w-[45%] flex justify-end">
                 <img 
                   src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} 
                   alt="Logo" 
-                  className="w-32 h-32 md:w-40 md:h-40 object-contain drop-shadow-sm" 
+                  className="w-36 h-36 md:w-44 md:h-44 object-contain drop-shadow-md" 
                 />
               </div>
               
-              {/* 오른쪽: 이모지, 이름, 공부시간 뭉치 */}
-              <div className="flex-shrink-0 w-[60%] flex flex-col justify-center items-center text-center">
-                <div className="flex flex-col mb-1.5 items-center">
+              {/* 오른쪽: 이모지, 이름, 공부시간 뭉치를 왼쪽으로 밀착 */}
+              <div className="w-[55%] flex flex-col justify-center items-center text-center">
+                <div className="flex flex-col mb-1 items-center">
                   <span className="text-4xl md:text-5xl mb-1">{studentData[selectedStudentReport].emoji}</span>
-                  <span className="font-bold text-[10px] md:text-sm text-slate-400 tracking-tight leading-none">{formatDisplayName(selectedStudentReport)}</span>
+                  <span className="font-bold text-xs md:text-sm text-slate-400 tracking-tight leading-none">{formatDisplayName(selectedStudentReport)}</span>
                 </div>
-                <div className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter leading-tight italic">
+                <div className="text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-tight italic">
                   {calculateWeeklyTotal(selectedStudentReport)}
                 </div>
               </div>
             </div>
 
-            {/* 주간 날짜: 하단 표와 가깝게 배치 (위치 유지) */}
-            <div className="text-lg md:text-xl font-black text-black italic mb-2 text-center tracking-tight">
+            {/* 주간 날짜: [10]번에서 수정한 형식이 반영되며, 폰트 크기를 키움 */}
+            <div className="text-xl md:text-2xl font-black text-black italic mb-4 text-center tracking-tight">
               {getWeeklyDateRange()}
             </div>
             
@@ -770,7 +771,7 @@ export default function HogwartsApp() {
                             <div className="text-3xl mb-1">{info.emoji}</div>
                             <div className="leading-tight text-sm font-black mb-1 break-keep">{formatDisplayName(name)}</div>
                             <div className="text-[9px] font-black opacity-70 mb-2">{info.house}</div>
-                            <button onClick={(e) => { e.stopPropagation(); prompt("변경할 비밀번호를 입력하세요 (숫자4자리)"); }} className="text-[8px] underline opacity-40 block mx-auto">PW 변경</button>
+                            <button onClick={(e) => { e.stopPropagation(); prompt("변경할 비밀번호를 입력하세요. (숫자4자리)"); }} className="text-[8px] underline opacity-40 block mx-auto">PW 변경</button>
                           </td>
                         )}
                         {DAYS.map(day => {
