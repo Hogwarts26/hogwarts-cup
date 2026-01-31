@@ -330,9 +330,11 @@ export default function HogwartsApp() {
     let bonus = 0;
     let penalty = 0;
     let usedWeeklyOff = 0;   // 주간 휴무 (1.5 기준)
-    let usedMonthlyOff = 0;  // 월간 휴무 (2.0 기준)
+    // usedMonthlyOff 변수는 이제 직접적인 연동을 위해 사용하지 않거나, 초기화만 유지합니다.
 
-    records.filter(r => r.student_name === name).forEach(r => {
+    const studentRecords = records.filter(r => r.student_name === name);
+
+    studentRecords.forEach(r => {
       const res = calc(r);
       bonus += res.bonus;
       penalty += res.penalty;
@@ -340,17 +342,19 @@ export default function HogwartsApp() {
       // 주간 휴무 계산: 반휴=0.5, 주휴=1.0 (지각휴무 포함)
       if (['반휴', '늦반휴'].includes(r.off_type)) usedWeeklyOff += 0.5;
       if (['주휴', '늦휴'].includes(r.off_type)) usedWeeklyOff += 1.0;
-
-      // 월간 휴무 계산: 월반휴=0.5, 월휴=1.0 (지각월휴 포함)
-      if (['월반휴', '늦월반휴'].includes(r.off_type)) usedMonthlyOff += 0.5;
-      if (['월휴', '늦월휴'].includes(r.off_type)) usedMonthlyOff += 1.0;
     });
+
+    // [수정 요청 사항 반영] 잔여 월휴 연동: 
+    // 테이블 우측의 월휴 동그라미(monthly_off_count) 값을 직접 가져옵니다.
+    const monRec = studentRecords.find(r => r.day_of_week === '월');
+    const offCount = monRec?.monthly_off_count ?? 4;
 
     return { 
       bonus, 
       penalty,
       remainingWeeklyOff: (1.5 - usedWeeklyOff).toFixed(1).replace('.0', ''),
-      remainingMonthlyOff: (2.0 - usedMonthlyOff).toFixed(1).replace('.0', '')
+      // 2.0 고정 차감이 아닌, 체크된 동그라미 개수당 0.5일로 계산하여 표시
+      remainingMonthlyOff: (offCount * 0.5).toFixed(1).replace('.0', '')
     };
   };
 
@@ -383,7 +387,6 @@ export default function HogwartsApp() {
     return `${target.getMonth() + 1}.${target.getDate()}`;
   };
 
-  // [수정] 이번 주 시간이 아닌 데이터상의 전체 누적 시간을 계산하도록 변경
   const getMonthAccumulatedTime = (name: string) => {
     const currentMonth = new Date().getMonth() + 1;
     let totalMinutes = 0;
@@ -598,7 +601,7 @@ export default function HogwartsApp() {
         </div>
       )}
 
-      {/* --- 학생 개인 주간 요약 카드 (디자인 & 누적 로직 수정본) --- */}
+      {/* --- 학생 개인 주간 요약 카드 --- */}
       {selectedStudentReport && studentData[selectedStudentReport] && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
           <div className="bg-white p-8 w-full max-w-lg shadow-[0_20px_50px_rgba(0,0,0,0.2)] relative rounded-[2.5rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
@@ -608,7 +611,7 @@ export default function HogwartsApp() {
                 <div className="text-center">
                   {/* 상단 큰 이모지만 유지 */}
                   <div className="text-4xl mb-1">{studentData[selectedStudentReport].emoji}</div>
-                  {/* 이름 아래 중복 이모지 제거, 글자만 표시 */}
+                  {/* 이름 부분에서 중복 이모지 제거 및 깔끔하게 이름만 표시 */}
                   <div className="font-black text-xl text-slate-800 tracking-tight">{selectedStudentReport}</div>
                 </div>
               </div>
@@ -619,7 +622,6 @@ export default function HogwartsApp() {
             </div>
             <div className="text-center text-[#737373] font-bold text-sm mb-4 italic">{getWeeklyDateRange()}</div>
             
-            {/* 내부 칸들도 둥근 사각형 처리 */}
             <div className="grid grid-cols-4 gap-2 mb-8">
               {DAYS.map(day => {
                 const rec = records.find(r => r.student_name === selectedStudentReport && r.day_of_week === day) || {};
@@ -637,23 +639,12 @@ export default function HogwartsApp() {
                   </div>
                 );
               })}
-              {/* 상벌점 및 휴무 칸 라운드 처리 */}
               <div className="p-3 text-[11px] font-bold leading-relaxed flex flex-col justify-center bg-slate-900 text-white rounded-2xl shadow-lg">
                 <div>상점 {calculatePoints(selectedStudentReport).bonus}</div>
                 <div>벌점 {calculatePoints(selectedStudentReport).penalty}</div>
                 <div className="text-yellow-400">잔여휴무 {calculatePoints(selectedStudentReport).remainingWeeklyOff}</div>
                 <div className="text-cyan-400">잔여월휴 {calculatePoints(selectedStudentReport).remainingMonthlyOff}</div>
               </div>
-            </div>
-
-            <div className="space-y-2 border-t pt-4">
-              {/* [10]번 구역에서 수정된 getMonthAccumulatedTime 호출로 1월 전체 누적 시간 표시 */}
-              {getMonthAccumulatedTime(selectedStudentReport).map(item => (
-                <div key={item.month} className="flex justify-between items-center bg-stone-50 p-4 rounded-2xl border border-stone-100">
-                  <span className="text-sm font-bold text-stone-500">{item.month}월 누적 공부시간</span>
-                  <span className="text-xl font-black text-indigo-600">{item.time}</span>
-                </div>
-              ))}
             </div>
           </div>
         </div>
@@ -744,6 +735,7 @@ export default function HogwartsApp() {
                         {rIdx === 0 && (
                           <td rowSpan={7} className={`p-4 text-center sticky left-0 z-20 font-bold border-r-[3px] ${info.color} ${info.text} cursor-pointer hover:brightness-95 transition-all`} onClick={() => setSelectedStudentReport(name)}>
                             <div className="text-3xl mb-1">{info.emoji}</div>
+                            {/* 중복 이모지 제거: 이름만 깔끔하게 표시 */}
                             <div className="leading-tight text-sm font-black mb-1 break-keep">{name}</div>
                             <div className="text-[9px] font-black opacity-70 mb-2">{info.house}</div>
                             <button onClick={(e) => { e.stopPropagation(); prompt("비번변경"); }} className="text-[8px] underline opacity-40 block mx-auto">PW 변경</button>
