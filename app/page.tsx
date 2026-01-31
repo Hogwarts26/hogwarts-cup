@@ -428,7 +428,7 @@ export default function HogwartsApp() {
   // ==========================================
   const [isPlaying, setIsPlaying] = useState(false);
   // 깃허브에 올리신 파일명 'hedwig.mp3'를 반영했습니다.
-  const [bgm] = useState(() => typeof Audio !== 'undefined' ? new Audio('/hedwig.mp3') : null);
+  const [bgm] = useState(() => typeof Audio !== 'undefined' ? new Audio('./hedwig.mp3') : null);
 
   const toggleMusic = () => {
     if (!bgm) return;
