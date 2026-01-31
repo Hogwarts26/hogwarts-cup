@@ -615,13 +615,13 @@ export default function HogwartsApp() {
       {selectedStudentReport && studentData[selectedStudentReport] && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
           <div className="bg-white p-6 md:px-10 md:py-6 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-            {/* 상단 로고/이름 영역: 날짜를 제거하여 하단과 분리감 조성 */}
-            <div className="flex items-center gap-2 mb-6">
-              {/* 왼쪽: 로고 크게 배치 */}
-              <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="Logo" className="w-36.5 h-36.5 object-contain drop-shadow-sm" />
+            {/* 상단 로고/이름 영역: 모바일 잘림 방지를 위해 flex-col(기본) -> md:flex-row(PC)로 대응 */}
+            <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-6">
+              {/* 왼쪽: 로고 배치 */}
+              <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="Logo" className="w-36 h-36 object-contain drop-shadow-sm" />
               
               {/* 오른쪽: 이모지, 이름, 공부시간 */}
-              <div className="flex flex-col justify-center items-center text-center mt-6">
+              <div className="flex flex-col justify-center items-center text-center">
                 <div className="flex flex-col mb-1.5">
                   <span className="text-5xl mb-1">{studentData[selectedStudentReport].emoji}</span>
                   <span className="font-bold text-sm text-slate-400 tracking-tight leading-none">{formatDisplayName(selectedStudentReport)}</span>
