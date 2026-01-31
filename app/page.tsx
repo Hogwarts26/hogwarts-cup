@@ -708,11 +708,13 @@ export default function HogwartsApp() {
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight">Hogwarts School</h2>
           <div className="flex gap-2">
-            {/* 음악 재생 버튼 추가 */}
+{/* 음악 재생 버튼 추가 */}
             <button 
               onClick={toggleMusic} 
-              className={`text-[10px] font-black px-3 py-1.5 rounded-full shadow-lg transition-all ${
-                isPlaying ? 'bg-yellow-500 text-slate-900 animate-pulse' : 'bg-slate-700 text-white opacity-70'
+              className={`text-[10px] font-black px-3 py-1.5 rounded-full shadow-sm transition-all border-2 ${
+                isPlaying 
+                  ? 'bg-white border-yellow-400 text-yellow-500 animate-pulse' 
+                  : 'bg-white border-slate-200 text-slate-400'
               }`}
             >
               {isPlaying ? '🎵' : '🔇'}
