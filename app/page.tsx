@@ -945,8 +945,22 @@ export default function HogwartsApp() {
         </div>
       </div>
 {/* 여기서부터 추가되는 지도 섹션입니다. 기존 코드는 절대 건드리지 않습니다. */}
-      <div id="new-map-section" style={{ marginTop: '30px', fontFamily: 'inherit' }}>
-        {/* 1. 상단 지형 구역 (가로 3개씩 2줄 - 크기 및 폰트 축소) */}
+      <div id="new-map-section" style={{ marginTop: '80px', fontFamily: 'inherit' }}>
+        
+        {/* Dragon Cave 제목 (Cinzel 폰트 적용) */}
+        <div style={{ 
+          textAlign: 'center', 
+          fontSize: '22px',          // 폰트 특성상 조금 더 키웠습니다.
+          fontWeight: '700', 
+          marginBottom: '25px',
+          color: '#222',
+          fontFamily: "'Cinzel', serif", // Cinzel 폰트 지정
+          letterSpacing: '2px'        // 간격을 넓혀 더 고급스럽게 연출
+        }}>
+          DRAGON CAVE
+        </div>
+
+        {/* 1. 상단 지형 구역 (가로 3개씩 2줄) */}
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(3, 1fr)', 
@@ -968,7 +982,7 @@ export default function HogwartsApp() {
           ))}
         </div>
 
-        {/* 2. 지도 이미지 영역 (검은 가로줄 borderTop 제거) */}
+        {/* 2. 지도 이미지 영역 */}
         <div style={{ width: '100%' }}>
           <img 
             src="/map.jpg" 
