@@ -423,6 +423,25 @@ export default function HogwartsApp() {
     }).sort((a, b) => b.finalPoint - a.finalPoint);
   }, [records]);
 
+ // ==========================================
+  // [11.5] 배경음악(BGM) 로직
+  // ==========================================
+  const [isPlaying, setIsPlaying] = useState(false);
+  // 깃허브에 올리신 파일명 'hedwig.mp3'를 반영했습니다.
+  const [bgm] = useState(() => typeof Audio !== 'undefined' ? new Audio('/hedwig.mp3') : null);
+
+  const toggleMusic = () => {
+    if (!bgm) return;
+    if (isPlaying) {
+      bgm.pause();
+    } else {
+      bgm.loop = true;
+      bgm.volume = 0.4; // 볼륨 40%
+      bgm.play().catch(e => console.log("음악 재생 실패:", e));
+    }
+    setIsPlaying(!isPlaying);
+  };
+
 // ==========================================
   // [12] 데이터 변경 및 저장 로직 (비밀번호, 목표, 학습 기록)
   // ==========================================
@@ -691,6 +710,15 @@ export default function HogwartsApp() {
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight">Hogwarts House Cup</h2>
           <div className="flex gap-2">
+            {/* 음악 재생 버튼 추가 */}
+            <button 
+              onClick={toggleMusic} 
+              className={`text-[10px] font-black px-3 py-1.5 rounded-full shadow-lg transition-all ${
+                isPlaying ? 'bg-yellow-500 text-slate-900 animate-pulse' : 'bg-slate-700 text-white opacity-70'
+              }`}
+            >
+              {isPlaying ? '🪄 Music On' : '🔇 Music Off'}
+            </button>
             {isAdmin && <button onClick={() => setShowSummary(true)} className="text-[10px] font-black text-white bg-indigo-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-indigo-700 transition-colors">요약</button>}
             {isAdmin && <button onClick={resetWeeklyData} className="text-[10px] font-black text-white bg-red-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-red-700 transition-colors">Weekly Reset</button>}
             <button onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full shadow-sm">Logout</button>
