@@ -754,7 +754,6 @@ export default function HogwartsApp() {
                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                   <button 
                     onClick={() => {
-                      // 테이블에 표시된 첫 번째 학생 혹은 특정 대상을 name으로 지정하여 저장
                       const targetName = displayList[0]; 
                       if (targetName) handleUpdateRecord(targetName, 'goal', dailyGoal);
                     }}
@@ -875,3 +874,6 @@ export default function HogwartsApp() {
           </table>
         </div>
       </div>
+    </div>
+  );
+};
