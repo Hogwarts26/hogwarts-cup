@@ -459,10 +459,11 @@ export default function HogwartsApp() {
         </div>
       )}
 
-      {/* --- 요약 확인 팝업 --- */}
+{/* --- 요약 확인 팝업 --- */}
       {showSummary && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowSummary(false)}>
-          <div className="bg-white rounded-[2rem] p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl relative" onClick={e => e.stopPropagation()}>
+          {/* max-w-4xl에서 max-w-2xl로 줄여 표 사이즈 최적화 */}
+          <div className="bg-white rounded-[2rem] p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative" onClick={e => e.stopPropagation()}>
             <button onClick={() => setShowSummary(false)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-800 transition-colors text-2xl font-black">✕</button>
             <h3 className="text-2xl font-serif font-black text-slate-800 mb-8 italic tracking-tighter border-b-2 border-slate-100 pb-4 text-center">House Weekly Summary</h3>
             
@@ -489,10 +490,11 @@ export default function HogwartsApp() {
 
                         return (
                           <div key={name} className="flex h-10">
-                            <div className={`w-12 flex items-center justify-center text-xl border-r border-slate-200 ${config.bg.replace('bg-', 'bg-opacity-10 bg-')}`}>
+                            <div className={`w-10 flex items-center justify-center text-lg border-r border-slate-200 ${config.bg.replace('bg-', 'bg-opacity-10 bg-')}`}>
                               {emoji}
                             </div>
-                            <div className="flex-1 flex items-center justify-end pr-4 font-black text-sm text-slate-700 bg-white">
+                            {/* justify-end pr-4 대신 justify-center를 사용하여 시간 가운데 정렬 */}
+                            <div className="flex-1 flex items-center justify-center font-black text-sm text-slate-700 bg-white">
                               <span className={isUnderGoal ? "text-red-500" : "text-slate-800"}>
                                 {totalMins > 0 ? timeStr : "-"}
                               </span>
