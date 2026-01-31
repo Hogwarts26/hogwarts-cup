@@ -209,13 +209,6 @@ export default function HogwartsApp() {
   const [dailyGoal, setDailyGoal] = useState("");
   const [isEditingGoal, setIsEditingGoal] = useState(false);
 
-  const [selectedArea, setSelectedArea] = useState<string | null>(null);
-
-// 알 선택 관련 상태들
-  const [selectedEgg, setSelectedEgg] = useState<string | null>(null); // 선택된 알 파일명
-  const [confirmStep, setConfirmStep] = useState(0); // 0: 일반, 1: 1차확인, 2: 2차확인
-  const [myDragon, setMyDragon] = useState<string | null>(null); // 최종 확정된 내 드래곤(알)
-
   // ==========================================
   // [6] 초기 실행 (인증 확인 및 시계)
   // ==========================================
@@ -792,7 +785,7 @@ export default function HogwartsApp() {
         </div>
       </div>
 
-{/* --- 학습 기록 메인 테이블 --- */}
+      {/* --- 학습 기록 메인 테이블 --- */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
         <div className="bg-slate-900 p-4 px-6 md:px-8 flex flex-col gap-2 text-white min-h-[60px]">
           <div className="flex justify-between items-center w-full">
@@ -857,7 +850,6 @@ export default function HogwartsApp() {
                 const monRec = records.find(r => r.student_name === name && r.day_of_week === '월') || {};
                 const offCount = monRec.monthly_off_count ?? 4;
                 const rows = [{f:'off_type'},{f:'is_late'},{f:'am_3h'},{f:'study_time'},{f:'penalty'},{f:'bonus'},{f:'total'}];
-                
                 let totalTimeMinutes = 0;
                 let totalPointsSum = 0;
                 records.filter(r => r.student_name === name).forEach(r => {
@@ -866,7 +858,6 @@ export default function HogwartsApp() {
                   totalTimeMinutes += (isNaN(h) ? 0 : h * 60) + (isNaN(m) ? 0 : m);
                   totalPointsSum += res.total;
                 });
-
                 return (
                   <React.Fragment key={name}>
                     {isAdmin && (
@@ -883,6 +874,7 @@ export default function HogwartsApp() {
                             <div className="text-3xl mb-1">{info.emoji}</div>
                             <div className="leading-tight text-sm font-black mb-1 break-keep">{formatDisplayName(name)}</div>
                             <div className="text-[9px] font-black opacity-70 mb-2">{info.house}</div>
+                            {/* --- 비밀번호 변경 버튼 로직 수정 --- */}
                             <button 
                               onClick={(e) => { 
                                 e.stopPropagation(); 
@@ -902,7 +894,7 @@ export default function HogwartsApp() {
                         {DAYS.map(day => {
                           const rec = records.find(r => r.student_name === name && r.day_of_week === day) || {};
                           const res = calc(rec);
-                          const getCellBg = (val) => {
+                          const getCellBg = (val: string) => {
                             if (['반휴','월반휴','늦반휴','늦월반휴'].includes(val)) return 'bg-green-100';
                             if (['주휴','월휴','늦휴','늦월휴'].includes(val)) return 'bg-blue-100';
                             if (val === '결석') return 'bg-red-100';
@@ -923,7 +915,7 @@ export default function HogwartsApp() {
                                   onChange={(e) => setRecords(prev => prev.map(r => (r.student_name === name && r.day_of_week === day) ? {...r, study_time: e.target.value} : r))}
                                   onBlur={(e) => handleChange(name, day, 'study_time', e.target.value)} disabled={!isAdmin} />
                               ) : (
-                                <span className={`font-black text-sm ${row.f === 'penalty' && res.penalty < 0 ? 'text-red-500' : row.f === 'bonus' && res.bonus > 0 ? 'text-blue-600' : 'text-slate-900'}`}>{res[row.f] || (row.f === 'total' ? 0 : '')}</span>
+                                <span className={`font-black text-sm ${row.f === 'penalty' && res.penalty < 0 ? 'text-red-500' : row.f === 'bonus' && res.bonus > 0 ? 'text-blue-600' : 'text-slate-900'}`}>{res[row.f as keyof typeof res] || (row.f === 'total' ? 0 : '')}</span>
                               )}
                             </td>
                           );
@@ -952,83 +944,6 @@ export default function HogwartsApp() {
           </table>
         </div>
       </div>
-
-      {/* --- 드래곤 키우기 (Dragon Cave) 섹션 --- */}
-      <div id="new-map-section" style={{ marginTop: '80px', fontFamily: 'inherit', position: 'relative' }}>
-        <div style={{ textAlign: 'center', fontSize: '22px', fontWeight: '700', marginBottom: '25px', color: '#222', fontFamily: "'Cinzel', serif", letterSpacing: '2px' }}>DRAGON CAVE</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '15px', textAlign: 'center' }}>
-          {['Alpine', 'Coast', 'Desert', 'Forest', 'Jungle', 'Volcano'].map((area) => (
-            <div key={area} onClick={() => setSelectedArea(area)} style={{ padding: '4px 0', fontSize: '10px', fontWeight: 'bold', border: '1px solid #eee', backgroundColor: '#f9f9f9', borderRadius: '3px', cursor: 'pointer' }}>{area}</div>
-          ))}
-        </div>
-        <div style={{ width: '100%', cursor: myDragon ? 'pointer' : 'default' }} onClick={() => { if(myDragon) setConfirmStep(3); }}>
-          <img src="/map.jpg" alt="Map" style={{ width: '100%', height: 'auto', display: 'block', margin: '0 auto' }} />
-        </div>
-        {selectedArea && (
-          <div onClick={() => setSelectedArea(null)} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-            <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', width: '90%', maxWidth: '400px', backgroundColor: '#ffffff', borderRadius: '15px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
-              <div style={{ position: 'relative' }}>
-                <img src={`/${selectedArea.toLowerCase()}.webp`} alt={selectedArea} style={{ width: '100%', display: 'block', opacity: 0.7 }} />
-                <div style={{ position: 'absolute', bottom: '20px', left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: '40px' }}>
-                  {[1, 2, 3].map((num) => {
-                    const eggFile = `${selectedArea.substring(0, 2).toLowerCase()}${num}.webp`;
-                    return (
-                      <img key={num} src={`/${eggFile}`} alt={`egg-${num}`} onClick={() => { setSelectedEgg(eggFile); setConfirmStep(1); }} style={{ width: '45px', height: '45px', objectFit: 'contain', cursor: 'pointer', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))' }} />
-                    );
-                  })}
-                </div>
-              </div>
-              <div style={{ backgroundColor: '#ffffff', padding: '15px 0', color: '#222', textAlign: 'center', fontSize: '14px', fontFamily: "'Cinzel', serif", fontWeight: '700', borderTop: '1px solid #eee' }}>- {selectedArea} -</div>
-            </div>
-          </div>
-        )}
-        {confirmStep > 0 && (
-          <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }}>
-            <div style={{ backgroundColor: confirmStep === 3 ? '#e3d5ca' : '#ffffff', padding: '30px', borderRadius: '20px', width: '85%', maxWidth: '350px', textAlign: 'center', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }}>
-              {confirmStep === 1 && (
-                <>
-                  <p style={{ fontWeight: '900', fontSize: '18px', marginBottom: '20px' }}>이 알을 데려갈까요?</p>
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <button onClick={() => setConfirmStep(2)} style={{ flex: 1, padding: '12px', border: '1px solid #ccc', borderRadius: '10px', backgroundColor: '#fff', cursor: 'pointer' }}>네</button>
-                    <button onClick={() => { setConfirmStep(0); setSelectedEgg(null); }} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: '10px', backgroundColor: '#eee', cursor: 'pointer' }}>더 생각해볼게요</button>
-                  </div>
-                </>
-              )}
-              {confirmStep === 2 && (
-                <>
-                  <p style={{ fontWeight: '900', fontSize: '18px', marginBottom: '10px' }}>정말 이 알을 데려갈까요?</p>
-                  <p style={{ fontSize: '13px', color: '#666', lineHeight: '1.5', marginBottom: '20px' }}>한 번 데려온 알은 졸업 전까지<br/>여러분과 함께하게 됩니다.</p>
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <button onClick={() => { setMyDragon(selectedEgg); setConfirmStep(0); setSelectedArea(null); }} style={{ flex: 1, padding: '12px', border: '1px solid #ccc', borderRadius: '10px', backgroundColor: '#fff', cursor: 'pointer' }}>네</button>
-                    <button onClick={() => { setConfirmStep(0); setSelectedEgg(null); }} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: '10px', backgroundColor: '#eee', cursor: 'pointer' }}>더 생각해볼게요</button>
-                  </div>
-                </>
-              )}
-              {confirmStep === 3 && (
-                <>
-                  <div style={{ fontFamily: "'Cinzel', serif", fontSize: '20px', fontWeight: 'bold', marginBottom: '20px', color: '#5e503f' }}>My Dragon</div>
-                  {(() => {
-                    const studentName = displayList[0];
-                    const hours = Number(studentData[studentName]?.total_study_hours || 0); 
-                    const match = myDragon ? String(myDragon).match(/^([a-z]+)([0-9])\.webp$/i) : null;
-                    if (!match) return <img src={`/${myDragon || 'al1.webp'}`} alt="My Dragon" style={{ width: '45px', height: '45px', display: 'block', margin: '0 auto', objectFit: 'contain' }} />;
-                    const prefix = match[1];
-                    const num = match[2];
-                    let repeatCount = 1;
-                    if (hours >= 200) repeatCount = 4;      
-                    else if (hours >= 100) repeatCount = 3; 
-                    else if (hours >= 50) repeatCount = 2;  
-                    const evolvedFileName = `${prefix}${num.repeat(repeatCount)}.webp`;
-                    return <img src={`/${evolvedFileName}`} alt="My Dragon" style={{ width: '45px', height: '45px', display: 'block', margin: '0 auto', objectFit: 'contain', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))' }} />;
-                  })()}
-                  <p style={{ marginTop: '20px', fontSize: '13px', color: '#5e503f' }}>숲을 탐험하다 만난 소중한 인연입니다.</p>
-                  <button onClick={() => setConfirmStep(0)} style={{ marginTop: '20px', width: '100%', padding: '10px', border: 'none', borderRadius: '10px', backgroundColor: '#5e503f', color: '#fff', cursor: 'pointer' }}>닫기</button>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
     </div>
-  ); 
+  );
 };
