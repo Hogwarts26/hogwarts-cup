@@ -1112,7 +1112,7 @@ export default function HogwartsApp() {
                   <p style={{ fontWeight: '900', fontSize: '18px', marginBottom: '20px' }}>이 알을 데려갈까요?</p>
                   <div style={{ display: 'flex', gap: '10px' }}>
                     <button onClick={() => setConfirmStep(2)} style={{ flex: 1, padding: '12px', border: '1px solid #ccc', borderRadius: '10px', backgroundColor: '#fff', cursor: 'pointer' }}>네</button>
-                    <button onClick={() => { setConfirmStep(0); setSelectedEgg(null); }} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: '10px', backgroundColor: '#eee', cursor: 'pointer' }}>좀 더 생각해볼게요</button>
+                    <button onClick={() => { setConfirmStep(0); setSelectedEgg(null); }} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: '10px', backgroundColor: '#eee', cursor: 'pointer' }}>더 생각해볼게요</button>
                   </div>
                 </>
               )}
@@ -1125,7 +1125,7 @@ export default function HogwartsApp() {
                   </p>
                   <div style={{ display: 'flex', gap: '10px' }}>
                     <button onClick={() => { setMyDragon(selectedEgg); setConfirmStep(0); setSelectedArea(null); }} style={{ flex: 1, padding: '12px', border: '1px solid #ccc', borderRadius: '10px', backgroundColor: '#fff', cursor: 'pointer' }}>네</button>
-                    <button onClick={() => { setConfirmStep(0); setSelectedEgg(null); }} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: '10px', backgroundColor: '#eee', cursor: 'pointer' }}>좀 더 생각해볼게요</button>
+                    <button onClick={() => { setConfirmStep(0); setSelectedEgg(null); }} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: '10px', backgroundColor: '#eee', cursor: 'pointer' }}>더 생각해볼게요</button>
                   </div>
                 </>
               )}
@@ -1134,7 +1134,7 @@ export default function HogwartsApp() {
                 <>
                   <div style={{ fontFamily: "'Cinzel', serif", fontSize: '20px', fontWeight: 'bold', marginBottom: '20px', color: '#5e503f' }}>MY EGG</div>
                   <img src={`/${myDragon}`} alt="My Dragon" style={{ width: '80px', height: '80px', objectFit: 'contain', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))' }} />
-                  <p style={{ marginTop: '20px', fontSize: '13px', color: '#5e503f' }}>지도에서 발견한 소중한 인연입니다.</p>
+                  <p style={{ marginTop: '20px', fontSize: '13px', color: '#5e503f' }}>숲을 탐험하다 발견한 소중한 인연입니다.</p>
                   <button onClick={() => setConfirmStep(0)} style={{ marginTop: '20px', width: '100%', padding: '10px', border: 'none', borderRadius: '10px', backgroundColor: '#5e503f', color: '#fff', cursor: 'pointer' }}>닫기</button>
                 </>
               )}
