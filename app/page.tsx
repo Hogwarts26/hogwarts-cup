@@ -945,5 +945,33 @@ export default function HogwartsApp() {
         </div>
       </div>
     </div>
+
+{/* 여기서부터 추가되는 지도 섹션입니다. 기존 코드는 절대 건드리지 않습니다. */}
+      <div id="new-map-section" style={{ marginTop: '40px', fontFamily: 'inherit' }}>
+        {/* 1. 상단 지형 구역 (가로 3개씩 2줄) */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(3, 1fr)', 
+          gap: '10px', 
+          marginBottom: '20px', 
+          textAlign: 'center' 
+        }}>
+          <div style={{ padding: '10px', border: '1px solid #ddd', backgroundColor: '#f9f9f9' }}>Alpine</div>
+          <div style={{ padding: '10px', border: '1px solid #ddd', backgroundColor: '#f9f9f9' }}>Coast</div>
+          <div style={{ padding: '10px', border: '1px solid #ddd', backgroundColor: '#f9f9f9' }}>Desert</div>
+          <div style={{ padding: '10px', border: '1px solid #ddd', backgroundColor: '#f9f9f9' }}>Forest</div>
+          <div style={{ padding: '10px', border: '1px solid #ddd', backgroundColor: '#f9f9f9' }}>Jungle</div>
+          <div style={{ padding: '10px', border: '1px solid #ddd', backgroundColor: '#f9f9f9' }}>Volcano</div>
+        </div>
+
+        {/* 2. 지도 이미지 영역 (hogwarts-cup 저장소 경로 반영) */}
+        <div style={{ width: '100%', borderTop: '2px solid #333', paddingTop: '20px' }}>
+          <img 
+            src="/hogwarts-cup/public/map.jpg" 
+            alt="Map" 
+            style={{ width: '100%', height: 'auto', display: 'block', margin: '0 auto' }} 
+          />
+        </div>
+      </div>
   );
 };
