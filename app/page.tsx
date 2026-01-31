@@ -521,7 +521,7 @@ export default function HogwartsApp() {
                 onClick={() => setShowSummary(true)} 
                 className="text-[10px] font-black text-white bg-indigo-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-indigo-700 transition-colors"
               >
-                요약 확인
+                요약
               </button>
             )}
             {isAdmin && <button onClick={resetWeeklyData} className="text-[10px] font-black text-white bg-red-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-red-700 transition-colors">Weekly Reset</button>}
