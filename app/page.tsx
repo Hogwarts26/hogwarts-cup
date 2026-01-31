@@ -175,6 +175,14 @@ const HOUSE_NOTICES: { [key: string]: { title: string, content: string } } = {
 const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
 const OFF_OPTIONS = ['-', '출석', '반휴', '주휴', '월휴', '월반휴', '자율', '결석', '늦반휴', '늦휴', '늦월반휴', '늦월휴'];
 
+// 아래의 HOUSE_LOGOS를 추가했습니다. 다른 코드는 수정하지 않았습니다.
+const HOUSE_LOGOS: Record<string, string> = {
+  "슬리데린": "https://i.ibb.co/6R0fS8S/slytherin.png",
+  "래번클로": "https://i.ibb.co/vYm6YmY/ravenclaw.png",
+  "그리핀도르": "https://i.ibb.co/pP9m9mP/gryffindor.png",
+  "후플푸프": "https://i.ibb.co/fF8f8f8/hufflepuff.png"
+};
+
 const sortKorean = (a: string, b: string) => {
   const cleanA = a.replace(/[^\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/g, "");
   const cleanB = b.replace(/[^\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/g, "");
