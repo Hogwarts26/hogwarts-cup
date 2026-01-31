@@ -706,7 +706,7 @@ export default function HogwartsApp() {
 {/* --- 상단 기스크 점수판 --- */}
       <div className="max-w-[1100px] mx-auto mb-8">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight">Hogwarts House Cup</h2>
+          <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight">Hogwarts</h2>
           <div className="flex gap-2">
             {/* 음악 재생 버튼 추가 */}
             <button 
