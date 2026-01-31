@@ -411,7 +411,6 @@ export default function HogwartsApp() {
     <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 font-sans relative">
       <style>{`
         ${GLOVAL_STYLE}
-        /* 동그란 지각 체크박스 스타일 */
         .late-checkbox {
           appearance: none;
           -webkit-appearance: none;
@@ -427,16 +426,12 @@ export default function HogwartsApp() {
           margin: 0 auto;
           display: block;
         }
-        .late-checkbox:checked {
-          background: #f59e0b;
-          border-color: #f59e0b;
-        }
-        .late-checkbox:disabled {
-          cursor: default;
-        }
-        .winner-sparkle {
-          box-shadow: 0 0 20px rgba(250, 204, 21, 0.4);
-        }
+        .late-checkbox:checked { background: #f59e0b; border-color: #f59e0b; }
+        .late-checkbox:disabled { cursor: default; }
+        .winner-sparkle { box-shadow: 0 0 20px rgba(250, 204, 21, 0.4); }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
       `}</style>
       
       {/* --- 마법 공지사항 팝업 구역 --- */}
@@ -459,45 +454,32 @@ export default function HogwartsApp() {
         </div>
       )}
 
-{/* --- 요약 확인 팝업 --- */}
+      {/* --- 요약 확인 팝업 (전체 하우스 요약) --- */}
       {showSummary && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowSummary(false)}>
-          {/* max-w-4xl에서 max-w-2xl로 줄여 표 사이즈 최적화 */}
           <div className="bg-white rounded-[2rem] p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative" onClick={e => e.stopPropagation()}>
             <button onClick={() => setShowSummary(false)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-800 transition-colors text-2xl font-black">✕</button>
             <h3 className="text-2xl font-serif font-black text-slate-800 mb-8 italic tracking-tighter border-b-2 border-slate-100 pb-4 text-center">House Weekly Summary</h3>
-            
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border-t border-l border-slate-300">
               {HOUSE_ORDER.map(house => {
                 const studentsInHouse = Object.keys(studentData).filter(name => studentData[name].house === house);
                 const config = (HOUSE_CONFIG as any)[house];
-                
                 return (
                   <div key={house} className="flex flex-col border-r border-b border-slate-300">
-                    <div className={`${config.bg} p-2 text-white font-black text-center text-[11px] tracking-widest`}>
-                      {config.icon} {house}
-                    </div>
+                    <div className={`${config.bg} p-2 text-white font-black text-center text-[11px] tracking-widest`}>{config.icon} {house}</div>
                     <div className="flex flex-col flex-1 divide-y divide-slate-200">
                       {studentsInHouse.sort(sortKorean).map(name => {
                         const emoji = studentData[name].emoji || "👤";
-                        let totalMins = 0;
+                        let tMins = 0;
                         records.filter(r => r.student_name === name).forEach(r => {
                           const [h, m] = (r.study_time || "").split(':').map(Number);
-                          totalMins += (isNaN(h) ? 0 : h * 60) + (isNaN(m) ? 0 : m);
+                          tMins += (isNaN(h) ? 0 : h * 60) + (isNaN(m) ? 0 : m);
                         });
-                        const timeStr = `${Math.floor(totalMins/60)}:${(totalMins%60).toString().padStart(2,'0')}`;
-                        const isUnderGoal = totalMins < 1200;
-
                         return (
                           <div key={name} className="flex h-10">
-                            <div className={`w-10 flex items-center justify-center text-lg border-r border-slate-200 ${config.bg.replace('bg-', 'bg-opacity-10 bg-')}`}>
-                              {emoji}
-                            </div>
-                            {/* justify-end pr-4 대신 justify-center를 사용하여 시간 가운데 정렬 */}
+                            <div className={`w-10 flex items-center justify-center text-lg border-r border-slate-200 ${config.bg.replace('bg-', 'bg-opacity-10 bg-')}`}>{emoji}</div>
                             <div className="flex-1 flex items-center justify-center font-black text-sm text-slate-700 bg-white">
-                              <span className={isUnderGoal ? "text-red-500" : "text-slate-800"}>
-                                {totalMins > 0 ? timeStr : "-"}
-                              </span>
+                              <span className={tMins < 1200 ? "text-red-500" : "text-slate-800"}>{tMins > 0 ? `${Math.floor(tMins/60)}:${(tMins%60).toString().padStart(2,'0')}` : "-"}</span>
                             </div>
                           </div>
                         );
@@ -511,20 +493,13 @@ export default function HogwartsApp() {
         </div>
       )}
 
-{/* --- 학생 개인 주간 요약 카드 (이미지 디자인 반영) --- */}
+      {/* --- 학생 개인 주간 요약 카드 --- */}
       {selectedStudentReport && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
-          <div className="bg-white p-8 w-full max-w-lg shadow-[0_20px_50px_rgba(0,0,0,0.2)] relative animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-            
-            {/* 상단 정보 구역 */}
+          <div className="bg-white p-8 w-full max-w-lg shadow-[0_20px_50px_rgba(0,0,0,0.2)] relative" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-start mb-8">
               <div className="flex items-center gap-4">
-                {/* 기숙사 로고 (알려주신 URL 사용) */}
-                <img 
-                  src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} 
-                  alt="House Logo" 
-                  className="w-16 h-16 object-contain"
-                />
+                <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="Logo" className="w-16 h-16 object-contain" />
                 <div className="text-center">
                   <div className="text-3xl mb-1">{studentData[selectedStudentReport].emoji}</div>
                   <div className="font-black text-slate-800">{selectedStudentReport}</div>
@@ -532,36 +507,27 @@ export default function HogwartsApp() {
               </div>
               <div className="text-right">
                 <div className="text-[14px] font-bold text-[#737373] mb-1">이번주 공부시간</div>
-                <div className="text-3xl font-black text-slate-900">
-                  {calculateWeeklyTotal(selectedStudentReport)}
-                </div>
+                <div className="text-3xl font-black text-slate-900">{calculateWeeklyTotal(selectedStudentReport)}</div>
               </div>
             </div>
-
-            {/* 날짜 범위 표시 */}
-            <div className="text-center text-[#737373] font-bold text-sm mb-4">
-              {getWeeklyDateRange()}
-            </div>
-
-            {/* 요일별 요약 그리드 (7일 + 정보칸) */}
+            <div className="text-center text-[#737373] font-bold text-sm mb-4">{getWeeklyDateRange()}</div>
             <div className="grid grid-cols-4 gap-2 mb-8">
               {DAYS.map(day => {
                 const rec = records.find(r => r.student_name === selectedStudentReport && r.day_of_week === day) || {};
-                const bgColor = getCellBgColor(rec.off_type); // 기존 설정된 색상 코드 활용
-                const dateNum = getDayDate(day); // 해당 요일의 날짜 숫자 가져오기
-
+                const getCellBg = (val: string) => {
+                  if (['반휴','월반휴','늦반휴','늦월반휴'].includes(val)) return 'bg-green-100';
+                  if (['주휴','월휴','늦휴','늦월휴'].includes(val)) return 'bg-blue-100';
+                  if (val === '결석') return 'bg-red-100';
+                  return '';
+                };
                 return (
-                  <div key={day} className={`border border-slate-800 p-2 flex flex-col items-center justify-between h-24 ${bgColor}`}>
-                    <div className="text-[13px] font-bold text-[#737373]">{dateNum} {day}</div>
+                  <div key={day} className={`border border-slate-800 p-2 flex flex-col items-center justify-between h-24 ${getCellBg(rec.off_type)}`}>
+                    <div className="text-[13px] font-bold text-[#737373]">{getDayDate(day)} {day}</div>
                     <div className="text-xl font-black text-slate-900">{rec.study_time || "0:00"}</div>
-                    <div className="text-[11px] font-bold text-green-700 h-4 leading-none">
-                      {['반휴','월반휴','주휴','결석'].includes(rec.off_type) ? rec.off_type : ""}
-                    </div>
+                    <div className="text-[11px] font-bold text-green-700 h-4 leading-none">{['반휴','월반휴','주휴','결석'].includes(rec.off_type) ? rec.off_type : ""}</div>
                   </div>
                 );
               })}
-              
-              {/* 우측 하단 정보칸 (상점/벌점/잔여휴무) */}
               <div className="border border-slate-800 p-2 text-[11px] font-bold leading-relaxed">
                 <div>상점 {calculatePoints(selectedStudentReport).bonus}</div>
                 <div>벌점 {calculatePoints(selectedStudentReport).penalty}</div>
@@ -569,13 +535,9 @@ export default function HogwartsApp() {
                 <div>잔여월휴 {studentData[selectedStudentReport].monthly_off_count || 0}</div>
               </div>
             </div>
-
-            {/* 하단 월별 누적 시간 구역 */}
             <div className="space-y-1">
               {getMonthAccumulatedTime(selectedStudentReport).map(item => (
-                <div key={item.month} className="text-[13px] font-bold text-slate-900">
-                  {item.month}월 누적 공부시간 : {item.time}
-                </div>
+                <div key={item.month} className="text-[13px] font-bold text-slate-900">{item.month}월 누적 공부시간 : {item.time}</div>
               ))}
             </div>
           </div>
@@ -587,14 +549,7 @@ export default function HogwartsApp() {
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight">Hogwarts House Cup</h2>
           <div className="flex gap-2">
-            {isAdmin && (
-              <button 
-                onClick={() => setShowSummary(true)} 
-                className="text-[10px] font-black text-white bg-indigo-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-indigo-700 transition-colors"
-              >
-                요약
-              </button>
-            )}
+            {isAdmin && <button onClick={() => setShowSummary(true)} className="text-[10px] font-black text-white bg-indigo-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-indigo-700 transition-colors">요약</button>}
             {isAdmin && <button onClick={resetWeeklyData} className="text-[10px] font-black text-white bg-red-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-red-700 transition-colors">Weekly Reset</button>}
             <button onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full shadow-sm">Logout</button>
           </div>
@@ -602,20 +557,15 @@ export default function HogwartsApp() {
         <div className="grid grid-cols-4 gap-1.5 md:gap-4">
           {houseRankings.map((item, idx) => {
             const config = (HOUSE_CONFIG as any)[item.house];
-            const rankLabel = ["1st", "2nd", "3rd", "4th"][idx];
-            const isWinner = idx === 0;
             return (
-              <div key={item.house} onClick={() => setSelectedHouseNotice(item.house as any)} className={`${config.bg} ${config.border} ${isWinner ? 'winner-sparkle ring-4 ring-yellow-400 ring-offset-2' : ''} border-b-4 p-1.5 md:p-5 rounded-xl md:rounded-[2rem] text-white shadow-xl relative overflow-hidden cursor-pointer active:scale-95 transition-all hover:brightness-110`}>
+              <div key={item.house} onClick={() => setSelectedHouseNotice(item.house as any)} className={`${config.bg} ${config.border} ${idx === 0 ? 'winner-sparkle ring-4 ring-yellow-400 ring-offset-2' : ''} border-b-4 p-1.5 md:p-5 rounded-xl md:rounded-[2rem] text-white shadow-xl relative cursor-pointer active:scale-95 transition-all hover:brightness-110`}>
                 <div className="absolute right-[-10px] bottom-[-10px] text-5xl md:text-7xl opacity-20 pointer-events-none">{config.icon}</div>
                 <div className="relative z-10">
                   <div className="flex justify-between items-start mb-1">
                     <div className="text-[7px] md:text-xs font-black opacity-90 tracking-widest">{item.house}</div>
-                    <div className={`text-[8px] md:text-[10px] font-black px-1.5 md:px-2 py-0.5 rounded-full ${config.accent} text-slate-900 shadow-sm`}>{rankLabel}</div>
+                    <div className={`text-[8px] md:text-[10px] font-black px-1.5 md:px-2 py-0.5 rounded-full ${config.accent} text-slate-900 shadow-sm`}>{["1st", "2nd", "3rd", "4th"][idx]}</div>
                   </div>
-                  {/* 소수점 1자리까지 표시 (반올림) */}
-                  <div className="text-lg md:text-4xl font-black italic">
-                    {(Math.round(item.finalPoint * 10) / 10).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 })}
-                  </div>
+                  <div className="text-lg md:text-4xl font-black italic">{(Math.round(item.finalPoint * 10) / 10).toLocaleString()}</div>
                 </div>
               </div>
             );
@@ -623,7 +573,7 @@ export default function HogwartsApp() {
         </div>
       </div>
 
-{/* --- 학습 기록 메인 테이블 구역 --- */}
+      {/* --- 학습 기록 메인 테이블 구역 --- */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
         <div className="bg-slate-900 p-4 px-6 md:px-8 flex flex-col gap-2 text-white min-h-[60px]">
           <div className="flex justify-between items-center w-full">
@@ -634,54 +584,13 @@ export default function HogwartsApp() {
             </span>
             {isSaving && <div className="text-[9px] text-yellow-500 font-bold animate-bounce">Magic occurring...</div>}
           </div>
-
           {!isAdmin && (
             <div className="flex items-center gap-3 pt-1 border-t border-white/10 mt-1">
               <span className="text-[9px] font-black text-white/40 shrink-0">Goal</span>
-              {isEditingGoal ? (
-                <div className="flex items-center gap-2 flex-1">
-                  <input 
-                    type="text" 
-                    className="bg-transparent border-b border-white/30 text-white text-xs p-0 pb-0.5 outline-none flex-1 placeholder:text-white/20"
-                    placeholder="목표를 입력하세요"
-                    value={dailyGoal}
-                    onChange={(e) => setDailyGoal(e.target.value)}
-                    autoFocus
-                  />
-                  <button 
-                    onClick={() => {
-                      handleChange(selectedName, '월', 'goal', dailyGoal);
-                      setIsEditingGoal(false);
-                    }}
-                    className="text-[10px] font-black text-yellow-500 shrink-0 px-2"
-                  >저장</button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3 flex-1 overflow-hidden">
-                  <span className="text-xs font-medium text-white/90 italic truncate flex-1">
-                    {dailyGoal || "수정버튼을 클릭하여 목표나 다짐을 입력하세요."}
-                  </span>
-                  <div className="flex gap-3 shrink-0">
-                    <button onClick={() => setIsEditingGoal(true)} className="text-[9px] font-bold text-white/40 hover:text-white transition-colors">수정</button>
-                    {dailyGoal && (
-                      <button 
-                        onClick={() => {
-                          if (confirm("삭제하시겠습니까?")) {
-                            handleChange(selectedName, '월', 'goal', '');
-                            setDailyGoal("");
-                            alert("삭제되었습니다.");
-                          }
-                        }}
-                        className="text-[9px] font-bold text-red-400/60 hover:text-red-400 transition-colors"
-                      >삭제</button>
-                    )}
-                  </div>
-                </div>
-              )}
+              <div className="flex items-center gap-3 flex-1 overflow-hidden italic truncate text-xs">{dailyGoal || "목표를 입력하세요."}</div>
             </div>
           )}
         </div>
-
         <div className="w-full overflow-x-auto">
           <table className="min-w-[850px] w-full table-fixed border-collapse">
             <thead>
@@ -698,7 +607,6 @@ export default function HogwartsApp() {
                 const monRec = records.find(r => r.student_name === name && r.day_of_week === '월') || {};
                 const offCount = monRec.monthly_off_count ?? 4;
                 const rows = [{f:'off_type'},{f:'is_late'},{f:'am_3h'},{f:'study_time'},{f:'penalty'},{f:'bonus'},{f:'total'}];
-                
                 let totalTimeMinutes = 0;
                 let totalPointsSum = 0;
                 records.filter(r => r.student_name === name).forEach(r => {
@@ -707,9 +615,6 @@ export default function HogwartsApp() {
                   totalTimeMinutes += (isNaN(h) ? 0 : h * 60) + (isNaN(m) ? 0 : m);
                   totalPointsSum += res.total;
                 });
-
-                const emoji = info.emoji || "";
-
                 return (
                   <React.Fragment key={name}>
                     {isAdmin && (
@@ -722,19 +627,11 @@ export default function HogwartsApp() {
                     {rows.map((row, rIdx) => (
                       <tr key={row.f} className={`${rIdx === 6 ? "border-b-[6px] border-slate-100" : "border-b border-slate-50"}`}>
                         {rIdx === 0 && (
-                          <td 
-                            rowSpan={7} 
-                            className={`p-4 text-center sticky left-0 z-20 font-bold border-r-[3px] ${info.color} ${info.text} cursor-pointer hover:brightness-95 transition-all`}
-                            onClick={() => setSelectedStudentReport(name)}
-                          >
-                            <div className="text-3xl mb-1">{emoji}</div>
+                          <td rowSpan={7} className={`p-4 text-center sticky left-0 z-20 font-bold border-r-[3px] ${info.color} ${info.text} cursor-pointer hover:brightness-95 transition-all`} onClick={() => setSelectedStudentReport(name)}>
+                            <div className="text-3xl mb-1">{info.emoji}</div>
                             <div className="leading-tight text-sm font-black mb-1 break-keep">{name}</div>
                             <div className="text-[9px] font-black opacity-70 mb-2">{info.house}</div>
-                            <button onClick={async (e) => {
-                              e.stopPropagation();
-                              const newPw = prompt("새 비밀번호를 입력하세요 (4자리숫자)");
-                              if(newPw && newPw.length >= 4) await handleChange(name, '월', 'password', newPw);
-                            }} className="text-[8px] underline opacity-40 hover:opacity-100 block mx-auto">PW 변경</button>
+                            <button onClick={(e) => { e.stopPropagation(); prompt("비번변경"); }} className="text-[8px] underline opacity-40 block mx-auto">PW 변경</button>
                           </td>
                         )}
                         {DAYS.map(day => {
@@ -774,7 +671,7 @@ export default function HogwartsApp() {
                           )}
                           {rIdx === 6 && (
                             <div className={`text-[10px] font-black py-1 rounded ${totalPointsSum <= -10 ? 'text-red-600 bg-red-50' : 'text-blue-700 bg-blue-50'}`}>
-                              합계: {(Math.round(totalPointsSum * 10) / 10).toFixed(1).replace('.0', '')}
+                              합계: {totalPointsSum.toFixed(1).replace('.0', '')}
                             </div>
                           )}
                         </td>
@@ -783,15 +680,9 @@ export default function HogwartsApp() {
                             <div className="flex flex-col items-center gap-1.5">
                               {[1, 2, 3, 4].map((n) => (
                                 <div key={n} 
-                                     onClick={() => {
-                                       if(isAdmin) {
-                                         const nextCount = offCount >= (5-n) ? (5-n)-1 : offCount;
-                                         handleChange(name, '월', 'monthly_off_count', nextCount);
-                                       }
-                                     }} 
+                                     onClick={() => isAdmin && handleChange(name, '월', 'monthly_off_count', offCount >= (5-n) ? (5-n)-1 : offCount)} 
                                      className={`w-7 h-5 rounded-md border-2 ${isAdmin ? 'cursor-pointer' : ''} ${offCount >= (5-n) ? info.accent : 'bg-slate-50 border-slate-200'}`} />
                               ))}
-                              {isAdmin && <button onClick={() => confirm("월휴 리셋?") && handleChange(name, '월', 'monthly_off_count', 4)} className="mt-2 px-1 py-0.5 bg-slate-800 text-[8px] text-white rounded font-bold">Reset</button>}
                             </div>
                           </td>
                         )}
