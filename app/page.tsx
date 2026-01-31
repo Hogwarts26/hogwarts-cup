@@ -307,7 +307,7 @@ export default function HogwartsApp() {
     }).sort((a, b) => b.finalPoint - a.finalPoint);
   }, [records]);
 
-// ==========================================
+  // ==========================================
   // [12] 데이터 변경 및 저장 로직 (비밀번호, 목표, 학습 기록)
   // ==========================================
   const handleChange = async (name: string, day: string, field: string, value: any) => {
@@ -397,7 +397,7 @@ export default function HogwartsApp() {
       })
     : [selectedName];
 
-// ==========================================
+  // ==========================================
   // [15] 메인 화면 렌더링 (UI)
   // ==========================================
   return (
