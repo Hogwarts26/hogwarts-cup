@@ -638,9 +638,9 @@ export default function HogwartsApp() {
                   <div className="text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-tight italic">
                     {calculateWeeklyTotal(selectedStudentReport)}
                   </div>
-                  {/* 목표 출력 영역 */}
+                  {/* 목표 출력 영역: studentData 대신 records에서 해당 학생의 goal 데이터를 찾아 출력 */}
                   <div className="text-sm md:text-base font-bold text-slate-500 tracking-tight mt-1">
-                    {studentData[selectedStudentReport].goal}
+                    {records.find(r => r.student_name === selectedStudentReport && r.goal)?.goal || ""}
                   </div>
                 </div>
               </div>
