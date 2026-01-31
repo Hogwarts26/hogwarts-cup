@@ -449,28 +449,26 @@ export default function HogwartsApp() {
         </div>
       )}
 
-      {/* --- 요약 확인 팝업 (데이터 구조 최적화) --- */}
+      {/* --- 요약 확인 팝업 --- */}
       {showSummary && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowSummary(false)}>
           <div className="bg-white rounded-[2rem] p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl relative" onClick={e => e.stopPropagation()}>
             <button onClick={() => setShowSummary(false)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-800 transition-colors text-2xl font-black">✕</button>
             <h3 className="text-2xl font-serif font-black text-slate-800 mb-8 italic uppercase tracking-tighter border-b-2 border-slate-100 pb-4">House Summary</h3>
             
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border-t border-l border-slate-200">
               {HOUSE_ORDER.map(house => {
                 const studentsInHouse = Object.keys(studentData).filter(name => studentData[name].house === house);
                 const config = (HOUSE_CONFIG as any)[house];
                 
                 return (
-                  <div key={house} className={`rounded-2xl border-2 ${config.border} overflow-hidden shadow-sm`}>
+                  <div key={house} className="flex flex-col border-r border-b border-slate-200">
                     <div className={`${config.bg} p-2.5 text-white font-black text-center uppercase text-[10px] tracking-widest`}>
                       {config.icon} {house}
                     </div>
-                    <div className="bg-white">
+                    <div className="bg-white divide-y divide-slate-100">
                       {studentsInHouse.sort(sortKorean).map(name => {
-                        // 학생 데이터에서 직접 이모지를 가져와 훨씬 빠르고 정확합니다.
                         const emoji = studentData[name]?.emoji || "👤";
-                        
                         let totalMins = 0;
                         records.filter(r => r.student_name === name).forEach(r => {
                           const [h, m] = (r.study_time || "").split(':').map(Number);
@@ -480,11 +478,15 @@ export default function HogwartsApp() {
                         const isUnderGoal = totalMins < 1200;
 
                         return (
-                          <div key={name} className="flex justify-between items-center p-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors">
-                            <span className="text-xl">{emoji}</span>
-                            <span className={`font-black text-sm ${isUnderGoal ? 'text-red-500' : 'text-slate-700'}`}>
-                              {totalMins > 0 ? timeStr : "-"}
-                            </span>
+                          <div key={name} className="flex items-center h-10 hover:bg-slate-50 transition-colors">
+                            <div className="w-12 h-full flex items-center justify-center border-r border-slate-50 text-xl bg-slate-50/50">
+                              {emoji}
+                            </div>
+                            <div className="flex-1 px-3 text-right">
+                              <span className={`font-black text-sm ${isUnderGoal ? 'text-red-500' : 'text-slate-700'}`}>
+                                {totalMins > 0 ? timeStr : "-"}
+                              </span>
+                            </div>
                           </div>
                         );
                       })}
@@ -502,7 +504,6 @@ export default function HogwartsApp() {
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight uppercase">Hogwarts House Cup</h2>
           <div className="flex gap-2">
-            {/* 요약 확인 버튼 추가 */}
             {isAdmin && (
               <button 
                 onClick={() => setShowSummary(true)} 
@@ -515,6 +516,95 @@ export default function HogwartsApp() {
             <button onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full shadow-sm">LOGOUT</button>
           </div>
         </div>
+
+        <div className="grid grid-cols-4 gap-1.5 md:gap-4">
+          {houseRankings.map((item, idx) => (
+            <div key={item.house} onClick={() => setSelectedHouseNotice(item.house as any)} className={`relative overflow-hidden rounded-2xl md:rounded-[2rem] p-3 md:p-6 text-white shadow-xl transition-all hover:scale-[1.02] active:scale-95 cursor-pointer ${item.config.bg} ${idx === 0 ? 'ring-4 ring-yellow-400 ring-offset-2' : ''}`}>
+              <div className="relative z-10">
+                <div className="flex justify-between items-start mb-1 md:mb-4">
+                  <span className="text-xl md:text-4xl">{item.config.icon}</span>
+                  {idx === 0 && <span className="text-[10px] font-black bg-yellow-400 text-black px-2 py-0.5 rounded-full uppercase">1st</span>}
+                </div>
+                <h3 className="text-[10px] md:text-sm font-black opacity-80 uppercase tracking-widest mb-1">{item.house}</h3>
+                <div className="text-lg md:text-3xl font-black italic">{item.score.toLocaleString()}</div>
+              </div>
+              <div className="absolute -right-4 -bottom-4 text-white/10 text-6xl md:text-8xl font-black italic select-none">#{idx + 1}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
+        <div className="p-4 md:p-8 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-2 h-8 bg-slate-800 rounded-full"></div>
+            <h2 className="text-xl md:text-2xl font-black text-slate-800 uppercase italic tracking-tighter">Daily Study Log</h2>
+          </div>
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
+            {DAYS.map(day => (
+              <button key={day} onClick={() => setSelectedDay(day)} className={`px-4 py-2 rounded-full text-xs font-black transition-all whitespace-nowrap ${selectedDay === day ? 'bg-slate-800 text-white shadow-lg scale-105' : 'bg-white text-slate-400 hover:bg-slate-100 border border-slate-200'}`}>{day}</button>
+            ))}
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-white">
+                <th className="p-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pl-6 md:pl-8 italic">Student</th>
+                <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 italic">Late</th>
+                <th className="p-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pr-6 md:pr-8 italic">Duration</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {Object.keys(studentData).sort(sortKorean).map(name => {
+                const record = records.find(r => r.student_name === name && r.study_day === selectedDay);
+                const isSelected = selectedName === name;
+                const config = studentData[name];
+                
+                return (
+                  <tr key={name} className={`group transition-colors ${isSelected ? 'bg-slate-50' : 'hover:bg-slate-50/50'}`}>
+                    <td className="p-4 pl-6 md:pl-8">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{config.emoji}</span>
+                        <div>
+                          <div className={`text-sm md:text-base font-black ${config.text}`}>{name}</div>
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{config.house}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-4 text-center">
+                      <input 
+                        type="checkbox" 
+                        className="late-checkbox" 
+                        checked={record?.is_late || false} 
+                        disabled={!isSelected && !isAdmin} 
+                        onChange={(e) => updateRecord(name, record?.study_time || "", e.target.checked)} 
+                      />
+                    </td>
+                    <td className="p-4 pr-6 md:pr-8 text-right">
+                      {isSelected || isAdmin ? (
+                        <input 
+                          type="text" 
+                          placeholder="0:00" 
+                          className={`w-20 md:w-24 bg-white border-2 rounded-xl px-3 py-2 text-right font-black text-sm transition-all focus:ring-4 outline-none ${record?.study_time ? 'border-slate-800 text-slate-800' : 'border-slate-100 text-slate-300'} ${config.accent.replace('bg-', 'focus:ring-').replace('600', '100')}`}
+                          value={record?.study_time || ""} 
+                          onChange={(e) => updateRecord(name, e.target.value, record?.is_late || false)} 
+                        />
+                      ) : (
+                        <span className="text-sm font-black text-slate-300 italic">{record?.study_time || "-"}</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
 
       {/* --- 상단 기숙사 점수판(대시보드) 구역 --- */}
       <div className="max-w-[1100px] mx-auto mb-8">
