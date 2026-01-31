@@ -175,12 +175,12 @@ const HOUSE_NOTICES: { [key: string]: { title: string, content: string } } = {
 const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
 const OFF_OPTIONS = ['-', '출석', '반휴', '주휴', '월휴', '월반휴', '자율', '결석', '늦반휴', '늦휴', '늦월반휴', '늦월휴'];
 
-// 아래의 HOUSE_LOGOS를 추가했습니다. 다른 코드는 수정하지 않았습니다.
+// 이미지 엑박 방지를 위해 더 안정적인 공식 이미지 링크로 교체했습니다.
 const HOUSE_LOGOS: Record<string, string> = {
-  "슬리데린": "https://i.ibb.co/6R0fS8S/slytherin.png",
-  "래번클로": "https://i.ibb.co/vYm6YmY/ravenclaw.png",
-  "그리핀도르": "https://i.ibb.co/pP9m9mP/gryffindor.png",
-  "후플푸프": "https://i.ibb.co/fF8f8f8/hufflepuff.png"
+  "그리핀도르": "https://static.wikia.nocookie.net/harrypotter/images/b/b1/Gryffindor_Clear_BG.png",
+  "슬리데린": "https://static.wikia.nocookie.net/harrypotter/images/0/00/Slytherin_Clear_BG.png",
+  "래번클로": "https://static.wikia.nocookie.net/harrypotter/images/7/71/Ravenclaw_Clear_BG.png",
+  "후플푸프": "https://static.wikia.nocookie.net/harrypotter/images/2/21/Hufflepuff_Clear_BG.png"
 };
 
 const sortKorean = (a: string, b: string) => {
