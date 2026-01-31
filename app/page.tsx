@@ -658,8 +658,8 @@ export default function HogwartsApp() {
               <div className="p-3 text-[10px] font-black leading-relaxed flex flex-col justify-center gap-1 bg-slate-900 text-white rounded-2xl shadow-lg">
                 <div className="flex justify-between"><span>상점</span><span className="text-blue-400">+{calculatePoints(selectedStudentReport).bonus}</span></div>
                 <div className="flex justify-between"><span>벌점</span><span className="text-red-400">{calculatePoints(selectedStudentReport).penalty}</span></div>
-                <div className="flex justify-between text-yellow-400 mt-0.5"><span>잔여휴무</span><span>{calculatePoints(selectedStudentReport).remainingWeeklyOff}</span></div>
-                <div className="flex justify-between text-cyan-400"><span>잔여월휴</span><span>{calculatePoints(selectedStudentReport).remainingMonthlyOff}</span></div>
+                <div className="flex justify-between text-yellow-400 mt-0.5"><span>휴무</span><span>{calculatePoints(selectedStudentReport).remainingWeeklyOff}</span></div>
+                <div className="flex justify-between text-cyan-400"><span>월휴</span><span>{calculatePoints(selectedStudentReport).remainingMonthlyOff}</span></div>
               </div>
             </div>
           </div>
