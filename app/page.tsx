@@ -618,7 +618,7 @@ export default function HogwartsApp() {
             {/* 상단 로고/이름 영역: 날짜를 제거하여 하단과 분리감 조성 */}
             <div className="flex items-center gap-2 mb-6">
               {/* 왼쪽: 로고 크게 배치 */}
-              <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="Logo" className="w-37 h-36 object-contain drop-shadow-sm" />
+              <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="Logo" className="w-36.5 h-36.5 object-contain drop-shadow-sm" />
               
               {/* 오른쪽: 이모지, 이름, 공부시간 */}
               <div className="flex flex-col justify-center items-center text-center mt-6">
