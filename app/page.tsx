@@ -479,7 +479,7 @@ export default function HogwartsApp() {
     setIsSaving(false);
   };
 
-  // ==========================================
+// ==========================================
   // [13] 로그인 화면 (Render Login)
   // ==========================================
   if (!isLoggedIn) {
@@ -488,7 +488,13 @@ export default function HogwartsApp() {
         <style>{GLOVAL_STYLE}</style>
         <div className="bg-white p-10 rounded-[2.5rem] w-full max-w-md shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-2 bg-yellow-500"></div>
-          <h1 className="text-4xl font-serif font-black text-center mb-10 text-slate-800 tracking-tighter italic uppercase">Hogwarts</h1>
+          <div className="flex justify-center mb-10">
+            <img 
+              src="https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/Hogwarts.png" 
+              alt="Hogwarts" 
+              className="w-56 h-auto object-contain" 
+            />
+          </div>
           <div className="space-y-6">
             <select className="w-full p-5 border-2 rounded-2xl font-bold text-slate-800 bg-slate-50 outline-none text-lg" value={selectedName} onChange={(e)=>setSelectedName(e.target.value)}>
               <option value="">이름을 선택하세요</option>
