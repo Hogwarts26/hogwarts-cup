@@ -686,7 +686,7 @@ export default function HogwartsApp() {
         </div>
       )}
 
-      {/* --- 상단 기스크 점수판 --- */}
+{/* --- 상단 기스크 점수판 --- */}
       <div className="max-w-[1100px] mx-auto mb-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight">Hogwarts House Cup</h2>
@@ -804,7 +804,21 @@ export default function HogwartsApp() {
                             <div className="text-3xl mb-1">{info.emoji}</div>
                             <div className="leading-tight text-sm font-black mb-1 break-keep">{formatDisplayName(name)}</div>
                             <div className="text-[9px] font-black opacity-70 mb-2">{info.house}</div>
-                            <button onClick={(e) => { e.stopPropagation(); prompt("변경할 비밀번호를 입력하세요. (숫자4자리)"); }} className="text-[8px] underline opacity-40 block mx-auto">PW 변경</button>
+                            {/* --- 비밀번호 변경 버튼 로직 수정 --- */}
+                            <button 
+                              onClick={(e) => { 
+                                e.stopPropagation(); 
+                                const newPw = prompt("변경할 비밀번호를 입력하세요. (숫자4자리)");
+                                if (newPw && /^\d{4}$/.test(newPw)) {
+                                  handleChange(name, '월', 'password', newPw);
+                                } else if (newPw) {
+                                  alert("비밀번호는 숫자 4자리로 입력해주세요.");
+                                }
+                              }} 
+                              className="text-[8px] underline opacity-40 block mx-auto"
+                            >
+                              PW 변경
+                            </button>
                           </td>
                         )}
                         {DAYS.map(day => {
