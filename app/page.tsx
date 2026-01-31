@@ -944,8 +944,6 @@ export default function HogwartsApp() {
           </table>
         </div>
       </div>
-    </div>
-
 {/* 여기서부터 추가되는 지도 섹션입니다. 기존 코드는 절대 건드리지 않습니다. */}
       <div id="new-map-section" style={{ marginTop: '40px', fontFamily: 'inherit' }}>
         {/* 1. 상단 지형 구역 (가로 3개씩 2줄) */}
@@ -973,5 +971,6 @@ export default function HogwartsApp() {
           />
         </div>
       </div>
+    </div>
   );
 };
