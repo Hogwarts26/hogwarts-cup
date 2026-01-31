@@ -1146,7 +1146,7 @@ export default function HogwartsApp() {
                       filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))' 
                     }} 
                   />
-                  <p style={{ marginTop: '20px', fontSize: '13px', color: '#5e503f' }}>숲을 탐험하다 함께하게 된 소중한 인연입니다.</p>
+                  <p style={{ marginTop: '20px', fontSize: '13px', color: '#5e503f' }}>숲을 탐험하다 만난 소중한 인연입니다.</p>
                   <button onClick={() => setConfirmStep(0)} style={{ marginTop: '20px', width: '100%', padding: '10px', border: 'none', borderRadius: '10px', backgroundColor: '#5e503f', color: '#fff', cursor: 'pointer' }}>닫기</button>
                 </>
               )}
