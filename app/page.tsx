@@ -700,7 +700,7 @@ export default function HogwartsApp() {
         </div>
       )}
 
-      {/* --- 상단 기스크 점수판 (수정 없음) --- */}
+{/* --- 상단 기스크 점수판 (수정 없음) --- */}
       <div className="max-w-[1100px] mx-auto mb-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight">Hogwarts House Cup</h2>
@@ -729,7 +729,7 @@ export default function HogwartsApp() {
         </div>
       </div>
 
-{/* --- 학습 기록 메인 테이블 (수정 없음) --- */}
+      {/* --- 학습 기록 메인 테이블 (수정 완료) --- */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
         <div className="bg-slate-900 p-4 px-6 md:px-8 flex flex-col gap-2 text-white min-h-[60px]">
           <div className="flex justify-between items-center w-full">
@@ -755,7 +755,8 @@ export default function HogwartsApp() {
                   <button 
                     onClick={() => {
                       const targetName = displayList[0]; 
-                      if (targetName) handleUpdateRecord(targetName, 'goal', dailyGoal);
+                      // handleUpdateRecord -> handleChange 로 수정
+                      if (targetName) handleChange(targetName, '월', 'goal', dailyGoal);
                     }}
                     className="text-[10px] font-bold text-yellow-500 hover:text-yellow-400"
                   >
@@ -766,7 +767,8 @@ export default function HogwartsApp() {
                       if(confirm("목표를 삭제하시겠습니까?")) {
                         const targetName = displayList[0];
                         setDailyGoal("");
-                        if (targetName) handleUpdateRecord(targetName, 'goal', "");
+                        // handleUpdateRecord -> handleChange 로 수정
+                        if (targetName) handleChange(targetName, '월', 'goal', "");
                       }
                     }}
                     className="text-[10px] font-bold text-red-400 hover:text-red-300"
@@ -874,6 +876,3 @@ export default function HogwartsApp() {
           </table>
         </div>
       </div>
-    </div>
-  );
-};
