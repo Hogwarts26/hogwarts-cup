@@ -952,7 +952,7 @@ export default function HogwartsApp() {
         </div>
       </div>
 
-{/* 여기서부터 추가되는 지도 섹션입니다. 기존 코드는 절대 건드리지 않습니다. */}
+      {/* --- 드래곤 키우기 (Dragon Cave) 섹션 시작 --- */}
       <div id="new-map-section" style={{ marginTop: '80px', fontFamily: 'inherit', position: 'relative' }}>
         
         {/* Dragon Cave 제목 */}
@@ -1081,7 +1081,8 @@ export default function HogwartsApp() {
                 <>
                   <div style={{ fontFamily: "'Cinzel', serif", fontSize: '20px', fontWeight: 'bold', marginBottom: '20px', color: '#5e503f' }}>My Dragon</div>
                   {(() => {
-                    const hours = Number(student?.total_study_hours || 0); 
+                    const studentName = displayList[0];
+                    const hours = Number(studentData[studentName]?.total_study_hours || 0); 
                     const match = myDragon ? String(myDragon).match(/^([a-z]+)([0-9])\.webp$/i) : null;
                     if (!match) return <img src={`/${myDragon || 'al1.webp'}`} alt="My Dragon" style={{ width: '45px', height: '45px', display: 'block', margin: '0 auto', objectFit: 'contain' }} />;
 
