@@ -1,4 +1,3 @@
-
 "use client";
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from './supabase';
@@ -7,8 +6,17 @@ import { supabase } from './supabase';
 // [1] 글로벌 스타일 및 애니메이션 설정
 // ==========================================
 const GLOVAL_STYLE = `
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap');
   @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-  body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif; }
+
+  body { 
+    /* 영문/숫자는 Cinzel, 한국어는 Pretendard 순으로 적용됩니다. */
+    font-family: 'Cinzel', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif; 
+  }
+
+  /* 폰트 강조가 필요한 serif 클래스에 Cinzel 적용 */
+  .font-serif { font-family: 'Cinzel', serif; }
+`;
   
   /* 디즈니 마법 가루(Pixie Dust) 효과 */
   .winner-sparkle {
