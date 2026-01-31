@@ -211,6 +211,11 @@ export default function HogwartsApp() {
 
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
 
+// 알 선택 관련 상태들
+  const [selectedEgg, setSelectedEgg] = useState<string | null>(null); // 선택된 알 파일명
+  const [confirmStep, setConfirmStep] = useState(0); // 0: 일반, 1: 1차확인, 2: 2차확인
+  const [myDragon, setMyDragon] = useState<string | null>(null); // 최종 확정된 내 드래곤(알)
+
   // ==========================================
   // [6] 초기 실행 (인증 확인 및 시계)
   // ==========================================
@@ -946,6 +951,7 @@ export default function HogwartsApp() {
           </table>
         </div>
       </div>
+
 {/* 여기서부터 추가되는 지도 섹션입니다. 기존 코드는 절대 건드리지 않습니다. */}
       <div id="new-map-section" style={{ marginTop: '80px', fontFamily: 'inherit', position: 'relative' }}>
         
@@ -962,7 +968,7 @@ export default function HogwartsApp() {
           DRAGON CAVE
         </div>
 
-        {/* 1. 상단 지형 구역 (클릭 이벤트 유지) */}
+        {/* 1. 상단 지형 구역 (가로 3개씩 2줄 - 클릭 이벤트 유지) */}
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(3, 1fr)', 
@@ -989,8 +995,11 @@ export default function HogwartsApp() {
           ))}
         </div>
 
-        {/* 2. 지도 이미지 영역 */}
-        <div style={{ width: '100%' }}>
+        {/* 2. 지도 이미지 영역 (클릭 시 내 알 확인 기능 추가) */}
+        <div 
+          style={{ width: '100%', cursor: myDragon ? 'pointer' : 'default' }}
+          onClick={() => { if(myDragon) setConfirmStep(3); }}
+        >
           <img 
             src="/map.jpg" 
             alt="Map" 
@@ -998,7 +1007,7 @@ export default function HogwartsApp() {
           />
         </div>
 
-        {/* 3. 지역별 .webp 팝업 레이어 (흰색 배경 + 2글자 조합 이미지 3개 추가) */}
+        {/* 3. 지역별 .webp 팝업 레이어 */}
         {selectedArea && (
           <div 
             onClick={() => setSelectedArea(null)} 
@@ -1009,28 +1018,26 @@ export default function HogwartsApp() {
               alignItems: 'center', justifyContent: 'center', zIndex: 9999
             }}
           >
-            <div style={{ 
-              position: 'relative', 
-              width: '90%', 
-              maxWidth: '400px',
-              backgroundColor: '#ffffff', 
-              borderRadius: '15px',
-              overflow: 'hidden',         
-              boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
-            }}>
-              {/* 메인 배경 이미지 영역 */}
+            <div 
+              onClick={(e) => e.stopPropagation()} // 팝업 내부 클릭 시 닫히지 않게
+              style={{ 
+                position: 'relative', 
+                width: '90%', 
+                maxWidth: '400px',
+                backgroundColor: '#ffffff', 
+                borderRadius: '15px',
+                overflow: 'hidden',         
+                boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+              }}
+            >
               <div style={{ position: 'relative' }}>
                 <img 
                   src={`/${selectedArea.toLowerCase()}.webp`} 
                   alt={selectedArea}
-                  style={{ 
-                    width: '100%', 
-                    display: 'block',
-                    opacity: 0.7, 
-                  }} 
+                  style={{ width: '100%', display: 'block', opacity: 0.7 }} 
                 />
                 
-                {/* --- 2글자 조합 이미지 3개 (하단 배치) --- */}
+                {/* 알 이미지 3개 배치 및 클릭 이벤트 추가 */}
                 <div style={{ 
                   position: 'absolute', 
                   bottom: '20px', 
@@ -1040,23 +1047,30 @@ export default function HogwartsApp() {
                   justifyContent: 'center', 
                   gap: '40px' 
                 }}>
-                  {[1, 2, 3].map((num) => (
-                    <img 
-                      key={num}
-                      src={`/${selectedArea.substring(0, 2).toLowerCase()}${num}.webp`}
-                      alt={`egg-${num}`}
-                      style={{ 
-                        width: '45px', 
-                        height: '45px', 
-                        objectFit: 'contain',
-                        filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))' // 배경과 분리되도록 그림자 추가
-                      }} 
-                    />
-                  ))}
+                  {[1, 2, 3].map((num) => {
+                    const eggFile = `${selectedArea.substring(0, 2).toLowerCase()}${num}.webp`;
+                    return (
+                      <img 
+                        key={num}
+                        src={`/${eggFile}`}
+                        alt={`egg-${num}`}
+                        onClick={() => {
+                          setSelectedEgg(eggFile);
+                          setConfirmStep(1);
+                        }}
+                        style={{ 
+                          width: '45px', 
+                          height: '45px', 
+                          objectFit: 'contain',
+                          cursor: 'pointer',
+                          filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))'
+                        }} 
+                      />
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* 하단 텍스트 표시 구역 */}
               <div style={{ 
                 backgroundColor: '#ffffff',
                 padding: '15px 0',
@@ -1069,6 +1083,61 @@ export default function HogwartsApp() {
               }}>
                 - {selectedArea} -
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* 4. 입양 프로세스 및 내 드래곤 확인 팝업 (통합 관리) */}
+        {confirmStep > 0 && (
+          <div 
+            style={{
+              position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+              backgroundColor: 'rgba(0,0,0,0.8)', 
+              display: 'flex', 
+              alignItems: 'center', justifyContent: 'center', zIndex: 10000
+            }}
+          >
+            <div style={{ 
+              backgroundColor: confirmStep === 3 ? '#e3d5ca' : '#ffffff', // 지도 클릭 시 연갈색 적용
+              padding: '30px', 
+              borderRadius: '20px', 
+              width: '85%', 
+              maxWidth: '350px', 
+              textAlign: 'center',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.5)'
+            }}>
+              
+              {confirmStep === 1 && (
+                <>
+                  <p style={{ fontWeight: '900', fontSize: '18px', marginBottom: '20px' }}>이 알을 데려갈까요?</p>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button onClick={() => setConfirmStep(2)} style={{ flex: 1, padding: '12px', border: '1px solid #ccc', borderRadius: '10px', backgroundColor: '#fff', cursor: 'pointer' }}>네</button>
+                    <button onClick={() => { setConfirmStep(0); setSelectedEgg(null); }} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: '10px', backgroundColor: '#eee', cursor: 'pointer' }}>좀 더 생각해볼게요</button>
+                  </div>
+                </>
+              )}
+
+              {confirmStep === 2 && (
+                <>
+                  <p style={{ fontWeight: '900', fontSize: '18px', marginBottom: '10px' }}>정말 이 알을 데려갈까요?</p>
+                  <p style={{ fontSize: '13px', color: '#666', lineHeight: '1.5', marginBottom: '20px' }}>
+                    한 번 데려온 알은 졸업 전까지<br/>여러분과 함께하게 됩니다.
+                  </p>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button onClick={() => { setMyDragon(selectedEgg); setConfirmStep(0); setSelectedArea(null); }} style={{ flex: 1, padding: '12px', border: '1px solid #ccc', borderRadius: '10px', backgroundColor: '#fff', cursor: 'pointer' }}>네</button>
+                    <button onClick={() => { setConfirmStep(0); setSelectedEgg(null); }} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: '10px', backgroundColor: '#eee', cursor: 'pointer' }}>좀 더 생각해볼게요</button>
+                  </div>
+                </>
+              )}
+
+              {confirmStep === 3 && (
+                <>
+                  <div style={{ fontFamily: "'Cinzel', serif", fontSize: '20px', fontWeight: 'bold', marginBottom: '20px', color: '#5e503f' }}>MY EGG</div>
+                  <img src={`/${myDragon}`} alt="My Dragon" style={{ width: '80px', height: '80px', objectFit: 'contain', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))' }} />
+                  <p style={{ marginTop: '20px', fontSize: '13px', color: '#5e503f' }}>지도에서 발견한 소중한 인연입니다.</p>
+                  <button onClick={() => setConfirmStep(0)} style={{ marginTop: '20px', width: '100%', padding: '10px', border: 'none', borderRadius: '10px', backgroundColor: '#5e503f', color: '#fff', cursor: 'pointer' }}>닫기</button>
+                </>
+              )}
             </div>
           </div>
         )}
