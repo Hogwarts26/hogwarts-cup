@@ -439,22 +439,29 @@ export default function HogwartsApp() {
       if (!error) { setRecords(prev => prev.map(r => r.student_name === name ? { ...r, password: value } : r)); alert("비밀번호가 성공적으로 변경되었습니다"); }
     } 
     else if (field === 'goal') {
-      // --- 오늘의 다짐(목표) 저장 구역 ---
+
+// --- 오늘의 다짐(목표) 저장 구역 ---
       const updatePayload = DAYS.map(d => {
         const existing = records.find(r => r.student_name === name && r.day_of_week === d) || {};
         return { 
           ...existing, 
           student_name: name, 
           day_of_week: d, 
-          goal: value,
+          goal: value, // 수정된 목표값
           password: existing.password || '0000',
           monthly_off_count: existing.monthly_off_count ?? 4
         };
       });
+
       const { error } = await supabase.from('study_records').upsert(updatePayload, { onConflict: 'student_name,day_of_week' });
+      
       if (!error) {
+        // [수정/저장 반영] 전체 records에서 해당 학생의 모든 요일 목표를 value로 통일
         setRecords(prev => prev.map(r => r.student_name === name ? { ...r, goal: value } : r));
+        
+        // UI 상태 동기화 (저장 버튼 클릭 후 입력 모드 해제 등)
         setDailyGoal(value);
+        setIsEditingGoal(false); // 수정 완료 후 버튼 상태를 다시 '수정'으로 변경하기 위함
       }
     }
     else {
@@ -464,7 +471,9 @@ export default function HogwartsApp() {
       const current = newRecords[idx] || {};
       const updatedData = { 
         ...current,
-        student_name: name, day_of_week: day, [field]: value, 
+        student_name: name, 
+        day_of_week: day, 
+        [field]: value, 
         password: current.password || '0000', 
         monthly_off_count: field === 'monthly_off_count' ? value : (current.monthly_off_count ?? 4)
       };
@@ -628,10 +637,11 @@ export default function HogwartsApp() {
                 />
               </div>
               
-              {/* 오른쪽: 이모지/이름(중앙정렬) + 공부시간/목표(좌측정렬) */}
+              {/* 오른쪽: 이모지+이름(가로배치) + 공부시간/목표(좌측정렬) */}
               <div className="w-[55%] flex flex-col justify-end items-start pl-4">
-                <div className="flex flex-col mb-1 items-center justify-center">
-                  <span className="text-4xl md:text-5xl mb-1">{studentData[selectedStudentReport].emoji}</span>
+                {/* 이모지와 이름을 가로로 배치하고 아래 공부시간과 밀착(mb-0) */}
+                <div className="flex items-center gap-1.5 mb-0">
+                  <span className="text-5xl md:text-6xl">{studentData[selectedStudentReport].emoji}</span>
                   <span className="font-bold text-xs md:text-sm text-slate-400 tracking-tight leading-none">{formatDisplayName(selectedStudentReport)}</span>
                 </div>
                 <div className="flex flex-col items-start">
