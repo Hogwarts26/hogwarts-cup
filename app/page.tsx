@@ -998,30 +998,45 @@ export default function HogwartsApp() {
           />
         </div>
 
-        {/* 3. 지역별 .webp 팝업 레이어 (투명도 70%) */}
+{/* 3. 지역별 .webp 팝업 레이어 (흰색 배경 + 이미지 70% 투명도) */}
         {selectedArea && (
           <div 
-            onClick={() => setSelectedArea(null)} // 배경 클릭 시 닫기
+            onClick={() => setSelectedArea(null)} 
             style={{
               position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-              backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', 
+              backgroundColor: 'rgba(0,0,0,0.6)', // 팝업 바깥쪽 어두운 배경
+              display: 'flex', 
               alignItems: 'center', justifyContent: 'center', zIndex: 9999
             }}
           >
-            <div style={{ position: 'relative', width: '90%', maxWidth: '400px' }}>
+            <div style={{ 
+              position: 'relative', 
+              width: '90%', 
+              maxWidth: '400px',
+              backgroundColor: '#ffffff', // 이미지 뒤에 깔리는 흰색 바탕
+              borderRadius: '15px',
+              overflow: 'hidden',         // 이미지가 둥근 모서리를 벗어나지 않게
+              boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+            }}>
               <img 
                 src={`/${selectedArea.toLowerCase()}.webp`} 
                 alt={selectedArea}
                 style={{ 
                   width: '100%', 
-                  borderRadius: '15px', 
-                  opacity: 0.7, // 요청하신 70% 투명도
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.5)' 
+                  display: 'block',
+                  opacity: 0.7, // 흰색 배경 위에서 70% 투명도 적용
                 }} 
               />
+              {/* 이미지 하단 지형 이름 표시 구역 (흰색 배경 유지) */}
               <div style={{ 
-                color: '#fff', textAlign: 'center', marginTop: '15px', 
-                fontSize: '14px', fontFamily: "'Cinzel', serif", fontWeight: '700' 
+                backgroundColor: '#ffffff',
+                padding: '15px 0',
+                color: '#222', 
+                textAlign: 'center', 
+                fontSize: '14px', 
+                fontFamily: "'Cinzel', serif", 
+                fontWeight: '700',
+                borderTop: '1px solid #eee'
               }}>
                 - {selectedArea} -
               </div>
