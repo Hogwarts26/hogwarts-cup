@@ -282,7 +282,7 @@ export default function HogwartsApp() {
     setIsSaving(false);
   };
 
-  // ==========================================
+ // ==========================================
   // [10] 점수 계산 로직 (Penalty & Bonus)
   // ==========================================
   const calc = (r: any) => {
@@ -303,6 +303,40 @@ export default function HogwartsApp() {
       else if (!isHalfOff && studyH >= target + 1) bonus += Math.floor(studyH - target);
     }
     return { penalty: Math.max(penalty, -5), bonus, total: Math.max(penalty, -5) + bonus, studyH };
+  };
+
+  // --- 아래부터는 리포트 기능을 위해 추가되는 함수입니다 (기존 코드 미수정) ---
+
+  const calculateWeeklyTotal = (name: string) => {
+    let totalMinutes = 0;
+    records.filter(r => r.student_name === name).forEach(r => {
+      const [h, m] = (r.study_time || "0:00").split(':').map(Number);
+      totalMinutes += (isNaN(h) ? 0 : h * 60) + (isNaN(m) ? 0 : m);
+    });
+    return `${Math.floor(totalMinutes / 60)}:${(totalMinutes % 60).toString().padStart(2, '0')}`;
+  };
+
+  const getWeeklyDateRange = () => {
+    const today = new Date();
+    const day = today.getDay();
+    const diff = today.getDate() - (day === 0 ? 6 : day - 1);
+    const monday = new Date(new Date().setDate(diff));
+    const sunday = new Date(new Date().setDate(diff + 6));
+    return `${monday.getMonth() + 1}.${monday.getDate()} - ${sunday.getMonth() + 1}.${sunday.getDate()}`;
+  };
+
+  const getDayDate = (targetDay: string) => {
+    const dayIdx = DAYS.indexOf(targetDay);
+    const today = new Date();
+    const currentDay = today.getDay();
+    const diff = today.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + dayIdx;
+    const target = new Date(new Date().setDate(diff));
+    return `${target.getMonth() + 1}.${target.getDate()}`;
+  };
+
+  const getMonthAccumulatedTime = (name: string) => {
+    const currentMonth = new Date().getMonth() + 1;
+    return [{ month: currentMonth, time: calculateWeeklyTotal(name) }];
   };
 
   // ==========================================
