@@ -397,7 +397,7 @@ export default function HogwartsApp() {
       })
     : [selectedName];
 
-// ==========================================
+  // ==========================================
   // [15] 메인 화면 렌더링 (UI)
   // ==========================================
   return (
@@ -449,41 +449,46 @@ export default function HogwartsApp() {
         </div>
       )}
 
-      {/* --- 요약 확인 팝업 --- */}
+      {/* --- 요약 확인 팝업 (이미지 피드백 반영: 격자무늬 및 배경색) --- */}
       {showSummary && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowSummary(false)}>
           <div className="bg-white rounded-[2rem] p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl relative" onClick={e => e.stopPropagation()}>
             <button onClick={() => setShowSummary(false)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-800 transition-colors text-2xl font-black">✕</button>
-            <h3 className="text-2xl font-serif font-black text-slate-800 mb-8 italic uppercase tracking-tighter border-b-2 border-slate-100 pb-4">House Summary</h3>
+            <h3 className="text-2xl font-serif font-black text-slate-800 mb-8 italic uppercase tracking-tighter border-b-2 border-slate-100 pb-4 text-center">House Weekly Summary</h3>
             
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border-t border-l border-slate-200">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border-t border-l border-slate-300">
               {HOUSE_ORDER.map(house => {
                 const studentsInHouse = Object.keys(studentData).filter(name => studentData[name].house === house);
                 const config = (HOUSE_CONFIG as any)[house];
                 
                 return (
-                  <div key={house} className="flex flex-col border-r border-b border-slate-200">
-                    <div className={`${config.bg} p-2.5 text-white font-black text-center uppercase text-[10px] tracking-widest`}>
+                  <div key={house} className="flex flex-col border-r border-b border-slate-300">
+                    {/* 기숙사 헤더 */}
+                    <div className={`${config.bg} p-2 text-white font-black text-center uppercase text-[11px] tracking-widest`}>
                       {config.icon} {house}
                     </div>
-                    <div className="bg-white divide-y divide-slate-100">
+                    {/* 학생 목록 표 */}
+                    <div className="flex flex-col flex-1">
                       {studentsInHouse.sort(sortKorean).map(name => {
-                        const emoji = studentData[name]?.emoji || "👤";
+                        const emoji = studentData[name].emoji || "👤";
                         let totalMins = 0;
                         records.filter(r => r.student_name === name).forEach(r => {
                           const [h, m] = (r.study_time || "").split(':').map(Number);
                           totalMins += (isNaN(h) ? 0 : h * 60) + (isNaN(m) ? 0 : m);
                         });
                         const timeStr = `${Math.floor(totalMins/60)}:${(totalMins%60).toString().padStart(2,'0')}`;
+                        // 20시간(1200분) 미만은 빨간색 표시
                         const isUnderGoal = totalMins < 1200;
 
                         return (
-                          <div key={name} className="flex items-center h-10 hover:bg-slate-50 transition-colors">
-                            <div className="w-12 h-full flex items-center justify-center border-r border-slate-50 text-xl bg-slate-50/50">
+                          <div key={name} className="flex border-b border-slate-200 last:border-0 h-10">
+                            {/* 이모지 칸: 이미지처럼 옅은 배경색 적용 */}
+                            <div className={`w-12 flex items-center justify-center text-xl border-r border-slate-200 ${config.bg.replace('bg-', 'bg-opacity-10 bg-')}`}>
                               {emoji}
                             </div>
-                            <div className="flex-1 px-3 text-right">
-                              <span className={`font-black text-sm ${isUnderGoal ? 'text-red-500' : 'text-slate-700'}`}>
+                            {/* 시간 칸 */}
+                            <div className="flex-1 flex items-center justify-end pr-4 font-black text-sm text-slate-700 bg-white">
+                              <span className={isUnderGoal ? "text-red-500" : "text-slate-800"}>
                                 {totalMins > 0 ? timeStr : "-"}
                               </span>
                             </div>
@@ -534,6 +539,7 @@ export default function HogwartsApp() {
         </div>
       </div>
 
+      {/* 학습 기록 테이블 구역 */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
         <div className="p-4 md:p-8 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
