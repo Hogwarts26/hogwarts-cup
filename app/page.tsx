@@ -397,7 +397,7 @@ export default function HogwartsApp() {
       })
     : [selectedName];
 
- // ==========================================
+// ==========================================
   // [15] 메인 화면 렌더링 (UI)
   // ==========================================
   return (
@@ -430,18 +430,15 @@ export default function HogwartsApp() {
       
       {/* --- 1. 마법 공지사항 팝업 --- */}
       {selectedHouseNotice && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setSelectedHouseNotice(null)}>
-          <div className="relative bg-[#f4e4bc] p-6 md:p-12 w-full max-w-2xl rounded-sm shadow-[0_0_50px_rgba(0,0,0,0.3)] overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()} style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.05) 100%)' }}>
-            <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/paper-fibers.png")' }}></div>
-            <button onClick={() => setSelectedHouseNotice(null)} className="absolute top-2 right-2 md:top-4 md:right-4 text-slate-800 hover:rotate-90 transition-transform p-2 text-2xl z-20">✕</button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedHouseNotice(null)}>
+          <div className="relative bg-[#f4e4bc] p-6 md:p-12 w-full max-w-2xl rounded-sm shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setSelectedHouseNotice(null)} className="absolute top-4 right-4 text-slate-800 text-2xl z-20">✕</button>
             <div className="relative z-10 font-serif flex flex-col overflow-hidden">
-              <div className="w-16 h-1 bg-slate-800/20 mx-auto mb-4 md:mb-6 shrink-0"></div>
-              <h3 className="text-xl md:text-3xl font-black text-[#4a3728] mb-4 md:mb-6 text-center italic border-b border-[#4a3728]/20 pb-4 shrink-0 px-4">{HOUSE_NOTICES[selectedHouseNotice].title}</h3>
-              <div className="overflow-y-auto pr-2 custom-scrollbar">
-                <div className="text-base md:text-lg leading-relaxed text-[#5d4037] whitespace-pre-wrap font-medium">
-                  {HOUSE_NOTICES[selectedHouseNotice].content}
-                </div>
-                <div className="mt-8 mb-4 text-right italic font-bold text-[#4a3728]/60">— Hogwarts School of Witchcraft and Wizardry —</div>
+              <h3 className="text-xl md:text-3xl font-black text-[#4a3728] mb-6 text-center italic border-b border-[#4a3728]/20 pb-4">
+                {HOUSE_NOTICES[selectedHouseNotice].title}
+              </h3>
+              <div className="overflow-y-auto text-base md:text-lg leading-relaxed text-[#5d4037] whitespace-pre-wrap font-medium">
+                {HOUSE_NOTICES[selectedHouseNotice].content}
               </div>
             </div>
           </div>
@@ -452,8 +449,8 @@ export default function HogwartsApp() {
       {showSummary && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowSummary(false)}>
           <div className="bg-white rounded-[2rem] p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl relative" onClick={e => e.stopPropagation()}>
-            <button onClick={() => setShowSummary(false)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-800 transition-colors text-2xl font-black">✕</button>
-            <h3 className="text-2xl font-serif font-black text-slate-800 mb-8 italic uppercase tracking-tighter border-b-2 border-slate-100 pb-4 text-center">House Weekly Summary</h3>
+            <button onClick={() => setShowSummary(false)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-800 text-2xl font-black">✕</button>
+            <h3 className="text-2xl font-serif font-black text-slate-800 mb-8 italic uppercase text-center border-b-2 pb-4">House Weekly Summary</h3>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border-t border-l border-slate-300">
               {HOUSE_ORDER.map(house => {
                 const studentsInHouse = Object.keys(studentData).filter(name => studentData[name].house === house);
@@ -485,32 +482,33 @@ export default function HogwartsApp() {
         </div>
       )}
 
-      {/* --- 3. 상단 기숙사 점수판 --- */}
+      {/* --- 3. 대시보드 (기숙사 점수판) --- */}
       <div className="max-w-[1100px] mx-auto mb-8">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight uppercase">Hogwarts House Cup</h2>
+          <h2 className="text-2xl font-serif font-black text-slate-800 italic uppercase">Hogwarts House Cup</h2>
           <div className="flex gap-2">
             {isAdmin && (
               <>
-                <button onClick={() => setShowSummary(true)} className="text-[10px] font-black text-white bg-indigo-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-indigo-700 transition-colors">요약 확인</button>
-                <button onClick={resetWeeklyData} className="text-[10px] font-black text-white bg-red-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-red-700 transition-colors">WEEKLY RESET</button>
+                <button onClick={() => setShowSummary(true)} className="text-[10px] font-black text-white bg-indigo-600 px-3 py-1.5 rounded-full shadow-lg">요약 확인</button>
+                <button onClick={resetWeeklyData} className="text-[10px] font-black text-white bg-red-600 px-3 py-1.5 rounded-full shadow-lg">WEEKLY RESET</button>
               </>
             )}
-            <button onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full shadow-sm">LOGOUT</button>
+            <button onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full">LOGOUT</button>
           </div>
         </div>
         <div className="grid grid-cols-4 gap-1.5 md:gap-4">
           {houseRankings.map((item, idx) => {
             const config = (HOUSE_CONFIG as any)[item.house];
             return (
-              <div key={item.house} onClick={() => setSelectedHouseNotice(item.house as any)} className={`${config.bg} ${config.border} ${idx === 0 ? 'ring-4 ring-yellow-400 ring-offset-2' : ''} border-b-4 p-3 md:p-6 rounded-2xl md:rounded-[2rem] text-white shadow-xl relative overflow-hidden cursor-pointer transition-all hover:scale-[1.02] active:scale-95`}>
+              <div key={item.house} onClick={() => setSelectedHouseNotice(item.house as any)} className={`${config.bg} p-3 md:p-6 rounded-2xl md:rounded-[2rem] text-white shadow-xl relative overflow-hidden cursor-pointer transition-all hover:scale-[1.02]`}>
                 <div className="relative z-10">
                   <div className="flex justify-between items-start mb-1 md:mb-4">
                     <span className="text-xl md:text-4xl">{config.icon}</span>
-                    {idx === 0 && <span className="text-[10px] font-black bg-yellow-400 text-black px-2 py-0.5 rounded-full uppercase">1st</span>}
+                    {idx === 0 && <span className="text-[10px] font-black bg-yellow-400 text-black px-2 py-0.5 rounded-full">1st</span>}
                   </div>
-                  <h3 className="text-[10px] md:text-sm font-black opacity-80 uppercase tracking-widest mb-1">{item.house}</h3>
-                  <div className="text-lg md:text-3xl font-black italic">{item.score.toLocaleString()}</div>
+                  <h3 className="text-[10px] md:text-sm font-black opacity-80 uppercase mb-1">{item.house}</h3>
+                  {/* 에러 해결 지점: score 대신 finalPoint 사용 */}
+                  <div className="text-lg md:text-3xl font-black italic">{item.finalPoint.toLocaleString()}</div>
                 </div>
                 <div className="absolute -right-4 -bottom-4 text-white/10 text-6xl md:text-8xl font-black italic select-none">#{idx + 1}</div>
               </div>
@@ -519,26 +517,21 @@ export default function HogwartsApp() {
         </div>
       </div>
 
-      {/* --- 4. 학습 기록 메인 테이블 --- */}
+      {/* --- 4. 상세 학습 기록 테이블 --- */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
-        <div className="bg-slate-900 p-4 px-6 md:px-8 flex flex-col gap-2 text-white">
-          <div className="flex justify-between items-center w-full">
-            <span className="text-[10px] md:text-xs font-black text-yellow-500 uppercase tracking-widest flex items-center gap-2">
-              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-              {isAdmin ? "Headmaster Console" : currentTime.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}
-            </span>
-            {isSaving && <div className="text-[9px] text-yellow-500 font-bold uppercase animate-bounce">Magic occurring...</div>}
-          </div>
+        <div className="bg-slate-900 p-4 px-6 md:px-8 text-white">
+          <span className="text-[10px] md:text-xs font-black text-yellow-500 uppercase tracking-widest">
+            {isAdmin ? "Headmaster Console" : currentTime.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}
+          </span>
         </div>
-
         <div className="w-full overflow-x-auto">
-          <table className="min-w-[850px] w-full table-fixed border-collapse">
+          <table className="min-w-[850px] w-full border-collapse">
             <thead>
               <tr className="bg-slate-50 text-slate-500 uppercase font-black text-[11px] border-b-2 text-center">
                 <th className="w-28 p-3 sticky left-0 bg-slate-50 z-20 border-r">학생명</th>
                 {DAYS.map(d => <th key={d} className="w-16 p-3 text-slate-900">{d}</th>)}
-                <th className="w-24 p-3 bg-slate-100">총 공부시간</th>
-                <th className="w-16 p-3 bg-slate-100 border-l">잔여월휴</th>
+                <th className="w-24 p-3 bg-slate-100">총 시간</th>
+                <th className="w-16 p-3 bg-slate-100 border-l">월휴</th>
               </tr>
             </thead>
             <tbody>
@@ -546,56 +539,54 @@ export default function HogwartsApp() {
                 const info = studentData[name];
                 const monRec = records.find(r => r.student_name === name && r.day_of_week === '월') || {};
                 const offCount = monRec.monthly_off_count ?? 4;
-                const rows = [{f:'off_type', label:'휴가'}, {f:'is_late', label:'지각'}, {f:'study_time', label:'시간'}, {f:'total', label:'점수'}];
+                const rows = [{f:'off_type'}, {f:'is_late'}, {f:'study_time'}, {f:'total'}];
                 
-                let totalTimeMinutes = 0;
-                let totalPointsSum = 0;
+                let totalMins = 0;
+                let totalPoints = 0;
                 records.filter(r => r.student_name === name).forEach(r => {
                   const res = calc(r);
                   const [h, m] = (r.study_time || "").split(':').map(Number);
-                  totalTimeMinutes += (isNaN(h) ? 0 : h * 60) + (isNaN(m) ? 0 : m);
-                  totalPointsSum += res.total;
+                  totalMins += (isNaN(h) ? 0 : h * 60) + (isNaN(m) ? 0 : m);
+                  totalPoints += res.total;
                 });
 
                 return (
                   <React.Fragment key={name}>
                     {rows.map((row, rIdx) => (
-                      <tr key={row.f} className={`${rIdx === 3 ? "border-b-[6px] border-slate-100" : "border-b border-slate-50"}`}>
+                      <tr key={row.f} className={rIdx === 3 ? "border-b-[6px] border-slate-100" : "border-b border-slate-50"}>
                         {rIdx === 0 && (
-                          <td rowSpan={4} className={`p-4 text-center sticky left-0 z-20 font-bold border-r-[3px] ${info.color} ${info.text}`}>
-                            <div className="text-3xl mb-1">{info.emoji}</div>
-                            <div className="leading-tight text-sm font-black mb-1 break-keep">{name}</div>
-                            <div className="text-[9px] font-black opacity-70 uppercase">{info.house}</div>
+                          <td rowSpan={4} className={`p-4 text-center sticky left-0 z-20 border-r-[3px] ${info.color} ${info.text}`}>
+                            <div className="text-2xl mb-1">{info.emoji}</div>
+                            <div className="text-sm font-black break-keep">{name}</div>
                           </td>
                         )}
                         {DAYS.map(day => {
                           const rec = records.find(r => r.student_name === name && r.day_of_week === day) || {};
-                          const res = calc(rec);
                           return (
                             <td key={day} className="p-1.5 text-center border-r border-slate-50">
                               {row.f === 'off_type' ? (
-                                <select className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-[10px]" value={rec.off_type || '-'} onChange={(e) => handleChange(name, day, 'off_type', e.target.value)} disabled={!isAdmin}>
+                                <select className="w-full text-center bg-transparent font-black text-[10px]" value={rec.off_type || '-'} onChange={(e) => handleChange(name, day, 'off_type', e.target.value)} disabled={!isAdmin}>
                                   {OFF_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
                                 </select>
                               ) : row.f === 'is_late' ? (
                                 <input type="checkbox" className="late-checkbox" checked={!!rec.is_late} onChange={(e) => handleChange(name, day, 'is_late', e.target.checked)} disabled={!isAdmin} />
                               ) : row.f === 'study_time' ? (
-                                <input type="text" className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-xs" placeholder="0:00" value={rec.study_time || ''} onBlur={(e) => handleChange(name, day, 'study_time', e.target.value)} onChange={(e) => setRecords(prev => prev.map(r => (r.student_name === name && r.day_of_week === day) ? {...r, study_time: e.target.value} : r))} disabled={!isAdmin} />
+                                <input type="text" className="w-full text-center bg-transparent font-black text-xs" placeholder="0:00" value={rec.study_time || ''} onBlur={(e) => handleChange(name, day, 'study_time', e.target.value)} onChange={(e) => setRecords(prev => prev.map(r => (r.student_name === name && r.day_of_week === day) ? {...r, study_time: e.target.value} : r))} disabled={!isAdmin} />
                               ) : (
-                                <span className="font-black text-xs text-slate-600">{res.total}</span>
+                                <span className="font-black text-xs">{calc(rec).total}</span>
                               )}
                             </td>
                           );
                         })}
-                        <td className="bg-slate-50 text-center font-black border-l">
-                          {rIdx === 2 && <div className={`text-sm ${totalTimeMinutes < 1200 ? 'text-red-600' : 'text-slate-900'}`}>{Math.floor(totalTimeMinutes/60)}:{(totalTimeMinutes%60).toString().padStart(2,'0')}</div>}
-                          {rIdx === 3 && <div className="text-[10px] text-blue-700 bg-blue-50 py-1 rounded">총 {totalPointsSum}점</div>}
+                        <td className="bg-slate-50 text-center font-black">
+                          {rIdx === 2 && <div className="text-sm">{Math.floor(totalMins/60)}:{(totalMins%60).toString().padStart(2,'0')}</div>}
+                          {rIdx === 3 && <div className="text-[10px] text-blue-700">총 {totalPoints}점</div>}
                         </td>
                         {rIdx === 0 && (
                           <td rowSpan={4} className="p-2 bg-white border-l text-center">
                             <div className="flex flex-col items-center gap-1">
-                              {[1, 2, 3, 4].map((n) => (
-                                <div key={n} onClick={() => isAdmin && handleChange(name, '월', 'monthly_off_count', (offCount >= (5-n) ? (5-n)-1 : offCount))} className={`w-6 h-4 rounded-sm border ${offCount >= (5-n) ? info.accent : 'bg-slate-50 border-slate-200'} ${isAdmin ? 'cursor-pointer' : ''}`} />
+                              {[1, 2, 3, 4].map(n => (
+                                <div key={n} className={`w-6 h-4 rounded-sm border ${offCount >= (5-n) ? info.accent : 'bg-slate-50'}`} />
                               ))}
                             </div>
                           </td>
