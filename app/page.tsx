@@ -209,6 +209,8 @@ export default function HogwartsApp() {
   const [dailyGoal, setDailyGoal] = useState("");
   const [isEditingGoal, setIsEditingGoal] = useState(false);
 
+  const [selectedArea, setSelectedArea] = useState<string | null>(null);
+
   // ==========================================
   // [6] 초기 실행 (인증 확인 및 시계)
   // ==========================================
@@ -945,22 +947,22 @@ export default function HogwartsApp() {
         </div>
       </div>
 {/* 여기서부터 추가되는 지도 섹션입니다. 기존 코드는 절대 건드리지 않습니다. */}
-      <div id="new-map-section" style={{ marginTop: '80px', fontFamily: 'inherit' }}>
+      <div id="new-map-section" style={{ marginTop: '80px', fontFamily: 'inherit', position: 'relative' }}>
         
         {/* Dragon Cave 제목 (Cinzel 폰트 적용) */}
         <div style={{ 
           textAlign: 'center', 
-          fontSize: '22px',          // 폰트 특성상 조금 더 키웠습니다.
+          fontSize: '22px', 
           fontWeight: '700', 
           marginBottom: '25px',
           color: '#222',
-          fontFamily: "'Cinzel', serif", // Cinzel 폰트 지정
-          letterSpacing: '2px'        // 간격을 넓혀 더 고급스럽게 연출
+          fontFamily: "'Cinzel', serif", 
+          letterSpacing: '2px'
         }}>
           DRAGON CAVE
         </div>
 
-        {/* 1. 상단 지형 구역 (가로 3개씩 2줄) */}
+        {/* 1. 상단 지형 구역 (가로 3개씩 2줄 - 클릭 이벤트 추가) */}
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(3, 1fr)', 
@@ -969,14 +971,19 @@ export default function HogwartsApp() {
           textAlign: 'center' 
         }}>
           {['Alpine', 'Coast', 'Desert', 'Forest', 'Jungle', 'Volcano'].map((area) => (
-            <div key={area} style={{ 
-              padding: '4px 0', 
-              fontSize: '10px', 
-              fontWeight: 'bold', 
-              border: '1px solid #eee', 
-              backgroundColor: '#f9f9f9',
-              borderRadius: '3px'
-            }}>
+            <div 
+              key={area} 
+              onClick={() => setSelectedArea(area)} // 클릭 시 해당 지역명 저장
+              style={{ 
+                padding: '4px 0', 
+                fontSize: '10px', 
+                fontWeight: 'bold', 
+                border: '1px solid #eee', 
+                backgroundColor: '#f9f9f9',
+                borderRadius: '3px',
+                cursor: 'pointer' // 클릭 가능하다는 표시
+              }}
+            >
               {area}
             </div>
           ))}
@@ -990,6 +997,37 @@ export default function HogwartsApp() {
             style={{ width: '100%', height: 'auto', display: 'block', margin: '0 auto' }} 
           />
         </div>
+
+        {/* 3. 지역별 .webp 팝업 레이어 (투명도 70%) */}
+        {selectedArea && (
+          <div 
+            onClick={() => setSelectedArea(null)} // 배경 클릭 시 닫기
+            style={{
+              position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+              backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', 
+              alignItems: 'center', justifyContent: 'center', zIndex: 9999
+            }}
+          >
+            <div style={{ position: 'relative', width: '90%', maxWidth: '400px' }}>
+              <img 
+                src={`/${selectedArea.toLowerCase()}.webp`} 
+                alt={selectedArea}
+                style={{ 
+                  width: '100%', 
+                  borderRadius: '15px', 
+                  opacity: 0.7, // 요청하신 70% 투명도
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.5)' 
+                }} 
+              />
+              <div style={{ 
+                color: '#fff', textAlign: 'center', marginTop: '15px', 
+                fontSize: '14px', fontFamily: "'Cinzel', serif", fontWeight: '700' 
+              }}>
+                - {selectedArea} -
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
