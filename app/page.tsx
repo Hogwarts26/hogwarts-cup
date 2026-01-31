@@ -287,42 +287,61 @@ export default function HogwartsApp() {
   // ==========================================
   const calc = (r: any) => {
     if (!r) return { penalty: 0, bonus: 0, total: 0, studyH: 0 };
+    // 결석은 즉시 벌점 -5점
     if (r.off_type === '결석') return { penalty: -5, bonus: 0, total: -5, studyH: 0 };
+    
     const timeVal = r.study_time || "";
     const [h, m] = timeVal.split(':').map(Number);
     const studyH = (isNaN(h) ? 0 : h) + (isNaN(m) ? 0 : m / 60);
+    
     let penalty = 0, bonus = 0;
     const isHalfOff = ['반휴', '월반휴', '늦반휴', '늦월반휴'].includes(r.off_type);
     const isFullOff = ['주휴', '월휴', '자율', '늦휴', '늦월휴'].includes(r.off_type);
+    
+    // 늦은 휴무 사용 시 벌점 -1 (중복 적용 가능)
     if (['늦반휴', '늦휴', '늦월반휴', '늦월휴'].includes(r.off_type)) penalty -= 1;
+    // 지각 시 벌점 -1 (풀휴무 제외)
     if (r.is_late && !isFullOff) penalty -= 1;
+    // 오전 3시간 미달성 시 벌점 -1 (공부한 기록이 있을 때만 체크)
     if ((r.off_type === '-' || r.off_type === '출석') && r.am_3h === false && studyH > 0) penalty -= 1;
+    
+    // 시간당 상벌점 (풀휴무/자율 제외)
     if (!isFullOff && r.off_type !== '자율' && studyH > 0) {
       const target = isHalfOff ? 4 : 9;
-      if (studyH < target) penalty -= Math.ceil(target - studyH);
-      else if (!isHalfOff && studyH >= target + 1) bonus += Math.floor(studyH - target);
+      if (studyH < target) {
+        penalty -= Math.ceil(target - studyH);
+      } else if (!isHalfOff && studyH >= target + 1) {
+        // 일반 출석 시 10시간부터 상점 부여
+        bonus += Math.floor(studyH - target);
+      }
     }
-    return { penalty: Math.max(penalty, -5), bonus, total: Math.max(penalty, -5) + bonus, studyH };
+    
+    return { 
+      penalty: Math.max(penalty, -5), 
+      bonus, 
+      total: Math.max(penalty, -5) + bonus, 
+      studyH 
+    };
   };
 
-  // --- 리포트 팝업 실시간 데이터 연동 함수 (수정 및 추가) ---
+  // --- 리포트 팝업 실시간 데이터 연동 함수 ---
 
   const calculatePoints = (name: string) => {
     let bonus = 0;
     let penalty = 0;
-    let usedWeeklyOff = 0;   // 주간 휴무 사용량 (기본 1.5)
-    let usedMonthlyOff = 0;  // 월간 휴무 사용량 (기본 2.0)
+    let usedWeeklyOff = 0;   // 주간 휴무 (1.5 기준)
+    let usedMonthlyOff = 0;  // 월간 휴무 (2.0 기준)
 
     records.filter(r => r.student_name === name).forEach(r => {
       const res = calc(r);
       bonus += res.bonus;
       penalty += res.penalty;
 
-      // 주간 휴무 계산: 반휴=0.5, 주휴=1.0 (늦은 휴무 포함)
+      // 주간 휴무 계산: 반휴=0.5, 주휴=1.0 (지각휴무 포함)
       if (['반휴', '늦반휴'].includes(r.off_type)) usedWeeklyOff += 0.5;
       if (['주휴', '늦휴'].includes(r.off_type)) usedWeeklyOff += 1.0;
 
-      // 월간 휴무 계산: 월반휴=0.5, 월휴=1.0 (늦은 월휴 포함)
+      // 월간 휴무 계산: 월반휴=0.5, 월휴=1.0 (지각월휴 포함)
       if (['월반휴', '늦월반휴'].includes(r.off_type)) usedMonthlyOff += 0.5;
       if (['월휴', '늦월휴'].includes(r.off_type)) usedMonthlyOff += 1.0;
     });
@@ -341,7 +360,9 @@ export default function HogwartsApp() {
       const [h, m] = (r.study_time || "0:00").split(':').map(Number);
       totalMinutes += (isNaN(h) ? 0 : h * 60) + (isNaN(m) ? 0 : m);
     });
-    return `${Math.floor(totalMinutes / 60)}:${(totalMinutes % 60).toString().padStart(2, '0')}`;
+    const hrs = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+    return `${hrs}:${mins.toString().padStart(2, '0')}`;
   };
 
   const getWeeklyDateRange = () => {
@@ -362,9 +383,22 @@ export default function HogwartsApp() {
     return `${target.getMonth() + 1}.${target.getDate()}`;
   };
 
+  // [수정] 이번 주 시간이 아닌 데이터상의 전체 누적 시간을 계산하도록 변경
   const getMonthAccumulatedTime = (name: string) => {
     const currentMonth = new Date().getMonth() + 1;
-    return [{ month: currentMonth, time: calculateWeeklyTotal(name) }];
+    let totalMinutes = 0;
+    
+    // records 배열에 있는 모든 study_time을 합산하여 월 누적치 생성
+    records.filter(r => r.student_name === name).forEach(r => {
+      const [h, m] = (r.study_time || "0:00").split(':').map(Number);
+      totalMinutes += (isNaN(h) ? 0 : h * 60) + (isNaN(m) ? 0 : m);
+    });
+
+    const hrs = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+    const accumulatedTime = `${hrs}:${mins.toString().padStart(2, '0')}`;
+
+    return [{ month: currentMonth, time: accumulatedTime }];
   };
 
   // ==========================================
@@ -508,7 +542,7 @@ export default function HogwartsApp() {
       {/* --- 마법 공지사항 팝업 구역 --- */}
       {selectedHouseNotice && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setSelectedHouseNotice(null)}>
-          <div className="relative bg-[#f4e4bc] p-6 md:p-12 w-full max-w-2xl rounded-sm shadow-[0_0_50px_rgba(0,0,0,0.3)] overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()} style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.05) 100%)' }}>
+          <div className="relative bg-[#f4e4bc] p-6 md:p-12 w-full max-w-2xl rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.3)] overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()} style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.05) 100%)' }}>
             <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/paper-fibers.png")' }}></div>
             <button onClick={() => setSelectedHouseNotice(null)} className="absolute top-2 right-2 md:top-4 md:right-4 text-slate-800 hover:rotate-90 transition-transform p-2 text-2xl z-20">✕</button>
             <div className="relative z-10 font-serif flex flex-col overflow-hidden">
@@ -531,7 +565,7 @@ export default function HogwartsApp() {
           <div className="bg-white rounded-[2rem] p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative" onClick={e => e.stopPropagation()}>
             <button onClick={() => setShowSummary(false)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-800 transition-colors text-2xl font-black">✕</button>
             <h3 className="text-2xl font-serif font-black text-slate-800 mb-8 italic tracking-tighter border-b-2 border-slate-100 pb-4 text-center">House Weekly Summary</h3>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border-t border-l border-slate-300">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border-t border-l border-slate-300 overflow-hidden rounded-xl">
               {HOUSE_ORDER.map(house => {
                 const studentsInHouse = Object.keys(studentData).filter(name => studentData[name].house === house);
                 const config = (HOUSE_CONFIG as any)[house];
@@ -564,16 +598,18 @@ export default function HogwartsApp() {
         </div>
       )}
 
-      {/* --- 학생 개인 주간 요약 카드 (휴무 차감 로직 연동 버전) --- */}
+      {/* --- 학생 개인 주간 요약 카드 (디자인 & 누적 로직 수정본) --- */}
       {selectedStudentReport && studentData[selectedStudentReport] && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
-          <div className="bg-white p-8 w-full max-w-lg shadow-[0_20px_50px_rgba(0,0,0,0.2)] relative rounded-sm animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+          <div className="bg-white p-8 w-full max-w-lg shadow-[0_20px_50px_rgba(0,0,0,0.2)] relative rounded-[2.5rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-start mb-8">
               <div className="flex items-center gap-4">
                 <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="Logo" className="w-16 h-16 object-contain" />
                 <div className="text-center">
-                  <div className="text-3xl mb-1">{studentData[selectedStudentReport].emoji}</div>
-                  <div className="font-black text-slate-800">{selectedStudentReport}</div>
+                  {/* 상단 큰 이모지만 유지 */}
+                  <div className="text-4xl mb-1">{studentData[selectedStudentReport].emoji}</div>
+                  {/* 이름 아래 중복 이모지 제거, 글자만 표시 */}
+                  <div className="font-black text-xl text-slate-800 tracking-tight">{selectedStudentReport}</div>
                 </div>
               </div>
               <div className="text-right">
@@ -581,7 +617,9 @@ export default function HogwartsApp() {
                 <div className="text-3xl font-black text-slate-900">{calculateWeeklyTotal(selectedStudentReport)}</div>
               </div>
             </div>
-            <div className="text-center text-[#737373] font-bold text-sm mb-4">{getWeeklyDateRange()}</div>
+            <div className="text-center text-[#737373] font-bold text-sm mb-4 italic">{getWeeklyDateRange()}</div>
+            
+            {/* 내부 칸들도 둥근 사각형 처리 */}
             <div className="grid grid-cols-4 gap-2 mb-8">
               {DAYS.map(day => {
                 const rec = records.find(r => r.student_name === selectedStudentReport && r.day_of_week === day) || {};
@@ -589,27 +627,32 @@ export default function HogwartsApp() {
                   if (['반휴','월반휴','늦반휴','늦월반휴'].includes(val)) return 'bg-green-100';
                   if (['주휴','월휴','늦휴','늦월휴'].includes(val)) return 'bg-blue-100';
                   if (val === '결석') return 'bg-red-100';
-                  return '';
+                  return 'bg-slate-50';
                 };
                 return (
-                  <div key={day} className={`border border-slate-800 p-2 flex flex-col items-center justify-between h-24 ${getCellBg(rec.off_type)}`}>
-                    <div className="text-[13px] font-bold text-[#737373]">{getDayDate(day)} {day}</div>
-                    <div className="text-xl font-black text-slate-900">{rec.study_time || "0:00"}</div>
-                    <div className="text-[11px] font-bold text-green-700 h-4 leading-none">{['반휴','월반휴','주휴','결석'].includes(rec.off_type) ? rec.off_type : ""}</div>
+                  <div key={day} className={`p-2 flex flex-col items-center justify-between h-24 rounded-2xl border border-slate-200 shadow-sm transition-all ${getCellBg(rec.off_type)}`}>
+                    <div className="text-[11px] font-bold text-[#737373]">{getDayDate(day)} {day}</div>
+                    <div className="text-lg font-black text-slate-900">{rec.study_time || "0:00"}</div>
+                    <div className="text-[10px] font-bold text-green-700 h-4 leading-none uppercase">{['반휴','월반휴','주휴','결석'].includes(rec.off_type) ? rec.off_type : ""}</div>
                   </div>
                 );
               })}
-              <div className="border border-slate-800 p-2 text-[11px] font-bold leading-relaxed flex flex-col justify-center bg-slate-50">
+              {/* 상벌점 및 휴무 칸 라운드 처리 */}
+              <div className="p-3 text-[11px] font-bold leading-relaxed flex flex-col justify-center bg-slate-900 text-white rounded-2xl shadow-lg">
                 <div>상점 {calculatePoints(selectedStudentReport).bonus}</div>
                 <div>벌점 {calculatePoints(selectedStudentReport).penalty}</div>
-                {/* [10]번 구역에서 계산된 실시간 잔여 휴무 데이터 연동 */}
-                <div>잔여휴무 {calculatePoints(selectedStudentReport).remainingWeeklyOff}</div>
-                <div>잔여월휴 {calculatePoints(selectedStudentReport).remainingMonthlyOff}</div>
+                <div className="text-yellow-400">잔여휴무 {calculatePoints(selectedStudentReport).remainingWeeklyOff}</div>
+                <div className="text-cyan-400">잔여월휴 {calculatePoints(selectedStudentReport).remainingMonthlyOff}</div>
               </div>
             </div>
-            <div className="space-y-1 border-t pt-4">
+
+            <div className="space-y-2 border-t pt-4">
+              {/* [10]번 구역에서 수정된 getMonthAccumulatedTime 호출로 1월 전체 누적 시간 표시 */}
               {getMonthAccumulatedTime(selectedStudentReport).map(item => (
-                <div key={item.month} className="text-[13px] font-bold text-slate-900">{item.month}월 누적 공부시간 : {item.time}</div>
+                <div key={item.month} className="flex justify-between items-center bg-stone-50 p-4 rounded-2xl border border-stone-100">
+                  <span className="text-sm font-bold text-stone-500">{item.month}월 누적 공부시간</span>
+                  <span className="text-xl font-black text-indigo-600">{item.time}</span>
+                </div>
               ))}
             </div>
           </div>
