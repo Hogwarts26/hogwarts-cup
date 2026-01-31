@@ -282,8 +282,8 @@ export default function HogwartsApp() {
     setIsSaving(false);
   };
 
- // ==========================================
-  // [10] 점수 계산 로직 (Penalty & Bonus)
+// ==========================================
+  // [10] 점수 계산 및 리포트 연동 로직
   // ==========================================
   const calc = (r: any) => {
     if (!r) return { penalty: 0, bonus: 0, total: 0, studyH: 0 };
@@ -305,7 +305,35 @@ export default function HogwartsApp() {
     return { penalty: Math.max(penalty, -5), bonus, total: Math.max(penalty, -5) + bonus, studyH };
   };
 
-  // --- 아래부터는 리포트 기능을 위해 추가되는 함수입니다 (기존 코드 미수정) ---
+  // --- 리포트 팝업 실시간 데이터 연동 함수 (수정 및 추가) ---
+
+  const calculatePoints = (name: string) => {
+    let bonus = 0;
+    let penalty = 0;
+    let usedWeeklyOff = 0;   // 주간 휴무 사용량 (기본 1.5)
+    let usedMonthlyOff = 0;  // 월간 휴무 사용량 (기본 2.0)
+
+    records.filter(r => r.student_name === name).forEach(r => {
+      const res = calc(r);
+      bonus += res.bonus;
+      penalty += res.penalty;
+
+      // 주간 휴무 계산: 반휴=0.5, 주휴=1.0 (늦은 휴무 포함)
+      if (['반휴', '늦반휴'].includes(r.off_type)) usedWeeklyOff += 0.5;
+      if (['주휴', '늦휴'].includes(r.off_type)) usedWeeklyOff += 1.0;
+
+      // 월간 휴무 계산: 월반휴=0.5, 월휴=1.0 (늦은 월휴 포함)
+      if (['월반휴', '늦월반휴'].includes(r.off_type)) usedMonthlyOff += 0.5;
+      if (['월휴', '늦월휴'].includes(r.off_type)) usedMonthlyOff += 1.0;
+    });
+
+    return { 
+      bonus, 
+      penalty,
+      remainingWeeklyOff: (1.5 - usedWeeklyOff).toFixed(1).replace('.0', ''),
+      remainingMonthlyOff: (2.0 - usedMonthlyOff).toFixed(1).replace('.0', '')
+    };
+  };
 
   const calculateWeeklyTotal = (name: string) => {
     let totalMinutes = 0;
@@ -536,8 +564,8 @@ export default function HogwartsApp() {
         </div>
       )}
 
-      {/* --- 학생 개인 주간 요약 카드 (이미지 디자인 완벽 반영) --- */}
-      {selectedStudentReport && (
+      {/* --- 학생 개인 주간 요약 카드 (휴무 차감 로직 연동 버전) --- */}
+      {selectedStudentReport && studentData[selectedStudentReport] && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
           <div className="bg-white p-8 w-full max-w-lg shadow-[0_20px_50px_rgba(0,0,0,0.2)] relative rounded-sm animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-start mb-8">
@@ -571,14 +599,15 @@ export default function HogwartsApp() {
                   </div>
                 );
               })}
-              <div className="border border-slate-800 p-2 text-[11px] font-bold leading-relaxed flex flex-col justify-center">
+              <div className="border border-slate-800 p-2 text-[11px] font-bold leading-relaxed flex flex-col justify-center bg-slate-50">
                 <div>상점 {calculatePoints(selectedStudentReport).bonus}</div>
                 <div>벌점 {calculatePoints(selectedStudentReport).penalty}</div>
-                <div>잔여휴무 0</div>
-                <div>잔여월휴 {studentData[selectedStudentReport].monthly_off_count || 0}</div>
+                {/* [10]번 구역에서 계산된 실시간 잔여 휴무 데이터 연동 */}
+                <div>잔여휴무 {calculatePoints(selectedStudentReport).remainingWeeklyOff}</div>
+                <div>잔여월휴 {calculatePoints(selectedStudentReport).remainingMonthlyOff}</div>
               </div>
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1 border-t pt-4">
               {getMonthAccumulatedTime(selectedStudentReport).map(item => (
                 <div key={item.month} className="text-[13px] font-bold text-slate-900">{item.month}월 누적 공부시간 : {item.time}</div>
               ))}
@@ -616,7 +645,7 @@ export default function HogwartsApp() {
         </div>
       </div>
 
-      {/* --- 학습 기록 메인 테이블 (디테일 로직 100% 복구) --- */}
+      {/* --- 학습 기록 메인 테이블 --- */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
         <div className="bg-slate-900 p-4 px-6 md:px-8 flex flex-col gap-2 text-white min-h-[60px]">
           <div className="flex justify-between items-center w-full">
