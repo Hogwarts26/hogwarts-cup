@@ -614,7 +614,7 @@ export default function HogwartsApp() {
               <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="Logo" className="w-28 h-28 object-contain drop-shadow-sm" />
               
               {/* 오른쪽: 이모지(상단/큼), 이름(하단/작음), 공부시간(기울임) */}
-              <div className="flex flex-col justify-center">
+              <div className="flex flex-col justify-center items-center text-center mt-6">
                 <div className="flex flex-col mb-1.5">
                   <span className="text-5xl mb-1">{studentData[selectedStudentReport].emoji}</span>
                   <span className="font-bold text-sm text-slate-400 tracking-tight leading-none">{formatDisplayName(selectedStudentReport)}</span>
