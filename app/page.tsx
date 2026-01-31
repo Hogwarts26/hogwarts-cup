@@ -175,12 +175,12 @@ const HOUSE_NOTICES: { [key: string]: { title: string, content: string } } = {
 const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
 const OFF_OPTIONS = ['-', '출석', '반휴', '주휴', '월휴', '월반휴', '자율', '결석', '늦반휴', '늦휴', '늦월반휴', '늦월휴'];
 
-// 이미지 엑박 문제를 영구적으로 해결하기 위해 SVG 아이콘 데이터로 대체했습니다.
+// 사용자님의 깃허브 저장소(Hogwarts26/hogwarts-cup)에 올린 이미지를 직접 연결합니다.
 const HOUSE_LOGOS: Record<string, string> = {
-  "그리핀도르": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2I5MWMyNCI+PHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkgxOS4yN0wxNC4yNyAxMi4xMUwxNS44MiAxOC4zN0wxMiAxNC41M0w4LjE4IDE4LjM3TDkuNzMgMTIuMTFMNC43MyA4LjI2SDEwLjkxTDEyIDJaIi8+PC9zdmc+",
-  "슬리데린": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzA1OTY2OSI+PHBhdGggZD0iTTEyIDJDNi40NyAyIDIgNi40NyAyIDEyUzYuNDcgMjIgMTIgMjJTMjIgMTcuNTMgMjIgMTJTMTcuNTMgMiAxMiAyWk03IDEzTDEwIDExTDEzIDEzTDE3IDExVjEzSDE1VjE1SDEzVjEzSDEwVjE1SDhWMTNIN1oiLz48L3N2Zz4=",
-  "래번클로": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzFkNGVkOCI+PHBhdGggZD0iTTEyIDJMMiA3TDEyIDEyTDIyIDdMMTIgMk0yIDExVjE3TDEyIDIyTDIyIDE3VjExTDEyIDE2TDIgMTFaIi8+PC9zdmc+",
-  "후플푸프": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2Q5NzcwOCI+PHBhdGggZD0iTTEyIDJMMiA3VjE3TDEyIDIyTDIyIDE3VjdMMTIgMk0xMiA0TDIwIDguMjhWMTUuNzJMMTIgMjBMNCAxNS43MlY4LjI4TDEyIDRaIi8+PC9zdmc+"
+  "그리핀도르": "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/gry.png",
+  "슬리데린": "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/sly.png",
+  "래번클로": "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/rav.png",
+  "후플푸프": "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/huf.png"
 };
 
 const sortKorean = (a: string, b: string) => {
