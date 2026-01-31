@@ -902,7 +902,7 @@ export default function HogwartsApp() {
                         {DAYS.map(day => {
                           const rec = records.find(r => r.student_name === name && r.day_of_week === day) || {};
                           const res = calc(rec);
-                          const getCellBg = (val: string) => {
+                          const getCellBg = (val) => {
                             if (['반휴','월반휴','늦반휴','늦월반휴'].includes(val)) return 'bg-green-100';
                             if (['주휴','월휴','늦휴','늦월휴'].includes(val)) return 'bg-blue-100';
                             if (val === '결석') return 'bg-red-100';
@@ -923,7 +923,7 @@ export default function HogwartsApp() {
                                   onChange={(e) => setRecords(prev => prev.map(r => (r.student_name === name && r.day_of_week === day) ? {...r, study_time: e.target.value} : r))}
                                   onBlur={(e) => handleChange(name, day, 'study_time', e.target.value)} disabled={!isAdmin} />
                               ) : (
-                                <span className={`font-black text-sm ${row.f === 'penalty' && res.penalty < 0 ? 'text-red-500' : row.f === 'bonus' && res.bonus > 0 ? 'text-blue-600' : 'text-slate-900'}`}>{res[row.f as keyof typeof res] || (row.f === 'total' ? 0 : '')}</span>
+                                <span className={`font-black text-sm ${row.f === 'penalty' && res.penalty < 0 ? 'text-red-500' : row.f === 'bonus' && res.bonus > 0 ? 'text-blue-600' : 'text-slate-900'}`}>{res[row.f] || (row.f === 'total' ? 0 : '')}</span>
                               )}
                             </td>
                           );
@@ -953,7 +953,7 @@ export default function HogwartsApp() {
         </div>
       </div>
 
-      {/* --- 드래곤 키우기 (Dragon Cave) 섹션 시작 --- */}
+      {/* --- 드래곤 키우기 (Dragon Cave) 섹션 --- */}
       <div id="new-map-section" style={{ marginTop: '80px', fontFamily: 'inherit', position: 'relative' }}>
         <div style={{ textAlign: 'center', fontSize: '22px', fontWeight: '700', marginBottom: '25px', color: '#222', fontFamily: "'Cinzel', serif", letterSpacing: '2px' }}>DRAGON CAVE</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '15px', textAlign: 'center' }}>
