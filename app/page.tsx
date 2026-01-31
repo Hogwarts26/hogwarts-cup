@@ -1039,7 +1039,7 @@ export default function HogwartsApp() {
           </div>
         )}
 
-{/* 4. 입양 프로세스 및 내 드래곤 확인 팝업 (통합 관리) */}
+        {/* 4. 입양 프로세스 및 내 드래곤 확인 팝업 (통합 관리) */}
         {confirmStep > 0 && (
           <div 
             style={{
