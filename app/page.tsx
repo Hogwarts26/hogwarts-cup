@@ -252,34 +252,75 @@ export default function HogwartsApp() {
     localStorage.setItem('hg_auth', JSON.stringify({ name: selectedName, admin }));
   };
 
-  // ==========================================
-  // [9] 데이터 초기화 (Weekly Reset)
+// ==========================================
+  // [9] 데이터 초기화 (Weekly Reset) - 누적 합산 버전
   // ==========================================
   const resetWeeklyData = async () => {
-    if (!confirm("⚠️ 주의: 모든 학생의 이번 주 공부 기록을 초기화하시겠습니까?")) return;
-    if (!confirm("정말로 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) return;
+    if (!confirm("⚠️ 모든 학생의 이번 주 공부 기록을 [누적 합산]하고 초기화하시겠습니까?")) return;
+    if (!confirm("정말로 초기화하시겠습니까? 누적 데이터는 기록되지만 주간 표는 비워집니다.")) return;
+    
     setIsSaving(true);
-    const names = Object.keys(studentData);
-    const resetData = [];
-    for (const name of names) {
-      for (const day of DAYS) {
-        const existing = records.find(r => r.student_name === name && r.day_of_week === day) || {};
-        resetData.push({
-          student_name: name, 
-          day_of_week: day, 
-          off_type: '-', 
-          is_late: false, 
-          am_3h: false, 
-          study_time: '',
-          password: existing.password || '0000', 
-          monthly_off_count: existing.monthly_off_count ?? 4,
-          goal: existing.goal || '' 
-        });
+    
+    try {
+      // 1. 현재 records에 있는 학생별 주간 시간을 숫자로 환산하여 누적 합산
+      const updatePromises = records.map(async (student) => {
+        // "10:30" 형태를 숫자 10.5로 변환
+        const timeStr = String(student.study_time || "00:00");
+        let hoursNum = 0;
+
+        if (timeStr.includes(':')) {
+          const [h, m] = timeStr.split(':').map(Number);
+          hoursNum = (isNaN(h) ? 0 : h) + (isNaN(m) ? 0 : m / 60);
+        } else {
+          hoursNum = Number(timeStr) || 0;
+        }
+
+        // 기존 DB의 total_study_hours에 더하기
+        const currentTotal = Number(student.total_study_hours) || 0;
+        const newTotal = currentTotal + hoursNum;
+
+        return supabase
+          .from('study_records')
+          .update({ total_study_hours: newTotal })
+          .eq('student_name', student.student_name);
+      });
+
+      await Promise.all(updatePromises);
+
+      // 2. 주간 기록 초기화 (디자인에 맞춰 필드 정리)
+      const names = Object.keys(studentData);
+      const resetData = [];
+      for (const name of names) {
+        for (const day of DAYS) {
+          const existing = records.find(r => r.student_name === name && r.day_of_week === day) || {};
+          resetData.push({
+            student_name: name, 
+            day_of_week: day, 
+            off_type: '-', 
+            is_late: false, 
+            am_3h: false, 
+            study_time: '',
+            password: existing.password || '0000', 
+            monthly_off_count: existing.monthly_off_count ?? 4,
+            goal: '' // 새 주에는 목표도 비워줍니다
+          });
+        }
       }
+
+      const { error } = await supabase
+        .from('study_records')
+        .upsert(resetData, { onConflict: 'student_name,day_of_week' });
+
+      if (!error) { 
+        alert("✅ 이번 주 기록이 누적합산되었으며, 표가 초기화되었습니다."); 
+        window.location.reload(); 
+      }
+    } catch (err) {
+      console.error("Reset Error:", err);
+      alert("처리 중 오류가 발생했습니다.");
+    } finally {
+      setIsSaving(false);
     }
-    const { error } = await supabase.from('study_records').upsert(resetData, { onConflict: 'student_name,day_of_week' });
-    if (!error) { setRecords(resetData); alert("✅ 기록이 초기화되었습니다."); }
-    setIsSaving(false);
   };
 
 // ==========================================
@@ -440,6 +481,7 @@ export default function HogwartsApp() {
     }
     setIsPlaying(!isPlaying);
   };
+
 // ==========================================
   // [12] 데이터 변경 및 저장 로직 (비밀번호, 목표, 학습 기록)
   // ==========================================
