@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from './supabase';
@@ -185,6 +186,9 @@ export default function HogwartsApp() {
   const [isSaving, setIsSaving] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedHouseNotice, setSelectedHouseNotice] = useState<string | null>(null);
+  
+  // 요약 확인 팝업 상태 추가
+  const [showSummary, setShowSummary] = useState(false); 
   
   const [dailyGoal, setDailyGoal] = useState("");
   const [isEditingGoal, setIsEditingGoal] = useState(false);
@@ -393,7 +397,7 @@ export default function HogwartsApp() {
       })
     : [selectedName];
 
-  // ==========================================
+// ==========================================
   // [15] 메인 화면 렌더링 (UI)
   // ==========================================
   return (
@@ -444,6 +448,73 @@ export default function HogwartsApp() {
           </div>
         </div>
       )}
+
+      {/* --- 요약 확인 팝업 (데이터 구조 최적화) --- */}
+      {showSummary && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowSummary(false)}>
+          <div className="bg-white rounded-[2rem] p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl relative" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setShowSummary(false)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-800 transition-colors text-2xl font-black">✕</button>
+            <h3 className="text-2xl font-serif font-black text-slate-800 mb-8 italic uppercase tracking-tighter border-b-2 border-slate-100 pb-4">House Summary</h3>
+            
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {HOUSE_ORDER.map(house => {
+                const studentsInHouse = Object.keys(studentData).filter(name => studentData[name].house === house);
+                const config = (HOUSE_CONFIG as any)[house];
+                
+                return (
+                  <div key={house} className={`rounded-2xl border-2 ${config.border} overflow-hidden shadow-sm`}>
+                    <div className={`${config.bg} p-2.5 text-white font-black text-center uppercase text-[10px] tracking-widest`}>
+                      {config.icon} {house}
+                    </div>
+                    <div className="bg-white">
+                      {studentsInHouse.sort(sortKorean).map(name => {
+                        // 학생 데이터에서 직접 이모지를 가져와 훨씬 빠르고 정확합니다.
+                        const emoji = studentData[name]?.emoji || "👤";
+                        
+                        let totalMins = 0;
+                        records.filter(r => r.student_name === name).forEach(r => {
+                          const [h, m] = (r.study_time || "").split(':').map(Number);
+                          totalMins += (isNaN(h) ? 0 : h * 60) + (isNaN(m) ? 0 : m);
+                        });
+                        const timeStr = `${Math.floor(totalMins/60)}:${(totalMins%60).toString().padStart(2,'0')}`;
+                        const isUnderGoal = totalMins < 1200;
+
+                        return (
+                          <div key={name} className="flex justify-between items-center p-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors">
+                            <span className="text-xl">{emoji}</span>
+                            <span className={`font-black text-sm ${isUnderGoal ? 'text-red-500' : 'text-slate-700'}`}>
+                              {totalMins > 0 ? timeStr : "-"}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 대시보드 */}
+      <div className="max-w-[1100px] mx-auto mb-8">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight uppercase">Hogwarts House Cup</h2>
+          <div className="flex gap-2">
+            {/* 요약 확인 버튼 추가 */}
+            {isAdmin && (
+              <button 
+                onClick={() => setShowSummary(true)} 
+                className="text-[10px] font-black text-white bg-indigo-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-indigo-700 transition-colors"
+              >
+                요약 확인
+              </button>
+            )}
+            {isAdmin && <button onClick={resetWeeklyData} className="text-[10px] font-black text-white bg-red-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-red-700 transition-colors">WEEKLY RESET</button>}
+            <button onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full shadow-sm">LOGOUT</button>
+          </div>
+        </div>
 
       {/* --- 상단 기숙사 점수판(대시보드) 구역 --- */}
       <div className="max-w-[1100px] mx-auto mb-8">
