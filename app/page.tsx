@@ -511,6 +511,77 @@ export default function HogwartsApp() {
         </div>
       )}
 
+{/* --- 학생 개인 주간 요약 카드 (이미지 디자인 반영) --- */}
+      {selectedStudentReport && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
+          <div className="bg-white p-8 w-full max-w-lg shadow-[0_20px_50px_rgba(0,0,0,0.2)] relative animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            
+            {/* 상단 정보 구역 */}
+            <div className="flex justify-between items-start mb-8">
+              <div className="flex items-center gap-4">
+                {/* 기숙사 로고 (알려주신 URL 사용) */}
+                <img 
+                  src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} 
+                  alt="House Logo" 
+                  className="w-16 h-16 object-contain"
+                />
+                <div className="text-center">
+                  <div className="text-3xl mb-1">{studentData[selectedStudentReport].emoji}</div>
+                  <div className="font-black text-slate-800">{selectedStudentReport}</div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-[14px] font-bold text-[#737373] mb-1">이번주 공부시간</div>
+                <div className="text-3xl font-black text-slate-900">
+                  {calculateWeeklyTotal(selectedStudentReport)}
+                </div>
+              </div>
+            </div>
+
+            {/* 날짜 범위 표시 */}
+            <div className="text-center text-[#737373] font-bold text-sm mb-4">
+              {getWeeklyDateRange()}
+            </div>
+
+            {/* 요일별 요약 그리드 (7일 + 정보칸) */}
+            <div className="grid grid-cols-4 gap-2 mb-8">
+              {DAYS.map(day => {
+                const rec = records.find(r => r.student_name === selectedStudentReport && r.day_of_week === day) || {};
+                const bgColor = getCellBgColor(rec.off_type); // 기존 설정된 색상 코드 활용
+                const dateNum = getDayDate(day); // 해당 요일의 날짜 숫자 가져오기
+
+                return (
+                  <div key={day} className={`border border-slate-800 p-2 flex flex-col items-center justify-between h-24 ${bgColor}`}>
+                    <div className="text-[13px] font-bold text-[#737373]">{dateNum} {day}</div>
+                    <div className="text-xl font-black text-slate-900">{rec.study_time || "0:00"}</div>
+                    <div className="text-[11px] font-bold text-green-700 h-4 leading-none">
+                      {['반휴','월반휴','주휴','결석'].includes(rec.off_type) ? rec.off_type : ""}
+                    </div>
+                  </div>
+                );
+              })}
+              
+              {/* 우측 하단 정보칸 (상점/벌점/잔여휴무) */}
+              <div className="border border-slate-800 p-2 text-[11px] font-bold leading-relaxed">
+                <div>상점 {calculatePoints(selectedStudentReport).bonus}</div>
+                <div>벌점 {calculatePoints(selectedStudentReport).penalty}</div>
+                <div>잔여휴무 0</div>
+                <div>잔여월휴 {studentData[selectedStudentReport].monthly_off_count || 0}</div>
+              </div>
+            </div>
+
+            {/* 하단 월별 누적 시간 구역 */}
+            <div className="space-y-1">
+              {getMonthAccumulatedTime(selectedStudentReport).map(item => (
+                <div key={item.month} className="text-[13px] font-bold text-slate-900">
+                  {item.month}월 누적 공부시간 : {item.time}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* --- 상단 기스크 점수판(대시보드) 구역 --- */}
       <div className="max-w-[1100px] mx-auto mb-8">
         <div className="flex justify-between items-center mb-6">
@@ -552,7 +623,7 @@ export default function HogwartsApp() {
         </div>
       </div>
 
-      {/* --- 학습 기록 메인 테이블 구역 --- */}
+{/* --- 학습 기록 메인 테이블 구역 --- */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
         <div className="bg-slate-900 p-4 px-6 md:px-8 flex flex-col gap-2 text-white min-h-[60px]">
           <div className="flex justify-between items-center w-full">
@@ -651,11 +722,16 @@ export default function HogwartsApp() {
                     {rows.map((row, rIdx) => (
                       <tr key={row.f} className={`${rIdx === 6 ? "border-b-[6px] border-slate-100" : "border-b border-slate-50"}`}>
                         {rIdx === 0 && (
-                          <td rowSpan={7} className={`p-4 text-center sticky left-0 z-20 font-bold border-r-[3px] ${info.color} ${info.text}`}>
+                          <td 
+                            rowSpan={7} 
+                            className={`p-4 text-center sticky left-0 z-20 font-bold border-r-[3px] ${info.color} ${info.text} cursor-pointer hover:brightness-95 transition-all`}
+                            onClick={() => setSelectedStudentReport(name)}
+                          >
                             <div className="text-3xl mb-1">{emoji}</div>
                             <div className="leading-tight text-sm font-black mb-1 break-keep">{name}</div>
                             <div className="text-[9px] font-black opacity-70 mb-2">{info.house}</div>
-                            <button onClick={async () => {
+                            <button onClick={async (e) => {
+                              e.stopPropagation();
                               const newPw = prompt("새 비밀번호를 입력하세요 (4자리숫자)");
                               if(newPw && newPw.length >= 4) await handleChange(name, '월', 'password', newPw);
                             }} className="text-[8px] underline opacity-40 hover:opacity-100 block mx-auto">PW 변경</button>
