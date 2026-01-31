@@ -609,23 +609,19 @@ export default function HogwartsApp() {
       {selectedStudentReport && studentData[selectedStudentReport] && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
           <div className="bg-white p-6 md:p-10 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-10">
-              <div className="flex items-center gap-6">
-                {/* 로고 크기 대폭 확대 */}
-                <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="Logo" className="w-24 h-24 object-contain drop-shadow-md" />
-                <div className="flex flex-col">
-                  {/* 이름과 이모지 크기 축소 및 세련된 배치 */}
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="font-black text-2xl text-slate-800 tracking-tight">{formatDisplayName(selectedStudentReport)}</span>
-                    <span className="text-xl">{studentData[selectedStudentReport].emoji}</span>
-                  </div>
-                  <div className="text-[12px] font-bold text-slate-400 uppercase tracking-widest">{studentData[selectedStudentReport].house}</div>
+            <div className="flex items-center gap-8 mb-8">
+              {/* 왼쪽: 로고 크게 배치 (첫 번째 이미지 스타일) */}
+              <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="Logo" className="w-28 h-28 object-contain drop-shadow-sm" />
+              
+              {/* 오른쪽: 이름, 기숙사, 시간 세로 정렬 */}
+              <div className="flex flex-col justify-center">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="font-black text-3xl text-slate-800 tracking-tight">{formatDisplayName(selectedStudentReport)}</span>
+                  <span className="text-2xl">{studentData[selectedStudentReport].emoji}</span>
                 </div>
-              </div>
-              <div className="text-right">
-                <div className="text-[12px] font-bold text-slate-400 mb-1">이번주 공부시간</div>
-                <div className="text-4xl font-black text-slate-900 tracking-tighter">{calculateWeeklyTotal(selectedStudentReport)}</div>
-                <div className="text-[11px] font-black text-slate-300 mt-1 italic">{getWeeklyDateRange()}</div>
+                <div className="text-[14px] font-bold text-slate-400 mb-2">{studentData[selectedStudentReport].house}</div>
+                <div className="text-5xl font-black text-slate-900 tracking-tighter leading-tight">{calculateWeeklyTotal(selectedStudentReport)}</div>
+                <div className="text-[12px] font-bold text-slate-300 italic">{getWeeklyDateRange()}</div>
               </div>
             </div>
             
