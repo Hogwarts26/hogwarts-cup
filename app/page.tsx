@@ -532,7 +532,10 @@ export default function HogwartsApp() {
                     <div className="text-[7px] md:text-xs font-black opacity-90 tracking-widest">{item.house}</div>
                     <div className={`text-[8px] md:text-[10px] font-black px-1.5 md:px-2 py-0.5 rounded-full ${config.accent} text-slate-900 shadow-sm`}>{rankLabel}</div>
                   </div>
-                  <div className="text-lg md:text-4xl font-black italic">{item.finalPoint.toLocaleString()}</div>
+                  {/* 소수점 1자리까지 표시 (반올림) */}
+                  <div className="text-lg md:text-4xl font-black italic">
+                    {(Math.round(item.finalPoint * 10) / 10).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 })}
+                  </div>
                 </div>
               </div>
             );
@@ -686,7 +689,7 @@ export default function HogwartsApp() {
                           )}
                           {rIdx === 6 && (
                             <div className={`text-[10px] font-black py-1 rounded ${totalPointsSum <= -10 ? 'text-red-600 bg-red-50' : 'text-blue-700 bg-blue-50'}`}>
-                              합계: {totalPointsSum}
+                              합계: {(Math.round(totalPointsSum * 10) / 10).toFixed(1).replace('.0', '')}
                             </div>
                           )}
                         </td>
