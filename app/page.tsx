@@ -1046,8 +1046,8 @@ export default function HogwartsApp() {
                       src={`/${selectedArea.substring(0, 2).toLowerCase()}${num}.webp`}
                       alt={`egg-${num}`}
                       style={{ 
-                        width: '65px', 
-                        height: '65px', 
+                        width: '45px', 
+                        height: '45px', 
                         objectFit: 'contain',
                         filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))' // 배경과 분리되도록 그림자 추가
                       }} 
