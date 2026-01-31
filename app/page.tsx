@@ -609,12 +609,12 @@ export default function HogwartsApp() {
       {selectedStudentReport && studentData[selectedStudentReport] && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
           <div className="bg-white p-6 md:px-10 md:py-6 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-            {/* mb-10으로 수정하여 상단 영역과 하단 카드 사이의 공간 분리감 조성 */}
-            <div className="flex items-center gap-4 mb-10">
+            {/* 상단 로고/이름 영역: 날짜를 제거하여 하단과 분리감 조성 */}
+            <div className="flex items-center gap-4 mb-6">
               {/* 왼쪽: 로고 크게 배치 */}
               <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="Logo" className="w-36 h-36 object-contain drop-shadow-sm" />
               
-              {/* 오른쪽: 이모지(상단/큼), 이름(하단/작음), 공부시간(기울임) */}
+              {/* 오른쪽: 이모지, 이름, 공부시간 */}
               <div className="flex flex-col justify-center items-center text-center mt-6">
                 <div className="flex flex-col mb-1.5">
                   <span className="text-5xl mb-1">{studentData[selectedStudentReport].emoji}</span>
@@ -623,9 +623,12 @@ export default function HogwartsApp() {
                 <div className="text-5xl font-black text-slate-900 tracking-tighter leading-tight italic">
                   {calculateWeeklyTotal(selectedStudentReport)}
                 </div>
-                {/* 텍스트 크기를 키우고 색상을 검정색(text-black)으로 변경 */}
-                <div className="text-sm font-bold text-black italic mt-2">{getWeeklyDateRange()}</div>
               </div>
+            </div>
+
+            {/* 주간 날짜: 하단 표와 가깝게 배치, 텍스트 크기 확대 및 검정색 강조 */}
+            <div className="text-xl font-black text-black italic mb-2 text-center tracking-tight">
+              {getWeeklyDateRange()}
             </div>
             
             <div className="grid grid-cols-4 gap-2.5 mb-2">
