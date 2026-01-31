@@ -457,7 +457,7 @@ export default function HogwartsApp() {
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowSummary(false)}>
           <div className="bg-white rounded-[2rem] p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl relative" onClick={e => e.stopPropagation()}>
             <button onClick={() => setShowSummary(false)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-800 transition-colors text-2xl font-black">✕</button>
-            <h3 className="text-2xl font-serif font-black text-slate-800 mb-8 italic uppercase tracking-tighter border-b-2 border-slate-100 pb-4 text-center">House Weekly Summary</h3>
+            <h3 className="text-2xl font-serif font-black text-slate-800 mb-8 italic tracking-tighter border-b-2 border-slate-100 pb-4 text-center">House Weekly Summary</h3>
             
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border-t border-l border-slate-300">
               {HOUSE_ORDER.map(house => {
@@ -466,7 +466,7 @@ export default function HogwartsApp() {
                 
                 return (
                   <div key={house} className="flex flex-col border-r border-b border-slate-300">
-                    <div className={`${config.bg} p-2 text-white font-black text-center uppercase text-[11px] tracking-widest`}>
+                    <div className={`${config.bg} p-2 text-white font-black text-center text-[11px] tracking-widest`}>
                       {config.icon} {house}
                     </div>
                     <div className="flex flex-col flex-1 divide-y divide-slate-200">
@@ -502,10 +502,10 @@ export default function HogwartsApp() {
         </div>
       )}
 
-      {/* --- 상단 기숙사 점수판(대시보드) 구역 --- */}
+      {/* --- 상단 기스크 점수판(대시보드) 구역 --- */}
       <div className="max-w-[1100px] mx-auto mb-8">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight uppercase">Hogwarts House Cup</h2>
+          <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight">Hogwarts House Cup</h2>
           <div className="flex gap-2">
             {isAdmin && (
               <button 
@@ -515,8 +515,8 @@ export default function HogwartsApp() {
                 요약 확인
               </button>
             )}
-            {isAdmin && <button onClick={resetWeeklyData} className="text-[10px] font-black text-white bg-red-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-red-700 transition-colors">WEEKLY RESET</button>}
-            <button onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full shadow-sm">LOGOUT</button>
+            {isAdmin && <button onClick={resetWeeklyData} className="text-[10px] font-black text-white bg-red-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-red-700 transition-colors">Weekly Reset</button>}
+            <button onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full shadow-sm">Logout</button>
           </div>
         </div>
         <div className="grid grid-cols-4 gap-1.5 md:gap-4">
@@ -529,8 +529,8 @@ export default function HogwartsApp() {
                 <div className="absolute right-[-10px] bottom-[-10px] text-5xl md:text-7xl opacity-20 pointer-events-none">{config.icon}</div>
                 <div className="relative z-10">
                   <div className="flex justify-between items-start mb-1">
-                    <div className="text-[7px] md:text-xs font-black opacity-90 uppercase tracking-widest">{item.house}</div>
-                    <div className={`text-[8px] md:text-[10px] font-black px-1.5 md:px-2 py-0.5 rounded-full ${config.accent} text-slate-900 shadow-sm uppercase`}>{rankLabel}</div>
+                    <div className="text-[7px] md:text-xs font-black opacity-90 tracking-widest">{item.house}</div>
+                    <div className={`text-[8px] md:text-[10px] font-black px-1.5 md:px-2 py-0.5 rounded-full ${config.accent} text-slate-900 shadow-sm`}>{rankLabel}</div>
                   </div>
                   <div className="text-lg md:text-4xl font-black italic">{item.finalPoint.toLocaleString()}</div>
                 </div>
@@ -544,17 +544,17 @@ export default function HogwartsApp() {
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
         <div className="bg-slate-900 p-4 px-6 md:px-8 flex flex-col gap-2 text-white min-h-[60px]">
           <div className="flex justify-between items-center w-full">
-            <span className="text-[10px] md:text-xs font-black text-yellow-500 uppercase tracking-widest flex items-center gap-2">
+            <span className="text-[10px] md:text-xs font-black text-yellow-500 tracking-widest flex items-center gap-2">
               <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
               {isAdmin ? "Headmaster Console" : currentTime.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}
               {!isAdmin && <span className="text-white ml-2">{currentTime.toLocaleTimeString('ko-KR', { hour12: false })}</span>}
             </span>
-            {isSaving && <div className="text-[9px] text-yellow-500 font-bold uppercase animate-bounce">Magic occurring...</div>}
+            {isSaving && <div className="text-[9px] text-yellow-500 font-bold animate-bounce">Magic occurring...</div>}
           </div>
 
           {!isAdmin && (
             <div className="flex items-center gap-3 pt-1 border-t border-white/10 mt-1">
-              <span className="text-[9px] font-black text-white/40 uppercase shrink-0">Goal</span>
+              <span className="text-[9px] font-black text-white/40 shrink-0">Goal</span>
               {isEditingGoal ? (
                 <div className="flex items-center gap-2 flex-1">
                   <input 
@@ -579,7 +579,7 @@ export default function HogwartsApp() {
                     {dailyGoal || "수정버튼을 클릭하여 목표나 다짐을 입력하세요."}
                   </span>
                   <div className="flex gap-3 shrink-0">
-                    <button onClick={() => setIsEditingGoal(true)} className="text-[9px] font-bold text-white/40 hover:text-white transition-colors uppercase">수정</button>
+                    <button onClick={() => setIsEditingGoal(true)} className="text-[9px] font-bold text-white/40 hover:text-white transition-colors">수정</button>
                     {dailyGoal && (
                       <button 
                         onClick={() => {
@@ -589,7 +589,7 @@ export default function HogwartsApp() {
                             alert("삭제되었습니다.");
                           }
                         }}
-                        className="text-[9px] font-bold text-red-400/60 hover:text-red-400 transition-colors uppercase"
+                        className="text-[9px] font-bold text-red-400/60 hover:text-red-400 transition-colors"
                       >삭제</button>
                     )}
                   </div>
@@ -602,7 +602,7 @@ export default function HogwartsApp() {
         <div className="w-full overflow-x-auto">
           <table className="min-w-[850px] w-full table-fixed border-collapse">
             <thead>
-              <tr className="bg-slate-50 text-slate-500 uppercase font-black text-[11px] border-b-2">
+              <tr className="bg-slate-50 text-slate-500 font-black text-[11px] border-b-2">
                 <th className="w-28 p-2 sticky left-0 bg-slate-50 z-20 border-r">학생명</th>
                 {DAYS.map(d => <th key={d} className="w-16 p-2 text-slate-900">{d}</th>)}
                 <th className="w-24 p-2 bg-slate-100 text-[10px]">공부시간</th>
@@ -632,7 +632,7 @@ export default function HogwartsApp() {
                     {isAdmin && (
                       <tr className="bg-slate-100/50 border-t-2 border-slate-200">
                         <td className="sticky left-0 bg-slate-100/50 z-20 border-r"></td>
-                        {DAYS.map(d => <td key={d} className="p-1 text-[10px] font-black text-slate-500 text-center uppercase">{d}</td>)}
+                        {DAYS.map(d => <td key={d} className="p-1 text-[10px] font-black text-slate-500 text-center">{d}</td>)}
                         <td colSpan={2} className="border-l"></td>
                       </tr>
                     )}
@@ -642,7 +642,7 @@ export default function HogwartsApp() {
                           <td rowSpan={7} className={`p-4 text-center sticky left-0 z-20 font-bold border-r-[3px] ${info.color} ${info.text}`}>
                             <div className="text-3xl mb-1">{emoji}</div>
                             <div className="leading-tight text-sm font-black mb-1 break-keep">{name}</div>
-                            <div className="text-[9px] font-black opacity-70 uppercase mb-2">{info.house}</div>
+                            <div className="text-[9px] font-black opacity-70 mb-2">{info.house}</div>
                             <button onClick={async () => {
                               const newPw = prompt("새 비밀번호를 입력하세요 (4자리숫자)");
                               if(newPw && newPw.length >= 4) await handleChange(name, '월', 'password', newPw);
@@ -703,7 +703,7 @@ export default function HogwartsApp() {
                                      }} 
                                      className={`w-7 h-5 rounded-md border-2 ${isAdmin ? 'cursor-pointer' : ''} ${offCount >= (5-n) ? info.accent : 'bg-slate-50 border-slate-200'}`} />
                               ))}
-                              {isAdmin && <button onClick={() => confirm("월휴 리셋?") && handleChange(name, '월', 'monthly_off_count', 4)} className="mt-2 px-1 py-0.5 bg-slate-800 text-[8px] text-white rounded font-bold uppercase">Reset</button>}
+                              {isAdmin && <button onClick={() => confirm("월휴 리셋?") && handleChange(name, '월', 'monthly_off_count', 4)} className="mt-2 px-1 py-0.5 bg-slate-800 text-[8px] text-white rounded font-bold">Reset</button>}
                             </div>
                           </td>
                         )}
