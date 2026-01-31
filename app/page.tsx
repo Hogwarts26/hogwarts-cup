@@ -423,12 +423,11 @@ export default function HogwartsApp() {
     }).sort((a, b) => b.finalPoint - a.finalPoint);
   }, [records]);
 
- // ==========================================
+// ==========================================
   // [11.5] 배경음악(BGM) 로직
   // ==========================================
   const [isPlaying, setIsPlaying] = useState(false);
-  // 깃허브에 올리신 파일명 'hedwig.mp3'를 반영했습니다.
-  const [bgm] = useState(() => typeof Audio !== 'undefined' ? new Audio('./hedwig.mp3') : null);
+  const [bgm] = useState(() => typeof Audio !== 'undefined' ? new Audio('/hedwig.mp3') : null);
 
   const toggleMusic = () => {
     if (!bgm) return;
@@ -441,7 +440,6 @@ export default function HogwartsApp() {
     }
     setIsPlaying(!isPlaying);
   };
-
 // ==========================================
   // [12] 데이터 변경 및 저장 로직 (비밀번호, 목표, 학습 기록)
   // ==========================================
