@@ -962,7 +962,7 @@ export default function HogwartsApp() {
           DRAGON CAVE
         </div>
 
-        {/* 1. 상단 지형 구역 (가로 3개씩 2줄 - 클릭 이벤트 추가) */}
+        {/* 1. 상단 지형 구역 (클릭 이벤트 유지) */}
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(3, 1fr)', 
@@ -973,7 +973,7 @@ export default function HogwartsApp() {
           {['Alpine', 'Coast', 'Desert', 'Forest', 'Jungle', 'Volcano'].map((area) => (
             <div 
               key={area} 
-              onClick={() => setSelectedArea(area)} // 클릭 시 해당 지역명 저장
+              onClick={() => setSelectedArea(area)} 
               style={{ 
                 padding: '4px 0', 
                 fontSize: '10px', 
@@ -981,7 +981,7 @@ export default function HogwartsApp() {
                 border: '1px solid #eee', 
                 backgroundColor: '#f9f9f9',
                 borderRadius: '3px',
-                cursor: 'pointer' // 클릭 가능하다는 표시
+                cursor: 'pointer' 
               }}
             >
               {area}
@@ -998,13 +998,13 @@ export default function HogwartsApp() {
           />
         </div>
 
-{/* 3. 지역별 .webp 팝업 레이어 (흰색 배경 + 이미지 70% 투명도) */}
+        {/* 3. 지역별 .webp 팝업 레이어 (흰색 배경 + 2글자 조합 이미지 3개 추가) */}
         {selectedArea && (
           <div 
             onClick={() => setSelectedArea(null)} 
             style={{
               position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-              backgroundColor: 'rgba(0,0,0,0.6)', // 팝업 바깥쪽 어두운 배경
+              backgroundColor: 'rgba(0,0,0,0.6)', 
               display: 'flex', 
               alignItems: 'center', justifyContent: 'center', zIndex: 9999
             }}
@@ -1013,21 +1013,50 @@ export default function HogwartsApp() {
               position: 'relative', 
               width: '90%', 
               maxWidth: '400px',
-              backgroundColor: '#ffffff', // 이미지 뒤에 깔리는 흰색 바탕
+              backgroundColor: '#ffffff', 
               borderRadius: '15px',
-              overflow: 'hidden',         // 이미지가 둥근 모서리를 벗어나지 않게
+              overflow: 'hidden',         
               boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
             }}>
-              <img 
-                src={`/${selectedArea.toLowerCase()}.webp`} 
-                alt={selectedArea}
-                style={{ 
-                  width: '100%', 
-                  display: 'block',
-                  opacity: 0.7, // 흰색 배경 위에서 70% 투명도 적용
-                }} 
-              />
-              {/* 이미지 하단 지형 이름 표시 구역 (흰색 배경 유지) */}
+              {/* 메인 배경 이미지 영역 */}
+              <div style={{ position: 'relative' }}>
+                <img 
+                  src={`/${selectedArea.toLowerCase()}.webp`} 
+                  alt={selectedArea}
+                  style={{ 
+                    width: '100%', 
+                    display: 'block',
+                    opacity: 0.7, 
+                  }} 
+                />
+                
+                {/* --- 2글자 조합 이미지 3개 (하단 배치) --- */}
+                <div style={{ 
+                  position: 'absolute', 
+                  bottom: '20px', 
+                  left: 0, 
+                  right: 0, 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  gap: '12px' 
+                }}>
+                  {[1, 2, 3].map((num) => (
+                    <img 
+                      key={num}
+                      src={`/${selectedArea.substring(0, 2).toLowerCase()}${num}.webp`}
+                      alt={`egg-${num}`}
+                      style={{ 
+                        width: '65px', 
+                        height: '65px', 
+                        objectFit: 'contain',
+                        filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))' // 배경과 분리되도록 그림자 추가
+                      }} 
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* 하단 텍스트 표시 구역 */}
               <div style={{ 
                 backgroundColor: '#ffffff',
                 padding: '15px 0',
