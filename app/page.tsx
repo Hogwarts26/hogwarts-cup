@@ -611,7 +611,7 @@ export default function HogwartsApp() {
           <div className="bg-white p-6 md:p-10 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-8 mb-8">
               {/* 왼쪽: 로고 크게 배치 */}
-              <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="Logo" className="w-28 h-28 object-contain drop-shadow-sm" />
+              <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="Logo" className="w-36 h-36 object-contain drop-shadow-sm" />
               
               {/* 오른쪽: 이모지(상단/큼), 이름(하단/작음), 공부시간(기울임) */}
               <div className="flex flex-col justify-center items-center text-center mt-6">
