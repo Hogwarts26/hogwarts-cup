@@ -729,7 +729,7 @@ export default function HogwartsApp() {
         </div>
       </div>
 
-      {/* --- 학습 기록 메인 테이블 (수정 없음) --- */}
+{/* --- 학습 기록 메인 테이블 (수정 없음) --- */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
         <div className="bg-slate-900 p-4 px-6 md:px-8 flex flex-col gap-2 text-white min-h-[60px]">
           <div className="flex justify-between items-center w-full">
@@ -742,8 +742,40 @@ export default function HogwartsApp() {
           </div>
           {!isAdmin && (
             <div className="flex items-center gap-3 pt-1 border-t border-white/10 mt-1">
-              <span className="text-[9px] font-black text-white/40 shrink-0">Goal</span>
-              <div className="flex items-center gap-3 flex-1 overflow-hidden italic truncate text-xs">{dailyGoal || "목표를 입력하세요."}</div>
+              <span className="text-[9px] font-black text-white/40 shrink-0 uppercase tracking-tighter">Goal</span>
+              <div className="flex items-center gap-2 flex-1 overflow-hidden group">
+                <input 
+                  type="text"
+                  value={dailyGoal || ""}
+                  onChange={(e) => setDailyGoal(e.target.value)}
+                  placeholder="목표를 입력하세요."
+                  className="bg-transparent italic text-xs w-full focus:outline-none border-b border-transparent focus:border-white/20 pb-0.5 transition-all text-white/90"
+                />
+                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                  <button 
+                    onClick={() => {
+                      // 테이블에 표시된 첫 번째 학생 혹은 특정 대상을 name으로 지정하여 저장
+                      const targetName = displayList[0]; 
+                      if (targetName) handleUpdateRecord(targetName, 'goal', dailyGoal);
+                    }}
+                    className="text-[10px] font-bold text-yellow-500 hover:text-yellow-400"
+                  >
+                    [저장]
+                  </button>
+                  <button 
+                    onClick={() => {
+                      if(confirm("목표를 삭제하시겠습니까?")) {
+                        const targetName = displayList[0];
+                        setDailyGoal("");
+                        if (targetName) handleUpdateRecord(targetName, 'goal', "");
+                      }
+                    }}
+                    className="text-[10px] font-bold text-red-400 hover:text-red-300"
+                  >
+                    [삭제]
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -843,6 +875,3 @@ export default function HogwartsApp() {
           </table>
         </div>
       </div>
-    </div>
-  );
-}
