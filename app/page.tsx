@@ -1108,3 +1108,6 @@ export default function HogwartsApp() {
           </div>
         )}
       </div> {/* [new-map-section 끝] */}
+    </div> {/* [메인 컨테이너 div 끝] */}
+  ); 
+};
