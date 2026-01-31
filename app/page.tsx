@@ -3,21 +3,21 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from './supabase';
 
 // ==========================================
-// [1] 글로벌 스타일 및 애니메이션 설정
+// [1] 기숙사컵 반짝이 스타일 및 애니메이션 설정
 // ==========================================
 const GLOVAL_STYLE = `
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap');
   @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
   body { 
-    /* 영문/숫자는 Cinzel, 한국어는 Pretendard 순으로 적용됩니다. */
+    /* 영문/숫자는 Cinzel, 한국어는 Pretendard 순으로 적용 */
     font-family: 'Cinzel', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif; 
   }
 
   /* 폰트 강조가 필요한 serif 클래스에 Cinzel 적용 */
   .font-serif { font-family: 'Cinzel', serif; }
 
-  /* 디즈니 마법 가루(Pixie Dust) 효과 */
+  /* Pixie Dust 효과 */
   .winner-sparkle {
     position: relative;
     overflow: hidden;
@@ -175,7 +175,7 @@ const HOUSE_NOTICES: { [key: string]: { title: string, content: string } } = {
 const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
 const OFF_OPTIONS = ['-', '출석', '반휴', '주휴', '월휴', '월반휴', '자율', '결석', '늦반휴', '늦휴', '늦월반휴', '늦월휴'];
 
-// 사용자님의 깃허브 저장소(Hogwarts26/hogwarts-cup)에 올린 이미지를 직접 연결합니다.
+// 깃허브 저장소(Hogwarts26/hogwarts-cup)에 올린 이미지를 직접 연결
 const HOUSE_LOGOS: Record<string, string> = {
   "그리핀도르": "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/gry.png",
   "슬리데린": "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/sly.png",
@@ -715,7 +715,7 @@ export default function HogwartsApp() {
                 isPlaying ? 'bg-yellow-500 text-slate-900 animate-pulse' : 'bg-slate-700 text-white opacity-70'
               }`}
             >
-              {isPlaying ? '🪄 Music On' : '🔇 Music Off'}
+              {isPlaying ? '🎵' : '🔇'}
             </button>
             {isAdmin && <button onClick={() => setShowSummary(true)} className="text-[10px] font-black text-white bg-indigo-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-indigo-700 transition-colors">요약</button>}
             {isAdmin && <button onClick={resetWeeklyData} className="text-[10px] font-black text-white bg-red-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-red-700 transition-colors">Weekly Reset</button>}
