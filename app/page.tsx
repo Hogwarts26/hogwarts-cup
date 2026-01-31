@@ -1038,7 +1038,7 @@ export default function HogwartsApp() {
                   right: 0, 
                   display: 'flex', 
                   justifyContent: 'center', 
-                  gap: '12px' 
+                  gap: '20px' 
                 }}>
                   {[1, 2, 3].map((num) => (
                     <img 
