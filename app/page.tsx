@@ -252,17 +252,15 @@ export default function HogwartsApp() {
     localStorage.setItem('hg_auth', JSON.stringify({ name: selectedName, admin }));
   };
 
-// ==========================================
+  // ==========================================
   // [9] 데이터 초기화 (Weekly Reset)
   // ==========================================
   const resetWeeklyData = async () => {
     if (!confirm("⚠️ 주의: 모든 학생의 이번 주 공부 기록을 초기화하시겠습니까?")) return;
     if (!confirm("정말로 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) return;
-
     setIsSaving(true);
     const names = Object.keys(studentData);
     const resetData = [];
-
     for (const name of names) {
       for (const day of DAYS) {
         const existing = records.find(r => r.student_name === name && r.day_of_week === day) || {};
@@ -279,16 +277,11 @@ export default function HogwartsApp() {
         });
       }
     }
-
     const { error } = await supabase.from('study_records').upsert(resetData, { onConflict: 'student_name,day_of_week' });
-    
-    if (!error) { 
-      setRecords(resetData); 
-      alert("✅ 기록이 초기화되었습니다."); 
-    }
+    if (!error) { setRecords(resetData); alert("✅ 기록이 초기화되었습니다."); }
     setIsSaving(false);
   };
-  
+
 // ==========================================
   // [10] 점수 계산 및 리포트 연동 로직
   // ==========================================
@@ -447,7 +440,6 @@ export default function HogwartsApp() {
     }
     setIsPlaying(!isPlaying);
   };
-
 // ==========================================
   // [12] 데이터 변경 및 저장 로직 (비밀번호, 목표, 학습 기록)
   // ==========================================
