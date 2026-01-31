@@ -605,49 +605,54 @@ export default function HogwartsApp() {
         </div>
       )}
 
-      {/* --- 학생 개인 주간 요약 카드 --- */}
+      {/* --- 학생 개인 주간 요약 카드 (레이아웃 최적화) --- */}
       {selectedStudentReport && studentData[selectedStudentReport] && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
-          <div className="bg-white p-8 w-full max-w-lg shadow-[0_20px_50px_rgba(0,0,0,0.2)] relative rounded-[2.5rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-start mb-8">
-              <div className="flex items-center gap-4">
-                <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="Logo" className="w-16 h-16 object-contain" />
-                <div className="text-center">
-                  <div className="text-4xl mb-1">{studentData[selectedStudentReport].emoji}</div>
-                  <div className="font-black text-xl text-slate-800 tracking-tight">{formatDisplayName(selectedStudentReport)}</div>
+          <div className="bg-white p-6 md:p-10 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-10">
+              <div className="flex items-center gap-6">
+                {/* 로고 크기 대폭 확대 */}
+                <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="Logo" className="w-24 h-24 object-contain drop-shadow-md" />
+                <div className="flex flex-col">
+                  {/* 이름과 이모지 크기 축소 및 세련된 배치 */}
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="font-black text-2xl text-slate-800 tracking-tight">{formatDisplayName(selectedStudentReport)}</span>
+                    <span className="text-xl">{studentData[selectedStudentReport].emoji}</span>
+                  </div>
+                  <div className="text-[12px] font-bold text-slate-400 uppercase tracking-widest">{studentData[selectedStudentReport].house}</div>
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-[14px] font-bold text-[#737373] mb-1">이번주 공부시간</div>
-                <div className="text-3xl font-black text-slate-900">{calculateWeeklyTotal(selectedStudentReport)}</div>
+                <div className="text-[12px] font-bold text-slate-400 mb-1">이번주 공부시간</div>
+                <div className="text-4xl font-black text-slate-900 tracking-tighter">{calculateWeeklyTotal(selectedStudentReport)}</div>
+                <div className="text-[11px] font-black text-slate-300 mt-1 italic">{getWeeklyDateRange()}</div>
               </div>
             </div>
-            <div className="text-center text-[#737373] font-bold text-sm mb-4 italic">{getWeeklyDateRange()}</div>
-            <div className="grid grid-cols-4 gap-2 mb-8">
+            
+            <div className="grid grid-cols-4 gap-2.5 mb-2">
               {DAYS.map(day => {
                 const rec = records.find(r => r.student_name === selectedStudentReport && r.day_of_week === day) || {};
                 const getCellBg = (val: string) => {
-                  if (['반휴','월반휴','늦반휴','늦월반휴'].includes(val)) return 'bg-green-100';
-                  if (['주휴','월휴','늦휴','늦월휴'].includes(val)) return 'bg-blue-100';
-                  if (val === '결석') return 'bg-red-100';
+                  if (['반휴','월반휴','늦반휴','늦월반휴'].includes(val)) return 'bg-green-100/50';
+                  if (['주휴','월휴','늦휴','늦월휴'].includes(val)) return 'bg-blue-100/50';
+                  if (val === '결석') return 'bg-red-100/50';
                   return 'bg-slate-50';
                 };
                 return (
-                  <div key={day} className={`p-2 flex flex-col items-center justify-between h-24 rounded-2xl border border-slate-200 shadow-sm transition-all ${getCellBg(rec.off_type)}`}>
-                    <div className="text-[11px] font-bold text-[#737373]">{getDayDate(day)} {day}</div>
-                    <div className="text-lg font-black text-slate-900">{rec.study_time || "0:00"}</div>
-                    <div className="text-[10px] font-bold text-green-700 h-4 leading-none uppercase">{['반휴','월반휴','주휴','결석'].includes(rec.off_type) ? rec.off_type : ""}</div>
+                  <div key={day} className={`p-2.5 flex flex-col items-center justify-between h-24 rounded-2xl border border-slate-100 shadow-sm transition-all ${getCellBg(rec.off_type)}`}>
+                    <div className="text-[10px] font-bold text-slate-400">{getDayDate(day)} {day}</div>
+                    <div className="text-[18px] font-black text-slate-800">{rec.study_time || "0:00"}</div>
+                    <div className="text-[9px] font-black text-indigo-500 h-3 leading-none uppercase">{['반휴','월반휴','주휴','결석'].includes(rec.off_type) ? rec.off_type : ""}</div>
                   </div>
                 );
               })}
-              <div className="p-3 text-[11px] font-bold leading-relaxed flex flex-col justify-center bg-slate-900 text-white rounded-2xl shadow-lg">
-                <div>상점 {calculatePoints(selectedStudentReport).bonus}</div>
-                <div>벌점 {calculatePoints(selectedStudentReport).penalty}</div>
-                <div className="text-yellow-400">잔여휴무 {calculatePoints(selectedStudentReport).remainingWeeklyOff}</div>
-                <div className="text-cyan-400">잔여월휴 {calculatePoints(selectedStudentReport).remainingMonthlyOff}</div>
+              <div className="p-3 text-[10px] font-black leading-relaxed flex flex-col justify-center gap-1 bg-slate-900 text-white rounded-2xl shadow-lg">
+                <div className="flex justify-between"><span>상점</span><span className="text-blue-400">+{calculatePoints(selectedStudentReport).bonus}</span></div>
+                <div className="flex justify-between"><span>벌점</span><span className="text-red-400">{calculatePoints(selectedStudentReport).penalty}</span></div>
+                <div className="flex justify-between text-yellow-400 mt-0.5"><span>잔여휴무</span><span>{calculatePoints(selectedStudentReport).remainingWeeklyOff}</span></div>
+                <div className="flex justify-between text-cyan-400"><span>잔여월휴</span><span>{calculatePoints(selectedStudentReport).remainingMonthlyOff}</span></div>
               </div>
             </div>
-            {/* 월별 누적 시간 제거 완료 */}
           </div>
         </div>
       )}
