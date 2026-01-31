@@ -16,7 +16,6 @@ const GLOVAL_STYLE = `
 
   /* 폰트 강조가 필요한 serif 클래스에 Cinzel 적용 */
   .font-serif { font-family: 'Cinzel', serif; }
-`;
   
   /* 디즈니 마법 가루(Pixie Dust) 효과 */
   .winner-sparkle {
