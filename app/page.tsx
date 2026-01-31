@@ -617,9 +617,9 @@ export default function HogwartsApp() {
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
           <div className="bg-white p-5 md:px-10 md:py-8 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             
-            {/* 상단: 로고와 텍스트 밀착 배치 (비율 조정 및 여백 제거) */}
-            <div className="flex items-center justify-center mb-6 w-full">
-              {/* 왼쪽: 로고를 이전보다 훨씬 크게(w-44) 설정하고 오른쪽으로 밀착 */}
+            {/* 상단: 로고와 텍스트 배치 (하단 정렬 적용) */}
+            <div className="flex items-end justify-center mb-6 w-full">
+              {/* 왼쪽: 로고 영역 */}
               <div className="w-[45%] flex justify-end">
                 <img 
                   src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} 
@@ -628,8 +628,8 @@ export default function HogwartsApp() {
                 />
               </div>
               
-              {/* 오른쪽: 이모지, 이름, 공부시간 뭉치를 왼쪽으로 밀착 */}
-              <div className="w-[55%] flex flex-col justify-center items-center text-center">
+              {/* 오른쪽: 이모지, 이름, 공부시간 뭉치를 하단(items-end)으로 정렬 */}
+              <div className="w-[55%] flex flex-col justify-end items-center text-center">
                 <div className="flex flex-col mb-1 items-center">
                   <span className="text-4xl md:text-5xl mb-1">{studentData[selectedStudentReport].emoji}</span>
                   <span className="font-bold text-xs md:text-sm text-slate-400 tracking-tight leading-none">{formatDisplayName(selectedStudentReport)}</span>
@@ -640,8 +640,8 @@ export default function HogwartsApp() {
               </div>
             </div>
 
-            {/* 주간 날짜: [10]번에서 수정한 형식이 반영되며, 폰트 크기를 키움 */}
-            <div className="text-xl md:text-2xl font-black text-black italic mb-4 text-center tracking-tight">
+            {/* 주간 날짜: italic 제거 */}
+            <div className="text-xl md:text-2xl font-black text-black mb-4 text-center tracking-tight">
               {getWeeklyDateRange()}
             </div>
             
