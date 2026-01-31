@@ -2,6 +2,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from './supabase';
 
+// ==========================================
+// [1] 글로벌 스타일 및 애니메이션 설정
+// ==========================================
 const GLOVAL_STYLE = `
   @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
   body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif; }
@@ -70,6 +73,9 @@ const GLOVAL_STYLE = `
   .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
 `;
 
+// ==========================================
+// [2] 학생 명단 데이터 (이름, 기숙사, 이모지, 색상)
+// ==========================================
 const studentData: { [key: string]: { house: string; emoji: string; color: string; accent: string, text: string } } = {
   "🧃피크닉": { house: "슬리데린", emoji: "🧃", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🤖로봇": { house: "슬리데린", emoji: "🤖", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
@@ -98,9 +104,12 @@ const studentData: { [key: string]: { house: string; emoji: string; color: strin
   "🦊여우": { house: "후플푸프", emoji: "🦊", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🧄마늘": { house: "후플푸프", emoji: "🧄", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🦖공룡": { house: "후플푸프", emoji: "🦖", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
-  "🐿️다람": { house: "후플푸프", emoji: "🐿️", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" }
+  "Squirrel다람": { house: "후플푸프", emoji: "🐿️", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" }
 };
 
+// ==========================================
+// [3] 기숙사 설정 및 공지사항 데이터
+// ==========================================
 const HOUSE_ORDER = ["슬리데린", "래번클로", "그리핀도르", "후플푸프"];
 const HOUSE_CONFIG = {
   "슬리데린": { bg: "bg-emerald-600", border: "border-emerald-700", icon: "🐍", accent: "bg-emerald-400" },
@@ -136,7 +145,7 @@ const HOUSE_NOTICES: { [key: string]: { title: string, content: string } } = {
 
 교수님께서는 이번 주말, 특별히 선발된 몇몇 학생을 대상으로 설탕 절임 파인애플 시식회를 겸한 작은 소모임을 가질 예정이십니다. 초대장을 받은 학생들은 슬리데린의 품격에 맞는 복장을 갖추고 참석하십시오. 이번 기회를 통해 자신의 가치를 증명해 보이길 바랍니다.
 
-그리고 최근 지하 감옥 복도 벽면에 타 기숙사를 비방하는 낙서를 하는 이들이 있습니다. 슬리데린은 그런 유치한 수단이 아닌, 오직 결과와 실력으로 상대를 압도하는 곳입니다. 자부심을 가지되 불필요한 마찰은 피하십시오.
+그리고 최근 지하 감옥 복도 벽면에 타 기스크를 비방하는 낙서를 하는 이들이 있습니다. 슬리데린은 그런 유치한 수단이 아닌, 오직 결과와 실력으로 상대를 압도하는 곳입니다. 자부심을 가지되 불필요한 마찰은 피하십시오.
 
 1월 마지막 주 암호는 '순수한 승리'입니다.`
   },
@@ -152,6 +161,9 @@ const HOUSE_NOTICES: { [key: string]: { title: string, content: string } } = {
   }
 };
 
+// ==========================================
+// [4] 공통 상수 및 정렬 함수
+// ==========================================
 const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
 const OFF_OPTIONS = ['-', '출석', '반휴', '주휴', '월휴', '월반휴', '자율', '결석', '늦반휴', '늦휴', '늦월반휴', '늦월휴'];
 
@@ -161,6 +173,9 @@ const sortKorean = (a: string, b: string) => {
   return cleanA.localeCompare(cleanB, 'ko');
 };
 
+// ==========================================
+// [5] 메인 App 컴포넌트 및 상태(State) 관리
+// ==========================================
 export default function HogwartsApp() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -171,10 +186,12 @@ export default function HogwartsApp() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedHouseNotice, setSelectedHouseNotice] = useState<string | null>(null);
   
-  // 오늘의 다짐 관련 상태
   const [dailyGoal, setDailyGoal] = useState("");
   const [isEditingGoal, setIsEditingGoal] = useState(false);
 
+  // ==========================================
+  // [6] 초기 실행 (인증 확인 및 시계)
+  // ==========================================
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     const saved = localStorage.getItem('hg_auth');
@@ -185,12 +202,13 @@ export default function HogwartsApp() {
     return () => clearInterval(timer);
   }, []);
 
-  // 1. [수정] 목표 불러오기: 요일 필터 없이 학생의 데이터 중 목표가 있는 것을 찾아옵니다.
+  // ==========================================
+  // [7] 데이터 불러오기 (Supabase 연결)
+  // ==========================================
   const fetchRecords = async () => {
     const { data } = await supabase.from('study_records').select('*');
     if (data) {
       setRecords(data);
-      // 현재 학생의 모든 요일 기록 중 goal이 비어있지 않은 첫 번째 데이터를 찾음
       const myRecords = data.filter(r => r.student_name === selectedName);
       const savedGoal = myRecords.find(r => r.goal && r.goal !== "")?.goal || "";
       setDailyGoal(savedGoal);
@@ -199,6 +217,9 @@ export default function HogwartsApp() {
 
   useEffect(() => { if (isLoggedIn) fetchRecords(); }, [isLoggedIn, selectedName]);
 
+  // ==========================================
+  // [8] 로그인 로직
+  // ==========================================
   const handleLogin = async () => {
     if (!selectedName) { alert("학생을 선택해주세요."); return; }
     let admin = password === "8888";
@@ -211,7 +232,9 @@ export default function HogwartsApp() {
     localStorage.setItem('hg_auth', JSON.stringify({ name: selectedName, admin }));
   };
 
-  // 2. [수정] 주간 리셋: 기록은 초기화하되 기존의 goal(목표)은 유지합니다.
+  // ==========================================
+  // [9] 데이터 초기화 (Weekly Reset)
+  // ==========================================
   const resetWeeklyData = async () => {
     if (!confirm("⚠️ 주의: 모든 학생의 이번 주 공부 기록을 초기화하시겠습니까?")) return;
     if (!confirm("정말로 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) return;
@@ -230,16 +253,18 @@ export default function HogwartsApp() {
           study_time: '',
           password: existing.password || '0000', 
           monthly_off_count: existing.monthly_off_count ?? 4,
-          goal: existing.goal || '' // ★ 기존 목표가 있다면 유지, 없다면 공백
+          goal: existing.goal || '' 
         });
       }
     }
     const { error } = await supabase.from('study_records').upsert(resetData, { onConflict: 'student_name,day_of_week' });
-    // 초기화 후 dailyGoal 상태를 ""로 만들지 않고 유지합니다.
     if (!error) { setRecords(resetData); alert("✅ 기록이 초기화되었습니다. (목표 유지)"); }
     setIsSaving(false);
   };
 
+  // ==========================================
+  // [10] 점수 계산 로직 (Penalty & Bonus)
+  // ==========================================
   const calc = (r: any) => {
     if (!r) return { penalty: 0, bonus: 0, total: 0, studyH: 0 };
     if (r.off_type === '결석') return { penalty: -5, bonus: 0, total: -5, studyH: 0 };
@@ -260,6 +285,9 @@ export default function HogwartsApp() {
     return { penalty: Math.max(penalty, -5), bonus, total: Math.max(penalty, -5) + bonus, studyH };
   };
 
+  // ==========================================
+  // [11] 기숙사 랭킹 계산
+  // ==========================================
   const houseRankings = useMemo(() => {
     return HOUSE_ORDER.map(house => {
       const students = Object.keys(studentData).filter(n => studentData[n].house === house);
@@ -275,12 +303,15 @@ export default function HogwartsApp() {
     }).sort((a, b) => b.finalPoint - a.finalPoint);
   }, [records]);
 
-  // 3. [수정] 데이터 변경: 목표(goal) 수정 시 모든 요일에 동일하게 저장합니다.
+// ==========================================
+  // [12] 데이터 변경 및 저장 로직 (비밀번호, 목표, 학습 기록)
+  // ==========================================
   const handleChange = async (name: string, day: string, field: string, value: any) => {
     if (!isAdmin && field !== 'password' && field !== 'goal') return;
     setIsSaving(true);
 
     if (field === 'password') {
+      // --- 비밀번호 변경 구역 ---
       const { error } = await supabase.from('study_records').upsert(
         DAYS.map(d => ({ student_name: name, day_of_week: d, password: value })),
         { onConflict: 'student_name,day_of_week' }
@@ -288,7 +319,7 @@ export default function HogwartsApp() {
       if (!error) { setRecords(prev => prev.map(r => r.student_name === name ? { ...r, password: value } : r)); alert("비밀번호가 성공적으로 변경되었습니다"); }
     } 
     else if (field === 'goal') {
-      // ★ 목표 저장 로직: 학생의 모든 요일 레코드에 동일한 goal 저장
+      // --- 오늘의 다짐(목표) 저장 구역 ---
       const updatePayload = DAYS.map(d => {
         const existing = records.find(r => r.student_name === name && r.day_of_week === d) || {};
         return { 
@@ -307,7 +338,7 @@ export default function HogwartsApp() {
       }
     }
     else {
-      // 일반 기록 수정
+      // --- 일반 학습 기록 수정 구역 (휴무, 지각, 시간 등) ---
       const newRecords = [...records];
       const idx = newRecords.findIndex(r => r.student_name === name && r.day_of_week === day);
       const current = newRecords[idx] || {};
@@ -329,7 +360,10 @@ export default function HogwartsApp() {
     setIsSaving(false);
   };
 
-if (!isLoggedIn) {
+  // ==========================================
+  // [13] 로그인 화면 (Render Login)
+  // ==========================================
+  if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
         <style>{GLOVAL_STYLE}</style>
@@ -349,6 +383,9 @@ if (!isLoggedIn) {
     );
   }
 
+  // ==========================================
+  // [14] 메인 화면 데이터 준비 (학생 필터링 등)
+  // ==========================================
   const displayList = isAdmin 
     ? Object.keys(studentData).sort((a, b) => {
         const houseDiff = HOUSE_ORDER.indexOf(studentData[a].house) - HOUSE_ORDER.indexOf(studentData[b].house);
@@ -356,6 +393,9 @@ if (!isLoggedIn) {
       })
     : [selectedName];
 
+  // ==========================================
+  // [15] 메인 화면 렌더링 (UI)
+  // ==========================================
   return (
     <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 font-sans relative">
       <style>{`
@@ -385,7 +425,7 @@ if (!isLoggedIn) {
         }
       `}</style>
       
-      {/* 마법 공지사항 팝업 */}
+      {/* --- 마법 공지사항 팝업 구역 --- */}
       {selectedHouseNotice && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setSelectedHouseNotice(null)}>
           <div className="relative bg-[#f4e4bc] p-6 md:p-12 w-full max-w-2xl rounded-sm shadow-[0_0_50px_rgba(0,0,0,0.3)] overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()} style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.05) 100%)' }}>
@@ -405,7 +445,7 @@ if (!isLoggedIn) {
         </div>
       )}
 
-      {/* 대시보드 */}
+      {/* --- 상단 기숙사 점수판(대시보드) 구역 --- */}
       <div className="max-w-[1100px] mx-auto mb-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight uppercase">Hogwarts House Cup</h2>
@@ -433,7 +473,7 @@ if (!isLoggedIn) {
         </div>
       </div>
 
-      {/* 기록 테이블 */}
+      {/* --- 학습 기록 메인 테이블 구역 --- */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
         <div className="bg-slate-900 p-4 px-6 md:px-8 flex flex-col gap-2 text-white min-h-[60px]">
           <div className="flex justify-between items-center w-full">
@@ -445,6 +485,7 @@ if (!isLoggedIn) {
             {isSaving && <div className="text-[9px] text-yellow-500 font-bold uppercase animate-bounce">Magic occurring...</div>}
           </div>
 
+          {/* 오늘의 다짐(Goal) 표시 구역 */}
           {!isAdmin && (
             <div className="flex items-center gap-3 pt-1 border-t border-white/10 mt-1">
               <span className="text-[9px] font-black text-white/40 uppercase shrink-0">Goal</span>
@@ -492,6 +533,7 @@ if (!isLoggedIn) {
           )}
         </div>
 
+        {/* 테이블 본체 */}
         <div className="w-full overflow-x-auto">
           <table className="min-w-[850px] w-full table-fixed border-collapse">
             <thead>
