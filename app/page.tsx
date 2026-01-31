@@ -1132,9 +1132,9 @@ export default function HogwartsApp() {
 
               {confirmStep === 3 && (
                 <>
-                  <div style={{ fontFamily: "'Cinzel', serif", fontSize: '20px', fontWeight: 'bold', marginBottom: '20px', color: '#5e503f' }}>MY EGG</div>
-                  <img src={`/${myDragon}`} alt="My Dragon" style={{ width: '80px', height: '80px', objectFit: 'contain', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))' }} />
-                  <p style={{ marginTop: '20px', fontSize: '13px', color: '#5e503f' }}>숲을 탐험하다 발견한 소중한 인연입니다.</p>
+                  <div style={{ fontFamily: "'Cinzel', serif", fontSize: '20px', fontWeight: 'bold', marginBottom: '20px', color: '#5e503f' }}>My Dragon</div>
+                  <img src={`/${myDragon}`} alt="My Dragon" style={{ width: '45px', height: '45px', objectFit: 'contain', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))' }} />
+                  <p style={{ marginTop: '20px', fontSize: '13px', color: '#5e503f' }}>숲을 탐험하다 함께하게 된 소중한 인연입니다.</p>
                   <button onClick={() => setConfirmStep(0)} style={{ marginTop: '20px', width: '100%', padding: '10px', border: 'none', borderRadius: '10px', backgroundColor: '#5e503f', color: '#fff', cursor: 'pointer' }}>닫기</button>
                 </>
               )}
