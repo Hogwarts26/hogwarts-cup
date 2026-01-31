@@ -518,7 +518,7 @@ export default function HogwartsApp() {
     );
   }
 
-  // ==========================================
+// ==========================================
   // [14] 메인 화면 데이터 준비 (학생 필터링 등)
   // ==========================================
   const displayList = isAdmin 
@@ -528,7 +528,7 @@ export default function HogwartsApp() {
       })
     : [selectedName];
 
-// ==========================================
+  // ==========================================
   // [15] 메인 화면 렌더링 (UI)
   // ==========================================
   
@@ -621,14 +621,11 @@ export default function HogwartsApp() {
         </div>
       )}
 
-{/* --- 학생 개인 주간 요약 카드 (레이아웃 고도화) --- */}
+      {/* --- 학생 개인 주간 요약 카드 --- */}
       {selectedStudentReport && studentData[selectedStudentReport] && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
           <div className="bg-white p-5 md:px-10 md:py-8 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-            
-            {/* 상단: 로고와 텍스트 배치 (하단 정렬 및 좌측 밀착 적용) */}
             <div className="flex items-end justify-center mb-6 w-full">
-              {/* 왼쪽: 로고 영역 */}
               <div className="w-[45%] flex justify-end">
                 <img 
                   src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} 
@@ -636,10 +633,7 @@ export default function HogwartsApp() {
                   className="w-36 h-36 md:w-44 md:h-44 object-contain drop-shadow-md" 
                 />
               </div>
-              
-              {/* 오른쪽: 이모지+이름(가로배치) + 공부시간/목표(좌측정렬) */}
               <div className="w-[55%] flex flex-col justify-end items-start pl-4">
-                {/* items-baseline을 적용하여 이름이 이모지 하단에 정렬되도록 수정 */}
                 <div className="flex items-baseline gap-1.5 mb-0">
                   <span className="text-5xl md:text-6xl">{studentData[selectedStudentReport].emoji}</span>
                   <span className="font-bold text-xs md:text-sm text-slate-400 tracking-tight leading-none">{formatDisplayName(selectedStudentReport)}</span>
@@ -648,37 +642,29 @@ export default function HogwartsApp() {
                   <div className="text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-tight italic">
                     {calculateWeeklyTotal(selectedStudentReport)}
                   </div>
-                  {/* 목표 출력 영역: studentData 대신 records에서 해당 학생의 goal 데이터를 찾아 출력 */}
                   <div className="text-sm md:text-base font-bold text-slate-500 tracking-tight mt-1">
                     {records.find(r => r.student_name === selectedStudentReport && r.goal)?.goal || ""}
                   </div>
                 </div>
               </div>
             </div>
-
-            {/* 주간 날짜: italic 제거 */}
             <div className="text-xl md:text-2xl font-black text-black mb-4 text-center tracking-tight">
               {getWeeklyDateRange()}
             </div>
-            
             <div className="grid grid-cols-4 gap-2.5 mb-2">
               {DAYS.map(day => {
                 const rec = records.find(r => r.student_name === selectedStudentReport && r.day_of_week === day) || {};
-                
                 const isGreen = ['반휴','월반휴','늦반휴','늦월반휴'].includes(rec.off_type);
                 const isBlue = ['주휴','월휴','늦휴','늦월휴'].includes(rec.off_type);
                 const isRed = rec.off_type === '결석';
-                
                 const cellClass = isGreen ? 'bg-green-100/60 border-green-200' 
                                 : isBlue ? 'bg-blue-100/60 border-blue-200'
                                 : isRed ? 'bg-red-100/60 border-red-200'
                                 : 'bg-slate-50 border-slate-100';
-                                
                 const textClass = isGreen ? 'text-green-700'
                                 : isBlue ? 'text-blue-700'
                                 : isRed ? 'text-red-700'
                                 : 'text-slate-400';
-
                 return (
                   <div key={day} className={`p-2.5 flex flex-col items-center justify-between h-24 rounded-2xl border shadow-sm transition-all ${cellClass}`}>
                     <div className={`text-[10px] font-bold ${textClass}`}>{getDayDate(day)} {day}</div>
@@ -700,7 +686,7 @@ export default function HogwartsApp() {
         </div>
       )}
 
-{/* --- 상단 기스크 점수판 (수정 없음) --- */}
+      {/* --- 상단 기스크 점수판 --- */}
       <div className="max-w-[1100px] mx-auto mb-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight">Hogwarts House Cup</h2>
@@ -729,7 +715,7 @@ export default function HogwartsApp() {
         </div>
       </div>
 
-      {/* --- 학습 기록 메인 테이블 (수정 완료) --- */}
+      {/* --- 학습 기록 메인 테이블 --- */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
         <div className="bg-slate-900 p-4 px-6 md:px-8 flex flex-col gap-2 text-white min-h-[60px]">
           <div className="flex justify-between items-center w-full">
@@ -755,7 +741,6 @@ export default function HogwartsApp() {
                   <button 
                     onClick={() => {
                       const targetName = displayList[0]; 
-                      // handleUpdateRecord -> handleChange 로 수정
                       if (targetName) handleChange(targetName, '월', 'goal', dailyGoal);
                     }}
                     className="text-[10px] font-bold text-yellow-500 hover:text-yellow-400"
@@ -767,7 +752,6 @@ export default function HogwartsApp() {
                       if(confirm("목표를 삭제하시겠습니까?")) {
                         const targetName = displayList[0];
                         setDailyGoal("");
-                        // handleUpdateRecord -> handleChange 로 수정
                         if (targetName) handleChange(targetName, '월', 'goal', "");
                       }
                     }}
@@ -876,3 +860,6 @@ export default function HogwartsApp() {
           </table>
         </div>
       </div>
+    </div>
+  );
+};
