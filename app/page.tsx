@@ -646,6 +646,15 @@ export default function HogwartsApp() {
                 <div className="text-cyan-400">잔여월휴 {calculatePoints(selectedStudentReport).remainingMonthlyOff}</div>
               </div>
             </div>
+
+            <div className="space-y-2 border-t pt-4">
+              {getMonthAccumulatedTime(selectedStudentReport).map(item => (
+                <div key={item.month} className="flex justify-between items-center bg-stone-50 p-4 rounded-2xl border border-stone-100">
+                  <span className="text-sm font-bold text-stone-500">{item.month}월 누적 공부시간</span>
+                  <span className="text-xl font-black text-indigo-600">{item.time}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -664,7 +673,7 @@ export default function HogwartsApp() {
           {houseRankings.map((item, idx) => {
             const config = (HOUSE_CONFIG as any)[item.house];
             return (
-              <div key={item.house} onClick={() => setSelectedHouseNotice(item.house as any)} className={`${config.bg} ${config.border} ${idx === 0 ? 'winner-sparkle ring-4 ring-yellow-400 ring-offset-2' : ''} border-b-4 p-1.5 md:p-5 rounded-xl md:rounded-[2rem] text-white shadow-xl relative cursor-pointer active:scale-95 transition-all hover:brightness-110`}>
+              <div key={item.house} onClick={() => setSelectedHouseNotice(item.house as any)} className={`${config.bg} ${config.border} ${idx === 0 ? 'winner-sparkle ring-4 ring-yellow-400 ring-offset-2' : ''} border-b-4 p-1.5 md:p-5 rounded-xl md:rounded-[2rem] text-white shadow-xl relative cursor-pointer active:scale-95 transition-all hover:brightness-110 overflow-hidden`}>
                 <div className="absolute right-[-10px] bottom-[-10px] text-5xl md:text-7xl opacity-20 pointer-events-none">{config.icon}</div>
                 <div className="relative z-10">
                   <div className="flex justify-between items-start mb-1">
@@ -804,4 +813,3 @@ export default function HogwartsApp() {
       </div>
     </div>
   );
-}
