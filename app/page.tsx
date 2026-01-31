@@ -196,6 +196,7 @@ export default function HogwartsApp() {
   
   // 요약 확인 팝업 상태 추가
   const [showSummary, setShowSummary] = useState(false); 
+  const [selectedStudentReport, setSelectedStudentReport] = useState<string | null>(null);
   
   const [dailyGoal, setDailyGoal] = useState("");
   const [isEditingGoal, setIsEditingGoal] = useState(false);
@@ -442,10 +443,10 @@ export default function HogwartsApp() {
             <button onClick={() => setSelectedHouseNotice(null)} className="absolute top-2 right-2 md:top-4 md:right-4 text-slate-800 hover:rotate-90 transition-transform p-2 text-2xl z-20">✕</button>
             <div className="relative z-10 font-serif flex flex-col overflow-hidden">
               <div className="w-16 h-1 bg-slate-800/20 mx-auto mb-4 md:mb-6 shrink-0"></div>
-              <h3 className="text-xl md:text-3xl font-black text-[#4a3728] mb-4 md:mb-6 text-center italic border-b border-[#4a3728]/20 pb-4 shrink-0 px-4">{HOUSE_NOTICES[selectedHouseNotice].title}</h3>
+              <h3 className="text-xl md:text-3xl font-black text-[#4a3728] mb-4 md:mb-6 text-center italic border-b border-[#4a3728]/20 pb-4 shrink-0 px-4">{(HOUSE_NOTICES as any)[selectedHouseNotice]?.title}</h3>
               <div className="overflow-y-auto pr-2 custom-scrollbar">
                 <div className="text-base md:text-lg leading-relaxed text-[#5d4037] whitespace-pre-wrap font-medium">
-                  {HOUSE_NOTICES[selectedHouseNotice].content}
+                  {(HOUSE_NOTICES as any)[selectedHouseNotice]?.content}
                 </div>
                 <div className="mt-8 mb-4 text-right italic font-bold text-[#4a3728]/60">— Hogwarts School of Witchcraft and Wizardry —</div>
               </div>
@@ -493,10 +494,10 @@ export default function HogwartsApp() {
         </div>
       )}
 
-      {/* --- 학생 개인 주간 요약 카드 --- */}
+      {/* --- 학생 개인 주간 요약 카드 (이미지 디자인 완벽 반영) --- */}
       {selectedStudentReport && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
-          <div className="bg-white p-8 w-full max-w-lg shadow-[0_20px_50px_rgba(0,0,0,0.2)] relative" onClick={e => e.stopPropagation()}>
+          <div className="bg-white p-8 w-full max-w-lg shadow-[0_20px_50px_rgba(0,0,0,0.2)] relative rounded-sm animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-start mb-8">
               <div className="flex items-center gap-4">
                 <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="Logo" className="w-16 h-16 object-contain" />
@@ -528,7 +529,7 @@ export default function HogwartsApp() {
                   </div>
                 );
               })}
-              <div className="border border-slate-800 p-2 text-[11px] font-bold leading-relaxed">
+              <div className="border border-slate-800 p-2 text-[11px] font-bold leading-relaxed flex flex-col justify-center">
                 <div>상점 {calculatePoints(selectedStudentReport).bonus}</div>
                 <div>벌점 {calculatePoints(selectedStudentReport).penalty}</div>
                 <div>잔여휴무 0</div>
@@ -544,7 +545,7 @@ export default function HogwartsApp() {
         </div>
       )}
 
-      {/* --- 상단 기스크 점수판(대시보드) 구역 --- */}
+      {/* --- 상단 기스크 점수판(대시보드) --- */}
       <div className="max-w-[1100px] mx-auto mb-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight">Hogwarts House Cup</h2>
@@ -573,7 +574,7 @@ export default function HogwartsApp() {
         </div>
       </div>
 
-      {/* --- 학습 기록 메인 테이블 구역 --- */}
+      {/* --- 학습 기록 메인 테이블 (디테일 로직 100% 복구) --- */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
         <div className="bg-slate-900 p-4 px-6 md:px-8 flex flex-col gap-2 text-white min-h-[60px]">
           <div className="flex justify-between items-center w-full">
