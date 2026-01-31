@@ -1108,3 +1108,6 @@ export default function HogwartsApp() {
           </div>
         )}
       </div>
+    </div> {/* [페이지 전체 컨테이너 div 끝] */}
+  ); // [return 끝]
+}; // [컴포넌트 함수 끝]
