@@ -955,39 +955,26 @@ export default function HogwartsApp() {
 {/* 여기서부터 추가되는 지도 섹션입니다. 기존 코드는 절대 건드리지 않습니다. */}
       <div id="new-map-section" style={{ marginTop: '80px', fontFamily: 'inherit', position: 'relative' }}>
         
-        {/* Dragon Cave 제목 (Cinzel 폰트 적용) */}
+        {/* Dragon Cave 제목 */}
         <div style={{ 
-          textAlign: 'center', 
-          fontSize: '22px', 
-          fontWeight: '700', 
-          marginBottom: '25px',
-          color: '#222',
-          fontFamily: "'Cinzel', serif", 
-          letterSpacing: '2px'
+          textAlign: 'center', fontSize: '22px', fontWeight: '700', marginBottom: '25px',
+          color: '#222', fontFamily: "'Cinzel', serif", letterSpacing: '2px'
         }}>
           DRAGON CAVE
         </div>
 
-        {/* 1. 상단 지형 구역 (가로 3개씩 2줄 - 클릭 이벤트 유지) */}
+        {/* 1. 상단 지형 구역 */}
         <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(3, 1fr)', 
-          gap: '6px', 
-          marginBottom: '15px', 
-          textAlign: 'center' 
+          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', 
+          marginBottom: '15px', textAlign: 'center' 
         }}>
           {['Alpine', 'Coast', 'Desert', 'Forest', 'Jungle', 'Volcano'].map((area) => (
             <div 
               key={area} 
               onClick={() => setSelectedArea(area)} 
               style={{ 
-                padding: '4px 0', 
-                fontSize: '10px', 
-                fontWeight: 'bold', 
-                border: '1px solid #eee', 
-                backgroundColor: '#f9f9f9',
-                borderRadius: '3px',
-                cursor: 'pointer' 
+                padding: '4px 0', fontSize: '10px', fontWeight: 'bold', border: '1px solid #eee', 
+                backgroundColor: '#f9f9f9', borderRadius: '3px', cursor: 'pointer' 
               }}
             >
               {area}
@@ -995,14 +982,13 @@ export default function HogwartsApp() {
           ))}
         </div>
 
-        {/* 2. 지도 이미지 영역 (클릭 시 내 알 확인 기능 추가) */}
+        {/* 2. 지도 이미지 영역 */}
         <div 
           style={{ width: '100%', cursor: myDragon ? 'pointer' : 'default' }}
           onClick={() => { if(myDragon) setConfirmStep(3); }}
         >
           <img 
-            src="/map.jpg" 
-            alt="Map" 
+            src="/map.jpg" alt="Map" 
             style={{ width: '100%', height: 'auto', display: 'block', margin: '0 auto' }} 
           />
         </div>
@@ -1013,124 +999,112 @@ export default function HogwartsApp() {
             onClick={() => setSelectedArea(null)} 
             style={{
               position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-              backgroundColor: 'rgba(0,0,0,0.6)', 
-              display: 'flex', 
+              backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', 
               alignItems: 'center', justifyContent: 'center', zIndex: 9999
             }}
           >
             <div 
-              onClick={(e) => e.stopPropagation()} // 팝업 내부 클릭 시 닫히지 않게
+              onClick={(e) => e.stopPropagation()} 
               style={{ 
-                position: 'relative', 
-                width: '90%', 
-                maxWidth: '400px',
-                backgroundColor: '#ffffff', 
-                borderRadius: '15px',
-                overflow: 'hidden',         
+                position: 'relative', width: '90%', maxWidth: '400px',
+                backgroundColor: '#ffffff', borderRadius: '15px', overflow: 'hidden',         
                 boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
               }}
             >
               <div style={{ position: 'relative' }}>
                 <img 
-                  src={`/${selectedArea.toLowerCase()}.webp`} 
-                  alt={selectedArea}
+                  src={`/${selectedArea.toLowerCase()}.webp`} alt={selectedArea}
                   style={{ width: '100%', display: 'block', opacity: 0.7 }} 
                 />
-                
-                {/* 알 이미지 3개 배치 및 클릭 이벤트 추가 */}
                 <div style={{ 
-                  position: 'absolute', 
-                  bottom: '20px', 
-                  left: 0, 
-                  right: 0, 
-                  display: 'flex', 
-                  justifyContent: 'center', 
-                  gap: '40px' 
+                  position: 'absolute', bottom: '20px', left: 0, right: 0, 
+                  display: 'flex', justifyContent: 'center', gap: '40px' 
                 }}>
                   {[1, 2, 3].map((num) => {
                     const eggFile = `${selectedArea.substring(0, 2).toLowerCase()}${num}.webp`;
                     return (
                       <img 
-                        key={num}
-                        src={`/${eggFile}`}
-                        alt={`egg-${num}`}
-                        onClick={() => {
-                          setSelectedEgg(eggFile);
-                          setConfirmStep(1);
-                        }}
-                        style={{ 
-                          width: '45px', 
-                          height: '45px', 
-                          objectFit: 'contain',
-                          cursor: 'pointer',
-                          filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))'
-                        }} 
+                        key={num} src={`/${eggFile}`} alt={`egg-${num}`}
+                        onClick={() => { setSelectedEgg(eggFile); setConfirmStep(1); }}
+                        style={{ width: '45px', height: '45px', objectFit: 'contain', cursor: 'pointer', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))' }} 
                       />
                     );
                   })}
                 </div>
               </div>
-
-              <div style={{ 
-                backgroundColor: '#ffffff',
-                padding: '15px 0',
-                color: '#222', 
-                textAlign: 'center', 
-                fontSize: '14px', 
-                fontFamily: "'Cinzel', serif", 
-                fontWeight: '700',
-                borderTop: '1px solid #eee'
-              }}>
+              <div style={{ backgroundColor: '#ffffff', padding: '15px 0', color: '#222', textAlign: 'center', fontSize: '14px', fontFamily: "'Cinzel', serif", fontWeight: '700', borderTop: '1px solid #eee' }}>
                 - {selectedArea} -
               </div>
             </div>
           </div>
         )}
 
-{confirmStep === 3 && (
+        {/* 4. 입양 프로세스 및 내 드래곤 확인 팝업 (통합 관리) */}
+        {confirmStep > 0 && (
+          <div 
+            style={{
+              position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+              backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', 
+              alignItems: 'center', justifyContent: 'center', zIndex: 10000
+            }}
+          >
+            <div style={{ 
+              backgroundColor: confirmStep === 3 ? '#e3d5ca' : '#ffffff', 
+              padding: '30px', borderRadius: '20px', width: '85%', maxWidth: '350px', 
+              textAlign: 'center', boxShadow: '0 10px 40px rgba(0,0,0,0.5)'
+            }}>
+              
+              {confirmStep === 1 && (
+                <>
+                  <p style={{ fontWeight: '900', fontSize: '18px', marginBottom: '20px' }}>이 알을 데려갈까요?</p>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button onClick={() => setConfirmStep(2)} style={{ flex: 1, padding: '12px', border: '1px solid #ccc', borderRadius: '10px', backgroundColor: '#fff', cursor: 'pointer' }}>네</button>
+                    <button onClick={() => { setConfirmStep(0); setSelectedEgg(null); }} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: '10px', backgroundColor: '#eee', cursor: 'pointer' }}>더 생각해볼게요</button>
+                  </div>
+                </>
+              )}
+
+              {confirmStep === 2 && (
+                <>
+                  <p style={{ fontWeight: '900', fontSize: '18px', marginBottom: '10px' }}>정말 이 알을 데려갈까요?</p>
+                  <p style={{ fontSize: '13px', color: '#666', lineHeight: '1.5', marginBottom: '20px' }}>
+                    한 번 데려온 알은 졸업 전까지<br/>여러분과 함께하게 됩니다.
+                  </p>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button onClick={() => { setMyDragon(selectedEgg); setConfirmStep(0); setSelectedArea(null); }} style={{ flex: 1, padding: '12px', border: '1px solid #ccc', borderRadius: '10px', backgroundColor: '#fff', cursor: 'pointer' }}>네</button>
+                    <button onClick={() => { setConfirmStep(0); setSelectedEgg(null); }} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: '10px', backgroundColor: '#eee', cursor: 'pointer' }}>더 생각해볼게요</button>
+                  </div>
+                </>
+              )}
+
+              {confirmStep === 3 && (
                 <>
                   <div style={{ fontFamily: "'Cinzel', serif", fontSize: '20px', fontWeight: 'bold', marginBottom: '20px', color: '#5e503f' }}>My Dragon</div>
-                  
                   {(() => {
-                    // 1. 현재 사용자의 누적 공부 시간을 가져옵니다 (변수명은 환경에 맞게 확인 필요)
-                    const hours = Number(student?.total_study_hours) || 0; 
-                    
-                    // 2. 파일명에서 영문(prefix)과 숫자(num)를 분리합니다 (예: al2.webp -> al, 2)
-                    const match = myDragon ? myDragon.match(/^([a-z]+)([0-9])\.webp$/i) : null;
-                    
-                    if (!match) {
-                      // 매칭 실패 시 기본 이미지 출력
-                      return <img src={`/${myDragon}`} alt="My Dragon" style={{ width: '45px', height: '45px', display: 'block', margin: '0 auto', objectFit: 'contain' }} />;
-                    }
+                    const hours = Number(student?.total_study_hours || 0); 
+                    const match = myDragon ? String(myDragon).match(/^([a-z]+)([0-9])\.webp$/i) : null;
+                    if (!match) return <img src={`/${myDragon}`} alt="My Dragon" style={{ width: '45px', height: '45px', display: 'block', margin: '0 auto', objectFit: 'contain' }} />;
 
                     const prefix = match[1];
                     const num = match[2];
-
-                    // 3. 시간에 따른 숫자 반복 횟수(진화 단계) 결정
                     let repeatCount = 1;
-                    if (hours >= 200) repeatCount = 4;      // al2222
-                    else if (hours >= 100) repeatCount = 3; // al222
-                    else if (hours >= 50) repeatCount = 2;  // al22
+                    if (hours >= 200) repeatCount = 4;      
+                    else if (hours >= 100) repeatCount = 3; 
+                    else if (hours >= 50) repeatCount = 2;  
 
                     const evolvedFileName = `${prefix}${num.repeat(repeatCount)}.webp`;
-
                     return (
                       <img 
-                        src={`/${evolvedFileName}`} 
-                        alt="My Dragon" 
-                        style={{ 
-                          width: '45px', 
-                          height: '45px', 
-                          display: 'block', 
-                          margin: '0 auto', 
-                          objectFit: 'contain', 
-                          filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))' 
-                        }} 
+                        src={`/${evolvedFileName}`} alt="My Dragon" 
+                        style={{ width: '45px', height: '45px', display: 'block', margin: '0 auto', objectFit: 'contain', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))' }} 
                       />
                     );
                   })()}
-
                   <p style={{ marginTop: '20px', fontSize: '13px', color: '#5e503f' }}>숲을 탐험하다 만난 소중한 인연입니다.</p>
                   <button onClick={() => setConfirmStep(0)} style={{ marginTop: '20px', width: '100%', padding: '10px', border: 'none', borderRadius: '10px', backgroundColor: '#5e503f', color: '#fff', cursor: 'pointer' }}>닫기</button>
                 </>
               )}
+            </div>
+          </div>
+        )}
+      </div>
