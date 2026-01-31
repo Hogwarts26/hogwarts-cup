@@ -1,4 +1,3 @@
-
 "use client";
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from './supabase';
@@ -253,75 +252,34 @@ export default function HogwartsApp() {
     localStorage.setItem('hg_auth', JSON.stringify({ name: selectedName, admin }));
   };
 
-// ==========================================
-  // [9] 데이터 초기화 (Weekly Reset) - 누적 합산 버전
+  // ==========================================
+  // [9] 데이터 초기화 (Weekly Reset)
   // ==========================================
   const resetWeeklyData = async () => {
-    if (!confirm("⚠️ 모든 학생의 이번 주 공부 기록을 [누적 합산]하고 초기화하시겠습니까?")) return;
-    if (!confirm("정말로 초기화하시겠습니까? 누적 데이터는 기록되지만 주간 표는 비워집니다.")) return;
-    
+    if (!confirm("⚠️ 주의: 모든 학생의 이번 주 공부 기록을 초기화하시겠습니까?")) return;
+    if (!confirm("정말로 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) return;
     setIsSaving(true);
-    
-    try {
-      // 1. 현재 records에 있는 학생별 주간 시간을 숫자로 환산하여 누적 합산
-      const updatePromises = records.map(async (student) => {
-        // "10:30" 형태를 숫자 10.5로 변환
-        const timeStr = String(student.study_time || "00:00");
-        let hoursNum = 0;
-
-        if (timeStr.includes(':')) {
-          const [h, m] = timeStr.split(':').map(Number);
-          hoursNum = (isNaN(h) ? 0 : h) + (isNaN(m) ? 0 : m / 60);
-        } else {
-          hoursNum = Number(timeStr) || 0;
-        }
-
-        // 기존 DB의 total_study_hours에 더하기
-        const currentTotal = Number(student.total_study_hours) || 0;
-        const newTotal = currentTotal + hoursNum;
-
-        return supabase
-          .from('study_records')
-          .update({ total_study_hours: newTotal })
-          .eq('student_name', student.student_name);
-      });
-
-      await Promise.all(updatePromises);
-
-      // 2. 주간 기록 초기화 (디자인에 맞춰 필드 정리)
-      const names = Object.keys(studentData);
-      const resetData = [];
-      for (const name of names) {
-        for (const day of DAYS) {
-          const existing = records.find(r => r.student_name === name && r.day_of_week === day) || {};
-          resetData.push({
-            student_name: name, 
-            day_of_week: day, 
-            off_type: '-', 
-            is_late: false, 
-            am_3h: false, 
-            study_time: '',
-            password: existing.password || '0000', 
-            monthly_off_count: existing.monthly_off_count ?? 4,
-            goal: '' // 새 주에는 목표도 비워줍니다
-          });
-        }
+    const names = Object.keys(studentData);
+    const resetData = [];
+    for (const name of names) {
+      for (const day of DAYS) {
+        const existing = records.find(r => r.student_name === name && r.day_of_week === day) || {};
+        resetData.push({
+          student_name: name, 
+          day_of_week: day, 
+          off_type: '-', 
+          is_late: false, 
+          am_3h: false, 
+          study_time: '',
+          password: existing.password || '0000', 
+          monthly_off_count: existing.monthly_off_count ?? 4,
+          goal: existing.goal || '' 
+        });
       }
-
-      const { error } = await supabase
-        .from('study_records')
-        .upsert(resetData, { onConflict: 'student_name,day_of_week' });
-
-      if (!error) { 
-        alert("✅ 이번 주 기록이 누적합산되었으며, 표가 초기화되었습니다."); 
-        window.location.reload(); 
-      }
-    } catch (err) {
-      console.error("Reset Error:", err);
-      alert("처리 중 오류가 발생했습니다.");
-    } finally {
-      setIsSaving(false);
     }
+    const { error } = await supabase.from('study_records').upsert(resetData, { onConflict: 'student_name,day_of_week' });
+    if (!error) { setRecords(resetData); alert("✅ 기록이 초기화되었습니다."); }
+    setIsSaving(false);
   };
 
 // ==========================================
@@ -482,7 +440,6 @@ export default function HogwartsApp() {
     }
     setIsPlaying(!isPlaying);
   };
-
 // ==========================================
   // [12] 데이터 변경 및 저장 로직 (비밀번호, 목표, 학습 기록)
   // ==========================================
@@ -786,7 +743,7 @@ export default function HogwartsApp() {
         </div>
       </div>
 
-{/* --- 학습 기록 메인 테이블 --- */}
+      {/* --- 학습 기록 메인 테이블 --- */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
         <div className="bg-slate-900 p-4 px-6 md:px-8 flex flex-col gap-2 text-white min-h-[60px]">
           <div className="flex justify-between items-center w-full">
@@ -820,7 +777,7 @@ export default function HogwartsApp() {
                   </button>
                   <button 
                     onClick={() => {
-                      if(window.confirm("목표를 삭제하시겠습니까?")) {
+                      if(confirm("목표를 삭제하시겠습니까?")) {
                         const targetName = displayList[0];
                         setDailyGoal("");
                         if (targetName) handleChange(targetName, '월', 'goal', "");
@@ -851,7 +808,6 @@ export default function HogwartsApp() {
                 const monRec = records.find(r => r.student_name === name && r.day_of_week === '월') || {};
                 const offCount = monRec.monthly_off_count ?? 4;
                 const rows = [{f:'off_type'},{f:'is_late'},{f:'am_3h'},{f:'study_time'},{f:'penalty'},{f:'bonus'},{f:'total'}];
-                
                 let totalTimeMinutes = 0;
                 let totalPointsSum = 0;
                 records.filter(r => r.student_name === name).forEach(r => {
@@ -860,7 +816,6 @@ export default function HogwartsApp() {
                   totalTimeMinutes += (isNaN(h) ? 0 : h * 60) + (isNaN(m) ? 0 : m);
                   totalPointsSum += res.total;
                 });
-
                 return (
                   <React.Fragment key={name}>
                     {isAdmin && (
@@ -877,10 +832,11 @@ export default function HogwartsApp() {
                             <div className="text-3xl mb-1">{info.emoji}</div>
                             <div className="leading-tight text-sm font-black mb-1 break-keep">{formatDisplayName(name)}</div>
                             <div className="text-[9px] font-black opacity-70 mb-2">{info.house}</div>
+                            {/* --- 비밀번호 변경 버튼 로직 수정 --- */}
                             <button 
                               onClick={(e) => { 
                                 e.stopPropagation(); 
-                                const newPw = window.prompt("변경할 비밀번호를 입력하세요. (숫자4자리)");
+                                const newPw = prompt("변경할 비밀번호를 입력하세요. (숫자4자리)");
                                 if (newPw && /^\d{4}$/.test(newPw)) {
                                   handleChange(name, '월', 'password', newPw);
                                 } else if (newPw) {
@@ -896,7 +852,7 @@ export default function HogwartsApp() {
                         {DAYS.map(day => {
                           const rec = records.find(r => r.student_name === name && r.day_of_week === day) || {};
                           const res = calc(rec);
-                          const getCellBg = (val) => {
+                          const getCellBg = (val: string) => {
                             if (['반휴','월반휴','늦반휴','늦월반휴'].includes(val)) return 'bg-green-100';
                             if (['주휴','월휴','늦휴','늦월휴'].includes(val)) return 'bg-blue-100';
                             if (val === '결석') return 'bg-red-100';
@@ -917,7 +873,7 @@ export default function HogwartsApp() {
                                   onChange={(e) => setRecords(prev => prev.map(r => (r.student_name === name && r.day_of_week === day) ? {...r, study_time: e.target.value} : r))}
                                   onBlur={(e) => handleChange(name, day, 'study_time', e.target.value)} disabled={!isAdmin} />
                               ) : (
-                                <span className={`font-black text-sm ${row.f === 'penalty' && res.penalty < 0 ? 'text-red-500' : row.f === 'bonus' && res.bonus > 0 ? 'text-blue-600' : 'text-slate-900'}`}>{res[row.f] || (row.f === 'total' ? 0 : '')}</span>
+                                <span className={`font-black text-sm ${row.f === 'penalty' && res.penalty < 0 ? 'text-red-500' : row.f === 'bonus' && res.bonus > 0 ? 'text-blue-600' : 'text-slate-900'}`}>{res[row.f as keyof typeof res] || (row.f === 'total' ? 0 : '')}</span>
                               )}
                             </td>
                           );
