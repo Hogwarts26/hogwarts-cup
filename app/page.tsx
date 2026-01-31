@@ -516,7 +516,7 @@ export default function HogwartsApp() {
   // [15] 메인 화면 렌더링 (UI)
   // ==========================================
   
-  // 이름에서 이모지를 제거하는 유틸 함수 (내부용)
+  // 이름에서 이모지를 제거하는 유틸 함수
   const formatDisplayName = (name: string) => name.replace(/[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, '').trim();
 
   return (
@@ -614,7 +614,6 @@ export default function HogwartsApp() {
                 <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="Logo" className="w-16 h-16 object-contain" />
                 <div className="text-center">
                   <div className="text-4xl mb-1">{studentData[selectedStudentReport].emoji}</div>
-                  {/* [핵심수정] 아이디에서 이모지를 제거하고 이름만 출력 */}
                   <div className="font-black text-xl text-slate-800 tracking-tight">{formatDisplayName(selectedStudentReport)}</div>
                 </div>
               </div>
@@ -623,7 +622,6 @@ export default function HogwartsApp() {
                 <div className="text-3xl font-black text-slate-900">{calculateWeeklyTotal(selectedStudentReport)}</div>
               </div>
             </div>
-            {/* ... 중략 ... (생략 없이 계속 진행) */}
             <div className="text-center text-[#737373] font-bold text-sm mb-4 italic">{getWeeklyDateRange()}</div>
             <div className="grid grid-cols-4 gap-2 mb-8">
               {DAYS.map(day => {
@@ -649,6 +647,7 @@ export default function HogwartsApp() {
                 <div className="text-cyan-400">잔여월휴 {calculatePoints(selectedStudentReport).remainingMonthlyOff}</div>
               </div>
             </div>
+            {/* 월별 누적 시간 제거 완료 */}
           </div>
         </div>
       )}
@@ -668,7 +667,6 @@ export default function HogwartsApp() {
             const config = (HOUSE_CONFIG as any)[item.house];
             return (
               <div key={item.house} onClick={() => setSelectedHouseNotice(item.house as any)} className={`${config.bg} ${config.border} ${idx === 0 ? 'winner-sparkle ring-4 ring-yellow-400 ring-offset-2' : ''} border-b-4 p-1.5 md:p-5 rounded-xl md:rounded-[2rem] text-white shadow-xl relative cursor-pointer active:scale-95 transition-all hover:brightness-110 overflow-hidden`}>
-                {/* [핵심수정] 배경 이모지가 밖으로 나가지 않게 overflow-hidden 추가됨 */}
                 <div className="absolute right-[-10px] bottom-[-10px] text-5xl md:text-7xl opacity-20 pointer-events-none">{config.icon}</div>
                 <div className="relative z-10">
                   <div className="flex justify-between items-start mb-1">
@@ -686,7 +684,6 @@ export default function HogwartsApp() {
       {/* --- 학습 기록 메인 테이블 --- */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
         <div className="bg-slate-900 p-4 px-6 md:px-8 flex flex-col gap-2 text-white min-h-[60px]">
-          {/* ... 헤더 정보 영역 동일 ... */}
           <div className="flex justify-between items-center w-full">
             <span className="text-[10px] md:text-xs font-black text-yellow-500 tracking-widest flex items-center gap-2">
               <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
@@ -740,7 +737,6 @@ export default function HogwartsApp() {
                         {rIdx === 0 && (
                           <td rowSpan={7} className={`p-4 text-center sticky left-0 z-20 font-bold border-r-[3px] ${info.color} ${info.text} cursor-pointer hover:brightness-95 transition-all`} onClick={() => setSelectedStudentReport(name)}>
                             <div className="text-3xl mb-1">{info.emoji}</div>
-                            {/* [핵심수정] 여기서 formatDisplayName(name)을 사용하여 이모지가 중복되지 않게 이름만 뽑아냅니다. */}
                             <div className="leading-tight text-sm font-black mb-1 break-keep">{formatDisplayName(name)}</div>
                             <div className="text-[9px] font-black opacity-70 mb-2">{info.house}</div>
                             <button onClick={(e) => { e.stopPropagation(); prompt("비번변경"); }} className="text-[8px] underline opacity-40 block mx-auto">PW 변경</button>
@@ -749,8 +745,14 @@ export default function HogwartsApp() {
                         {DAYS.map(day => {
                           const rec = records.find(r => r.student_name === name && r.day_of_week === day) || {};
                           const res = calc(rec);
+                          const getCellBg = (val: string) => {
+                            if (['반휴','월반휴','늦반휴','늦월반휴'].includes(val)) return 'bg-green-100';
+                            if (['주휴','월휴','늦휴','늦월휴'].includes(val)) return 'bg-blue-100';
+                            if (val === '결석') return 'bg-red-100';
+                            return '';
+                          };
                           return (
-                            <td key={day} className={`p-1.5 text-center border-r border-slate-50 ${row.f === 'off_type' ? (['반휴','월반휴','늦반휴','늦월반휴'].includes(rec.off_type) ? 'bg-green-100' : ['주휴','월휴','늦휴','늦월휴'].includes(rec.off_type) ? 'bg-blue-100' : rec.off_type === '결석' ? 'bg-red-100' : '') : ''}`}>
+                            <td key={day} className={`p-1.5 text-center border-r border-slate-50 ${row.f === 'off_type' ? getCellBg(rec.off_type) : ''}`}>
                               {row.f === 'off_type' ? (
                                 <select className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-[10px] cursor-pointer" value={rec.off_type || '-'} onChange={(e) => handleChange(name, day, 'off_type', e.target.value)} disabled={!isAdmin}>
                                   {OFF_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
@@ -795,3 +797,4 @@ export default function HogwartsApp() {
       </div>
     </div>
   );
+}
