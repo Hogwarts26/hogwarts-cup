@@ -964,11 +964,11 @@ export default function HogwartsApp() {
 
         {/* 2. 지도 이미지 영역 (hogwarts-cup 저장소 경로 반영) */}
         <div style={{ width: '100%', borderTop: '2px solid #333', paddingTop: '20px' }}>
-          <img 
-            src="/hogwarts-cup/public/map.jpg" 
-            alt="Map" 
-            style={{ width: '100%', height: 'auto', display: 'block', margin: '0 auto' }} 
-          />
+<img 
+  src="/map.jpg" 
+  alt="Map" 
+  style={{ width: '100%', height: 'auto', display: 'block', margin: '0 auto' }} 
+/>
         </div>
       </div>
     </div>
