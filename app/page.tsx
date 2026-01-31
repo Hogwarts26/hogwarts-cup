@@ -617,7 +617,7 @@ export default function HogwartsApp() {
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
           <div className="bg-white p-5 md:px-10 md:py-8 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             
-            {/* 상단: 로고와 텍스트 배치 (하단 정렬 적용) */}
+            {/* 상단: 로고와 텍스트 배치 (하단 정렬 및 좌측 밀착 적용) */}
             <div className="flex items-end justify-center mb-6 w-full">
               {/* 왼쪽: 로고 영역 */}
               <div className="w-[45%] flex justify-end">
@@ -628,14 +628,20 @@ export default function HogwartsApp() {
                 />
               </div>
               
-              {/* 오른쪽: 이모지, 이름, 공부시간 뭉치를 하단(items-end)으로 정렬 */}
-              <div className="w-[55%] flex flex-col justify-end items-center text-center">
-                <div className="flex flex-col mb-1 items-center">
+              {/* 오른쪽: 이모지/이름(중앙정렬) + 공부시간/목표(좌측정렬) */}
+              <div className="w-[55%] flex flex-col justify-end items-start pl-4">
+                <div className="flex flex-col mb-1 items-center justify-center">
                   <span className="text-4xl md:text-5xl mb-1">{studentData[selectedStudentReport].emoji}</span>
                   <span className="font-bold text-xs md:text-sm text-slate-400 tracking-tight leading-none">{formatDisplayName(selectedStudentReport)}</span>
                 </div>
-                <div className="text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-tight italic">
-                  {calculateWeeklyTotal(selectedStudentReport)}
+                <div className="flex flex-col items-start">
+                  <div className="text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-tight italic">
+                    {calculateWeeklyTotal(selectedStudentReport)}
+                  </div>
+                  {/* 목표 출력 영역 */}
+                  <div className="text-sm md:text-base font-bold text-slate-500 tracking-tight mt-1">
+                    {studentData[selectedStudentReport].goal}
+                  </div>
                 </div>
               </div>
             </div>
