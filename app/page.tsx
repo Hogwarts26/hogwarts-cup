@@ -614,26 +614,31 @@ export default function HogwartsApp() {
 {/* --- 학생 개인 주간 요약 카드 (레이아웃 고도화) --- */}
       {selectedStudentReport && studentData[selectedStudentReport] && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
-          <div className="bg-white p-6 md:px-10 md:py-6 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-            {/* 상단 로고/이름 영역: 모바일 잘림 방지를 위해 flex-col(기본) -> md:flex-row(PC)로 대응 */}
-            <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-6">
-              {/* 왼쪽: 로고 배치 */}
-              <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="Logo" className="w-36 h-36 object-contain drop-shadow-sm" />
+          <div className="bg-white p-5 md:px-10 md:py-6 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            
+            {/* 다시 가로 배치(flex-row)로 복구하되, gap을 줄여서 공간 확보 */}
+            <div className="flex items-center justify-center gap-2 md:gap-4 mb-4">
+              {/* 왼쪽: 로고 크기를 모바일에서 살짝 유연하게 조절 (w-28~w-36) */}
+              <img 
+                src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} 
+                alt="Logo" 
+                className="w-28 h-28 md:w-36 md:h-36 object-contain drop-shadow-sm flex-shrink-0" 
+              />
               
               {/* 오른쪽: 이모지, 이름, 공부시간 */}
-              <div className="flex flex-col justify-center items-center text-center">
-                <div className="flex flex-col mb-1.5">
-                  <span className="text-5xl mb-1">{studentData[selectedStudentReport].emoji}</span>
-                  <span className="font-bold text-sm text-slate-400 tracking-tight leading-none">{formatDisplayName(selectedStudentReport)}</span>
+              <div className="flex flex-col justify-center items-center text-center mt-4">
+                <div className="flex flex-col mb-1 items-center">
+                  <span className="text-4xl md:text-5xl mb-1">{studentData[selectedStudentReport].emoji}</span>
+                  <span className="font-bold text-[10px] md:text-sm text-slate-400 tracking-tight leading-none">{formatDisplayName(selectedStudentReport)}</span>
                 </div>
-                <div className="text-5xl font-black text-slate-900 tracking-tighter leading-tight italic">
+                <div className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter leading-tight italic">
                   {calculateWeeklyTotal(selectedStudentReport)}
                 </div>
               </div>
             </div>
 
-            {/* 주간 날짜: 하단 표와 가깝게 배치, 텍스트 크기 확대 및 검정색 강조 */}
-            <div className="text-xl font-black text-black italic mb-2 text-center tracking-tight">
+            {/* 주간 날짜: 하단 표와 가깝게 배치 */}
+            <div className="text-lg md:text-xl font-black text-black italic mb-2 text-center tracking-tight">
               {getWeeklyDateRange()}
             </div>
             
@@ -641,7 +646,6 @@ export default function HogwartsApp() {
               {DAYS.map(day => {
                 const rec = records.find(r => r.student_name === selectedStudentReport && r.day_of_week === day) || {};
                 
-                // 상태별 색상 매칭 (초록/파랑/빨강)
                 const isGreen = ['반휴','월반휴','늦반휴','늦월반휴'].includes(rec.off_type);
                 const isBlue = ['주휴','월휴','늦휴','늦월휴'].includes(rec.off_type);
                 const isRed = rec.off_type === '결석';
