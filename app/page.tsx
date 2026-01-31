@@ -639,8 +639,8 @@ export default function HogwartsApp() {
               
               {/* 오른쪽: 이모지+이름(가로배치) + 공부시간/목표(좌측정렬) */}
               <div className="w-[55%] flex flex-col justify-end items-start pl-4">
-                {/* 이모지와 이름을 가로로 배치하고 아래 공부시간과 밀착(mb-0) */}
-                <div className="flex items-center gap-1.5 mb-0">
+                {/* items-baseline을 적용하여 이름이 이모지 하단에 정렬되도록 수정 */}
+                <div className="flex items-baseline gap-1.5 mb-0">
                   <span className="text-5xl md:text-6xl">{studentData[selectedStudentReport].emoji}</span>
                   <span className="font-bold text-xs md:text-sm text-slate-400 tracking-tight leading-none">{formatDisplayName(selectedStudentReport)}</span>
                 </div>
