@@ -786,7 +786,7 @@ export default function HogwartsApp() {
         </div>
       </div>
 
-      {/* --- 학습 기록 메인 테이블 --- */}
+{/* --- 학습 기록 메인 테이블 --- */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
         <div className="bg-slate-900 p-4 px-6 md:px-8 flex flex-col gap-2 text-white min-h-[60px]">
           <div className="flex justify-between items-center w-full">
@@ -820,7 +820,7 @@ export default function HogwartsApp() {
                   </button>
                   <button 
                     onClick={() => {
-                      if(confirm("목표를 삭제하시겠습니까?")) {
+                      if(window.confirm("목표를 삭제하시겠습니까?")) {
                         const targetName = displayList[0];
                         setDailyGoal("");
                         if (targetName) handleChange(targetName, '월', 'goal', "");
@@ -851,6 +851,7 @@ export default function HogwartsApp() {
                 const monRec = records.find(r => r.student_name === name && r.day_of_week === '월') || {};
                 const offCount = monRec.monthly_off_count ?? 4;
                 const rows = [{f:'off_type'},{f:'is_late'},{f:'am_3h'},{f:'study_time'},{f:'penalty'},{f:'bonus'},{f:'total'}];
+                
                 let totalTimeMinutes = 0;
                 let totalPointsSum = 0;
                 records.filter(r => r.student_name === name).forEach(r => {
@@ -859,6 +860,7 @@ export default function HogwartsApp() {
                   totalTimeMinutes += (isNaN(h) ? 0 : h * 60) + (isNaN(m) ? 0 : m);
                   totalPointsSum += res.total;
                 });
+
                 return (
                   <React.Fragment key={name}>
                     {isAdmin && (
@@ -875,11 +877,10 @@ export default function HogwartsApp() {
                             <div className="text-3xl mb-1">{info.emoji}</div>
                             <div className="leading-tight text-sm font-black mb-1 break-keep">{formatDisplayName(name)}</div>
                             <div className="text-[9px] font-black opacity-70 mb-2">{info.house}</div>
-                            {/* --- 비밀번호 변경 버튼 로직 수정 --- */}
                             <button 
                               onClick={(e) => { 
                                 e.stopPropagation(); 
-                                const newPw = prompt("변경할 비밀번호를 입력하세요. (숫자4자리)");
+                                const newPw = window.prompt("변경할 비밀번호를 입력하세요. (숫자4자리)");
                                 if (newPw && /^\d{4}$/.test(newPw)) {
                                   handleChange(name, '월', 'password', newPw);
                                 } else if (newPw) {
@@ -895,7 +896,7 @@ export default function HogwartsApp() {
                         {DAYS.map(day => {
                           const rec = records.find(r => r.student_name === name && r.day_of_week === day) || {};
                           const res = calc(rec);
-                          const getCellBg = (val: string) => {
+                          const getCellBg = (val) => {
                             if (['반휴','월반휴','늦반휴','늦월반휴'].includes(val)) return 'bg-green-100';
                             if (['주휴','월휴','늦휴','늦월휴'].includes(val)) return 'bg-blue-100';
                             if (val === '결석') return 'bg-red-100';
@@ -916,7 +917,7 @@ export default function HogwartsApp() {
                                   onChange={(e) => setRecords(prev => prev.map(r => (r.student_name === name && r.day_of_week === day) ? {...r, study_time: e.target.value} : r))}
                                   onBlur={(e) => handleChange(name, day, 'study_time', e.target.value)} disabled={!isAdmin} />
                               ) : (
-                                <span className={`font-black text-sm ${row.f === 'penalty' && res.penalty < 0 ? 'text-red-500' : row.f === 'bonus' && res.bonus > 0 ? 'text-blue-600' : 'text-slate-900'}`}>{res[row.f as keyof typeof res] || (row.f === 'total' ? 0 : '')}</span>
+                                <span className={`font-black text-sm ${row.f === 'penalty' && res.penalty < 0 ? 'text-red-500' : row.f === 'bonus' && res.bonus > 0 ? 'text-blue-600' : 'text-slate-900'}`}>{res[row.f] || (row.f === 'total' ? 0 : '')}</span>
                               )}
                             </td>
                           );
