@@ -1083,7 +1083,7 @@ export default function HogwartsApp() {
                   {(() => {
                     const hours = Number(student?.total_study_hours || 0); 
                     const match = myDragon ? String(myDragon).match(/^([a-z]+)([0-9])\.webp$/i) : null;
-                    if (!match) return <img src={`/${myDragon}`} alt="My Dragon" style={{ width: '45px', height: '45px', display: 'block', margin: '0 auto', objectFit: 'contain' }} />;
+                    if (!match) return <img src={`/${myDragon || 'al1.webp'}`} alt="My Dragon" style={{ width: '45px', height: '45px', display: 'block', margin: '0 auto', objectFit: 'contain' }} />;
 
                     const prefix = match[1];
                     const num = match[2];
@@ -1107,7 +1107,7 @@ export default function HogwartsApp() {
             </div>
           </div>
         )}
-      </div>
-    </div> {/* [페이지 전체 컨테이너 div 끝] */}
-  ); // [return 끝]
-}; // [컴포넌트 함수 끝]
+      </div> {/* [new-map-section 끝] */}
+    </div> {/* [메인 컨테이너 div 끝] */}
+  ); 
+}; 
