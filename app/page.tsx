@@ -278,7 +278,7 @@ export default function HogwartsApp() {
       }
     }
     const { error } = await supabase.from('study_records').upsert(resetData, { onConflict: 'student_name,day_of_week' });
-    if (!error) { setRecords(resetData); alert("✅ 기록이 초기화되었습니다. (목표 유지)"); }
+    if (!error) { setRecords(resetData); alert("✅ 기록이 초기화되었습니다."); }
     setIsSaving(false);
   };
 
@@ -353,7 +353,7 @@ export default function HogwartsApp() {
       bonus, 
       penalty,
       remainingWeeklyOff: (1.5 - usedWeeklyOff).toFixed(1).replace('.0', ''),
-      // 2.0 고정 차감이 아닌, 체크된 동그라미 개수당 0.5일로 계산하여 표시
+      // 체크된 동그라미 개수당 0.5일로 계산하여 표시
       remainingMonthlyOff: (offCount * 0.5).toFixed(1).replace('.0', '')
     };
   };
@@ -616,18 +616,20 @@ export default function HogwartsApp() {
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
           <div className="bg-white p-5 md:px-10 md:py-6 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             
-            {/* 다시 가로 배치(flex-row)로 복구하되, gap을 줄여서 공간 확보 */}
-            <div className="flex items-center justify-center gap-2 md:gap-4 mb-4">
-              {/* 왼쪽: 로고 크기를 모바일에서 살짝 유연하게 조절 (w-28~w-36) */}
-              <img 
-                src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} 
-                alt="Logo" 
-                className="w-28 h-28 md:w-36 md:h-36 object-contain drop-shadow-sm flex-shrink-0" 
-              />
+            {/* 가로 배치를 유지하며 모바일에서 요소들이 비율에 맞게 줄어들도록 설정 */}
+            <div className="flex items-center justify-center gap-1 md:gap-4 mb-4 w-full">
+              {/* 왼쪽: 로고 크기를 다시 크게(w-36) 설정하되, 모바일에서 최소 크기를 보장하며 유연하게 조절 */}
+              <div className="flex-shrink-0 w-[40%] flex justify-end">
+                <img 
+                  src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} 
+                  alt="Logo" 
+                  className="w-32 h-32 md:w-40 md:h-40 object-contain drop-shadow-sm" 
+                />
+              </div>
               
-              {/* 오른쪽: 이모지, 이름, 공부시간 */}
-              <div className="flex flex-col justify-center items-center text-center mt-4">
-                <div className="flex flex-col mb-1 items-center">
+              {/* 오른쪽: 이모지, 이름, 공부시간 뭉치 */}
+              <div className="flex-shrink-0 w-[60%] flex flex-col justify-center items-center text-center">
+                <div className="flex flex-col mb-1.5 items-center">
                   <span className="text-4xl md:text-5xl mb-1">{studentData[selectedStudentReport].emoji}</span>
                   <span className="font-bold text-[10px] md:text-sm text-slate-400 tracking-tight leading-none">{formatDisplayName(selectedStudentReport)}</span>
                 </div>
@@ -637,7 +639,7 @@ export default function HogwartsApp() {
               </div>
             </div>
 
-            {/* 주간 날짜: 하단 표와 가깝게 배치 */}
+            {/* 주간 날짜: 하단 표와 가깝게 배치 (위치 유지) */}
             <div className="text-lg md:text-xl font-black text-black italic mb-2 text-center tracking-tight">
               {getWeeklyDateRange()}
             </div>
@@ -768,7 +770,7 @@ export default function HogwartsApp() {
                             <div className="text-3xl mb-1">{info.emoji}</div>
                             <div className="leading-tight text-sm font-black mb-1 break-keep">{formatDisplayName(name)}</div>
                             <div className="text-[9px] font-black opacity-70 mb-2">{info.house}</div>
-                            <button onClick={(e) => { e.stopPropagation(); prompt("비번변경"); }} className="text-[8px] underline opacity-40 block mx-auto">PW 변경</button>
+                            <button onClick={(e) => { e.stopPropagation(); prompt("변경할 비밀번호를 입력하세요 (숫자4자리)"); }} className="text-[8px] underline opacity-40 block mx-auto">PW 변경</button>
                           </td>
                         )}
                         {DAYS.map(day => {
