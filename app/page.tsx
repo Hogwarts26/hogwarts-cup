@@ -175,12 +175,12 @@ const HOUSE_NOTICES: { [key: string]: { title: string, content: string } } = {
 const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
 const OFF_OPTIONS = ['-', '출석', '반휴', '주휴', '월휴', '월반휴', '자율', '결석', '늦반휴', '늦휴', '늦월반휴', '늦월휴'];
 
-// 외부 링크 차단 방지를 위해 위키의 가장 안정적인 고유 이미지 주소로 교체했습니다.
+// 위키 서버의 차단을 피하기 위해 깃허브 기반의 안정적인 주소로 교체했습니다.
 const HOUSE_LOGOS: Record<string, string> = {
-  "그리핀도르": "https://vignette.wikia.nocookie.net/harrypotter/images/b/b1/Gryffindor_Clear_Crest.png",
-  "슬리데린": "https://vignette.wikia.nocookie.net/harrypotter/images/0/00/Slytherin_Clear_Crest.png",
-  "래번클로": "https://vignette.wikia.nocookie.net/harrypotter/images/4/4e/Ravenclaw_Clear_Crest.png",
-  "후플푸프": "https://vignette.wikia.nocookie.net/harrypotter/images/0/06/Hufflepuff_Clear_Crest.png"
+  "그리핀도르": "https://raw.githubusercontent.com/Anis-V/Hogwarts-Sorting-Hat/master/assets/gryffindor.png",
+  "슬리데린": "https://raw.githubusercontent.com/Anis-V/Hogwarts-Sorting-Hat/master/assets/slytherin.png",
+  "래번클로": "https://raw.githubusercontent.com/Anis-V/Hogwarts-Sorting-Hat/master/assets/ravenclaw.png",
+  "후플푸프": "https://raw.githubusercontent.com/Anis-V/Hogwarts-Sorting-Hat/master/assets/hufflepuff.png"
 };
 
 const sortKorean = (a: string, b: string) => {
