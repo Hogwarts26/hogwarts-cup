@@ -321,8 +321,8 @@ export default function HogwartsApp() {
   // [11] 점수 계산 및 리포트 연동 로직
   // ==========================================
   const calc = (r: any) => {
-    // 1. 데이터가 없거나, 휴무/출석 버튼을 아무것도 선택하지 않은 상태(off_type 없음)면 0점
-    if (!r || !r.off_type || r.off_type === '') {
+    // 1. 데이터가 없거나, 버튼이 '-' 상태인 경우 점수 계산 안 함 (0점)
+    if (!r || !r.off_type || r.off_type === '-' || r.off_type === '') {
       return { penalty: 0, bonus: 0, total: 0, studyH: 0 };
     }
     
@@ -360,15 +360,13 @@ export default function HogwartsApp() {
       const target = isHalfOff ? 4 : 9;
       
       if (studyH < target) {
-        // 미달 벌점 계산 (올림 처리)
         penalty -= Math.ceil(target - studyH);
       } else if (!isHalfOff && studyH >= target + 1) {
-        // 일반 출석 시 10시간부터 상점 부여
         bonus += Math.floor(studyH - target);
       }
     }
 
-    // ✅ D. 벌점 한도 적용: 벌점은 아무리 많아도 -5점까지만 (상점은 그대로)
+    // D. 벌점 한도 적용: 벌점은 하루 최대 -5점까지만
     const finalPenalty = Math.max(penalty, -5);
 
     return { 
