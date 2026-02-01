@@ -843,36 +843,64 @@ export default function HogwartsApp() {
       </div>
 
       {/* [26] 학생 개인 리포트 팝업 */}
-      {selectedStudentReport && studentData[selectedStudentReport] && (
+        {selectedStudentReport && studentData[selectedStudentReport] && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
-          <div className="bg-white p-5 md:px-10 md:py-8 w-full max-w-lg shadow-2xl relative rounded-[3rem]" onClick={e => e.stopPropagation()}>
+          <div className="bg-white p-5 md:px-10 md:py-8 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             <div className="flex items-end justify-center mb-6 w-full">
               <div className="w-[45%] flex justify-end">
-                <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="Logo" className="w-36 h-36 md:w-44 md:h-44 object-contain" />
+                <img 
+                  src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} 
+                  alt="Logo" 
+                  className="w-36 h-36 md:w-44 md:h-44 object-contain drop-shadow-md" 
+                />
               </div>
               <div className="w-[55%] flex flex-col justify-end items-start pl-4">
-                <div className="flex items-baseline gap-1.5">
+                <div className="flex items-baseline gap-1.5 mb-0">
                   <span className="text-5xl md:text-6xl">{studentData[selectedStudentReport].emoji}</span>
-                  <span className="font-bold text-xs text-slate-400">{formatDisplayName(selectedStudentReport)}</span>
+                  <span className="font-bold text-xs md:text-sm text-slate-400 tracking-tight leading-none">{formatDisplayName(selectedStudentReport)}</span>
                 </div>
-                <div className="text-5xl md:text-6xl font-black italic">{calculateWeeklyTotal(selectedStudentReport)}</div>
+                <div className="flex flex-col items-start">
+                  <div className="text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-tight italic">
+                    {calculateWeeklyTotal(selectedStudentReport)}
+                  </div>
+                  <div className="text-sm md:text-base font-bold text-slate-500 tracking-tight mt-1">
+                    {records.find(r => r.student_name === selectedStudentReport && r.goal)?.goal || ""}
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="text-xl md:text-2xl font-black text-center mb-4">{getWeeklyDateRange()}</div>
-            <div className="grid grid-cols-4 gap-2.5">
+            <div className="text-xl md:text-2xl font-black text-black mb-4 text-center tracking-tight">
+              {getWeeklyDateRange()}
+            </div>
+            <div className="grid grid-cols-4 gap-2.5 mb-2">
               {DAYS.map(day => {
                 const rec = records.find(r => r.student_name === selectedStudentReport && r.day_of_week === day) || {};
+                const isGreen = ['반휴','월반휴','늦반휴','늦월반휴'].includes(rec.off_type);
+                const isBlue = ['주휴','월휴','늦휴','늦월휴'].includes(rec.off_type);
+                const isRed = rec.off_type === '결석';
+                const cellClass = isGreen ? 'bg-green-100/60 border-green-200' 
+                                : isBlue ? 'bg-blue-100/60 border-blue-200'
+                                : isRed ? 'bg-red-100/60 border-red-200'
+                                : 'bg-slate-50 border-slate-100';
+                const textClass = isGreen ? 'text-green-700'
+                                : isBlue ? 'text-blue-700'
+                                : isRed ? 'text-red-700'
+                                : 'text-slate-400';
                 return (
-                  <div key={day} className="p-2.5 flex flex-col items-center justify-between h-24 rounded-2xl border bg-slate-50">
-                    <div className="text-[10px] font-bold text-slate-400">{getDayDate(day)} {day}</div>
-                    <div className="text-[18px] font-black">{rec.study_time || "0:00"}</div>
+                  <div key={day} className={`p-2.5 flex flex-col items-center justify-between h-24 rounded-2xl border shadow-sm transition-all ${cellClass}`}>
+                    <div className={`text-[10px] font-bold ${textClass}`}>{getDayDate(day)} {day}</div>
+                    <div className="text-[18px] font-black text-slate-800">{rec.study_time || "0:00"}</div>
+                    <div className={`text-[9px] font-black h-3 leading-none uppercase ${textClass}`}>
+                      {['반휴','월반휴','주휴','결석'].includes(rec.off_type) ? rec.off_type : ""}
+                    </div>
                   </div>
                 );
               })}
-              <div className="p-3 text-[10px] font-black bg-slate-900 text-white rounded-2xl flex flex-col gap-1">
+              <div className="p-3 text-[10px] font-black leading-relaxed flex flex-col justify-center gap-1 bg-slate-900 text-white rounded-2xl shadow-lg">
                 <div className="flex justify-between"><span>상점</span><span className="text-blue-400">+{calculatePoints(selectedStudentReport).bonus}</span></div>
                 <div className="flex justify-between"><span>벌점</span><span className="text-red-400">{calculatePoints(selectedStudentReport).penalty}</span></div>
-                <div className="flex justify-between text-yellow-400"><span>휴무</span><span>{calculatePoints(selectedStudentReport).remainingWeeklyOff}</span></div>
+                <div className="flex justify-between text-yellow-400 mt-0.5"><span>휴무</span><span>{calculatePoints(selectedStudentReport).remainingWeeklyOff}</span></div>
+                <div className="flex justify-between text-cyan-400"><span>월휴</span><span>{calculatePoints(selectedStudentReport).remainingMonthlyOff}</span></div>
               </div>
             </div>
           </div>
