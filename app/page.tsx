@@ -654,16 +654,41 @@ export default function HogwartsApp() {
       })
     : [selectedName];
 
-// ==========================================
+  // ==========================================
   // [20] 이름에서 이모지를 제거하는 유틸 함수 (호환성 버전)
   // ==========================================
   const formatDisplayName = (name: string) => {
     if (!name) return "";
+    // \p{...} 대신 가장 넓은 범위의 이모지 유니코드 대역을 지정하여 🪙까지 잡아냅니다.
     return name.replace(/[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]|\uD83E[\uAD00-\uADFF]/g, '').trim();
   };
 
   return (
     <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 font-sans relative">
+      <style>{`
+        ${GLOVAL_STYLE}
+        .late-checkbox {
+          appearance: none;
+          -webkit-appearance: none;
+          width: 1.25rem;
+          height: 1.25rem;
+          border: 2px solid #cbd5e1;
+          border-radius: 50%;
+          cursor: pointer;
+          transition: background 0.2s, border-color 0.2s;
+          position: relative;
+          background: white;
+          outline: none;
+          margin: 0 auto;
+          display: block;
+        }
+        .late-checkbox:checked { background: #f59e0b; border-color: #f59e0b; }
+        .late-checkbox:disabled { cursor: default; }
+        .winner-sparkle { box-shadow: 0 0 20px rgba(250, 204, 21, 0.4); }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+      `}</style>
       
 {/*[21] 기숙사별 공지사항 팝업 */}
       {selectedHouseNotice && (
