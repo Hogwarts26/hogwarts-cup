@@ -92,6 +92,7 @@ const studentData: { [key: string]: { house: string; emoji: string; color: strin
   "🐡복어": { house: "슬리데린", emoji: "🐡", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🎂케이크": { house: "슬리데린", emoji: "🎂", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🐻곰돌": { house: "슬리데린", emoji: "🐻", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
+  "🍮푸딩": { house: "래번클로", emoji: "🍮", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
   "🪙코인": { house: "래번클로", emoji: "🪙", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
   "💫별": { house: "래번클로", emoji: "💫", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
   "🍪쿠키": { house: "래번클로", emoji: "🍪", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
@@ -918,48 +919,54 @@ export default function HogwartsApp() {
         </div>
       </div>
 
-      {/* [Dragon Cave Section] */}
-      <div className="mt-20 px-4 pb-24 text-left max-w-6xl mx-auto">
-        <hr className="border-slate-200 mb-12" />
-        <h2 className="text-4xl font-bold text-slate-800 tracking-wider mb-8" style={{ fontFamily: "'Cinzel', serif" }}>
+{/* [Dragon Cave Section] */}
+      <div className="mt-16 px-4 pb-24 text-left max-w-6xl mx-auto">
+        <hr className="border-slate-200 mb-10" />
+        
+        {/* 타이틀: 테이블 폰트 스타일 적용 */}
+        <h2 className="text-xl font-black text-slate-800 tracking-tighter mb-6 uppercase">
           Dragon Cave
         </h2>
 
-        <div className="flex flex-wrap gap-6 mb-10">
+        {/* 지역명 버튼: 3개씩 2줄 배치, 테이블 텍스트 스타일 통일 */}
+        <div className="grid grid-cols-3 gap-2 mb-8 max-w-sm">
           {['volcano', 'jungle', 'forest', 'desert', 'coast', 'alpine'].map((region) => (
             <button
               key={region}
               onClick={() => handleRegionClick(region)}
-              className={`text-lg font-medium tracking-[0.2em] transition-colors uppercase
+              className={`py-2 text-[11px] font-black tracking-tighter transition-all rounded-md border uppercase
                 ${currentImageFile === `${region}.webp` 
-                  ? 'text-slate-900 border-b-2 border-slate-900 pb-1 cursor-default'
-                  : 'text-slate-400 hover:text-slate-700'}`}
-              style={{ fontFamily: "'Cinzel', serif" }}
+                  ? 'bg-slate-900 text-white border-slate-900 shadow-sm' 
+                  : 'bg-white text-slate-400 border-slate-100 hover:text-slate-600 hover:bg-slate-50' 
+                }`}
             >
               {region}
             </button>
           ))}
-          <button
-            onClick={handleResetImage}
-            className={`text-lg font-medium tracking-[0.2em] transition-colors uppercase ml-auto
-              ${currentImageFile === 'x.jpg' ? 'text-slate-900 border-b-2 border-slate-900 pb-1' : 'text-slate-400 hover:text-slate-700'}`}
-            style={{ fontFamily: "'Cinzel', serif" }}
-          >
-            Reset
-          </button>
         </div>
 
-        <div className="w-full rounded-xl overflow-hidden shadow-xl border border-slate-200 bg-slate-50 relative aspect-video">
-          <img 
-            src={`https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${currentImageFile}`}
-            alt="Dragon Habitat"
-            className={`w-full h-full object-cover transition-opacity duration-300 ease-in-out ${isFading ? 'opacity-0' : 'opacity-100'}`}
-            onError={(e) => {
-              // 💡 핵심 수정 부분: e.currentTarget을 이미지 엘리먼트로 정의하여 src 에러 해결
-              const target = e.currentTarget as HTMLImageElement;
-              target.src = "https://via.placeholder.com/1200x675?text=Check+GitHub+Public+Folder";
-            }}
-          />
+        {/* 리셋 버튼 & 이미지 영역 */}
+        <div className="relative">
+          <div className="flex justify-end mb-2">
+            <button
+              onClick={handleResetImage}
+              className="text-[9px] font-black text-slate-300 hover:text-slate-500 uppercase tracking-widest transition-colors"
+            >
+              [ Reset Habitat ]
+            </button>
+          </div>
+
+          <div className="w-full rounded-[1.5rem] md:rounded-[2rem] overflow-hidden shadow-2xl border border-slate-200 bg-slate-50 relative aspect-video">
+            <img 
+              src={`https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${currentImageFile}`}
+              alt="Dragon Habitat"
+              className={`w-full h-full object-cover transition-opacity duration-300 ease-in-out ${isFading ? 'opacity-0' : 'opacity-100'}`}
+              onError={(e) => {
+                const target = e.currentTarget as HTMLImageElement;
+                target.src = "https://via.placeholder.com/1200x675?text=Check+GitHub+Public+Folder";
+              }}
+            />
+          </div>
         </div>
       </div>
 
