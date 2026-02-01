@@ -974,19 +974,32 @@ export default function HogwartsApp() {
               }}
             />
 
-            {/* ✨ 알 이미지 배치 */}
-            {!isFading && currentImageFile !== 'main.webp' && (
-              <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-6 px-4">
-                {[1, 2, 3].map((num) => (
-                  <img
-                    key={num}
-                    src={`https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/eggs/${currentImageFile.substring(0, 2).toLowerCase()}${num}.webp`}
-                    alt="Dragon Egg"
-                    className="w-10 h-10 md:w-14 md:h-14 object-contain drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] hover:scale-110 transition-transform cursor-pointer"
-                  />
-                ))}
-              </div>
-            )}
+            {/* ✨ 알 이미지 배치 (그림자 효과 강화 버전) */}
+{!isFading && currentImageFile !== 'main.webp' && (
+  <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-8 px-4 z-20">
+    {[1, 2, 3].map((num) => {
+      const prefix = currentImageFile.split('.')[0].substring(0, 2).toLowerCase();
+      const eggUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${num}.webp`;
+      
+      return (
+        <div key={num} className="relative group flex flex-col items-center">
+          {/* 1. 바닥 그림자: 알의 하단에 배치되는 반투명 검정 타원 */}
+          <div className="absolute -bottom-1 w-8 h-2 md:w-10 md:h-3 bg-black/40 rounded-[100%] blur-[4px] group-hover:scale-125 transition-transform duration-300" />
+          
+          {/* 2. 알 이미지 */}
+          <img
+            src={eggUrl}
+            alt={`Egg ${prefix}${num}`}
+            className="relative w-12 h-12 md:w-16 md:h-16 object-contain hover:-translate-y-2 transition-transform duration-300 cursor-pointer"
+            onError={(e) => {
+              e.currentTarget.parentElement!.style.display = 'none';
+            }}
+          />
+        </div>
+      );
+    })}
+  </div>
+)}
           </div>
         </div>
       </div> {/* [26] 드래곤 키우기 전체 감싸는 div 닫기 */}
