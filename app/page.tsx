@@ -317,12 +317,12 @@ export default function HogwartsApp() {
     setIsSaving(false);
   };
 
-  // ==========================================
+ // ==========================================
   // [11] 점수 계산 및 리포트 연동 로직
   // ==========================================
   const calc = (r: any) => {
     if (!r) return { penalty: 0, bonus: 0, total: 0, studyH: 0 };
-    // 결석은 즉시 벌점 -5점
+    
     if (r.off_type === '결석') return { penalty: -5, bonus: 0, total: -5, studyH: 0 };
     
     const timeVal = r.study_time || "";
@@ -330,26 +330,49 @@ export default function HogwartsApp() {
     const studyH = (isNaN(h) ? 0 : h) + (isNaN(m) ? 0 : m / 60);
     
     let penalty = 0, bonus = 0;
+    
     const isHalfOff = ['반휴', '월반휴', '늦반휴', '늦월반휴'].includes(r.off_type);
     const isFullOff = ['주휴', '월휴', '자율', '늦휴', '늦월휴'].includes(r.off_type);
     
-    // 늦은 휴무 사용 시 벌점 -1 (중복 적용 가능)
-    if (['늦반휴', '늦휴', '늦월반휴', '늦월휴'].includes(r.off_type)) penalty -= 1;
-    // 지각 시 벌점 -1 (풀휴무 제외)
-    if (r.is_late && !isFullOff) penalty -= 1;
-    // 오전 3시간 미달성 시 벌점 -1 (공부한 기록이 있을 때만 체크)
-    if ((r.off_type === '-' || r.off_type === '출석') && r.am_3h === false && studyH > 0) penalty -= 1;
+    // A. 늦은 휴무 신청 자체 벌점 (-1)
+    if (['늦반휴', '늦휴', '늦월반휴', '늦월휴'].includes(r.off_type)) {
+      penalty -= 1;
+    }
     
-    // 시간당 상벌점 (풀휴무/자율 제외)
-    if (!isFullOff && r.off_type !== '자율' && studyH > 0) {
+    // B. 지각 벌점 (풀휴무/자율 제외)
+    if (r.is_late && !isFullOff && r.off_type !== '자율') {
+      penalty -= 1;
+    }
+    
+    // C. 시간당 상벌점 로직 (풀휴무/자율 제외)
+    if (!isFullOff && r.off_type !== '자율') {
+      
+      // ✅ [오전 3시간 체크] 수정: 반휴 계열(isHalfOff)이 아닐 때만 벌점 부여
+      if (!isHalfOff && r.am_3h === false && studyH > 0) {
+        penalty -= 1;
+      }
+
+      // [기준 시간 미달/초과 체크]
       const target = isHalfOff ? 4 : 9;
-      if (studyH < target) {
-        penalty -= Math.ceil(target - studyH);
-      } else if (!isHalfOff && studyH >= target + 1) {
-        // 일반 출석 시 10시간부터 상점 부여
-        bonus += Math.floor(studyH - target);
+      
+      if (studyH > 0) {
+        if (studyH < target) {
+          // 월반휴인데 3:18이면 여기서 -1점 발생
+          penalty -= Math.ceil(target - studyH);
+        } else if (!isHalfOff && studyH >= target + 1) {
+          // 일반 출석 시에만 상점 부여
+          bonus += Math.floor(studyH - target);
+        }
       }
     }
+
+    return { 
+      penalty, 
+      bonus, 
+      total: penalty + bonus, 
+      studyH 
+    };
+  };
     
     return { 
       penalty: Math.max(penalty, -5), 
