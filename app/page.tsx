@@ -348,7 +348,7 @@ export default function HogwartsApp() {
     localStorage.setItem('hg_auth', JSON.stringify({ name: selectedName, admin }));
   };
 
-  // ==========================================
+// ==========================================
 // [9] 주간 데이터 초기화 및 용 성장 데이터 누적
 // ==========================================
 const resetWeeklyData = async () => {
@@ -358,13 +358,14 @@ const resetWeeklyData = async () => {
 
   setIsSaving(true);
   try {
-    // ✅ [수정] studentData가 null일 경우를 대비해 빈 객체(|| {})를 기본값으로 줍니다.
-    const names = Object.keys(studentData || {});
+    // studentData가 null일 경우를 대비해 빈 객체(|| {})를 기본값으로 줍니다.
+    const names = (studentData || []).map((s: any) => s.student_name);
 
     // --- [단계 1] 용 성장을 위한 공부 시간 합산 및 마스터 테이블 누적 ---
-    const updatePromises = names.map(async (name) => {
-      // records도 혹시 모를 에러 방지를 위해 || [] 처리를 해주면 더 안전합니다.
-      const studentRecords = (records || []).filter(r => r.student_name === name);
+// ✅ 수정: (name) 뒤에 : string 타입을 추가합니다.
+const updatePromises = names.map(async (name: string) => { 
+  // records도 혹시 모를 에러 방지를 위해 || [] 처리를 해주면 더 안전합니다.
+  const studentRecords = (records || []).filter(r => r.student_name === name);
       
       // 이번 주 공부 시간(HH:mm)을 '분' 단위로 합산
       let weeklyMinutes = 0;
@@ -436,12 +437,15 @@ const resetWeeklyData = async () => {
   // ==========================================
   // [10] 월휴 초기화 (Monthly Reset)
   // ==========================================
-  const resetMonthlyOff = async () => {
+    const resetMonthlyOff = async () => {
     if (!confirm("⚠️ 주의: 모든 학생의 월휴 개수를 초기화하시겠습니까?")) return;
     setIsSaving(true);
 
-    const names = Object.keys(studentData || {});
+    // map을 사용하여 실제 학생 이름 배열을 만듭니다.
+    const names = (studentData || []).map((s: any) => s.student_name);
     const resetData = [];
+    
+    // ... 이후 로직
 
     // 현재 records에 있는 기존 데이터를 바탕으로 monthly_off_count만 4로 변경
     for (const name of names) {
@@ -594,19 +598,34 @@ const resetWeeklyData = async () => {
   // [13] 기숙사 랭킹 계산
   // ==========================================
   const houseRankings = useMemo(() => {
+    // 1. HOUSE_ORDER가 없거나 studentData가 로드 전일 때 빈 배열 반환
+    if (!HOUSE_ORDER || !studentData) return [];
+
     return HOUSE_ORDER.map(house => {
-      const students = Object.keys(studentData || {}).filter(n => studentData[n].house === house);
+      // ✅ 수정: studentData(배열)에서 해당 기수 학생들만 필터링
+      const studentsInHouse = (studentData || []).filter((s: any) => s.house === house);
+      
       let tScore = 0, tH = 0;
-      students.forEach(name => {
+
+      // 2. 해당 기수 학생들의 점수 합산
+      studentsInHouse.forEach((student: any) => {
+        const name = student.student_name;
         DAYS.forEach(day => {
-          const res = calc(records.find(r => r.student_name === name && r.day_of_week === day));
-          tScore += res.total; tH += res.studyH;
+          const record = (records || []).find(r => r.student_name === name && r.day_of_week === day);
+          const res = calc(record); // calc 함수가 외부에 정의되어 있어야 합니다.
+          tScore += res.total; 
+          tH += res.studyH;
         });
       });
-      const avg = students.length > 0 ? (tScore / students.length) + Math.floor(tH / students.length) : 0;
+
+      // 3. 평균 점수 계산 (학생 수로 나눔)
+      const avg = studentsInHouse.length > 0 
+        ? (tScore / studentsInHouse.length) + Math.floor(tH / studentsInHouse.length) 
+        : 0;
+
       return { house, finalPoint: avg };
-    }).sort((a, b) => b.finalPoint - a.finalPoint);
-  }, [records]);
+    }).sort((a, b) => b.finalPoint - a.finalPoint); // 점수 높은 순 정렬
+  }, [records, studentData]);
 
   // ==========================================
   // [14] 배경음악(BGM) 로직
@@ -698,42 +717,69 @@ const resetWeeklyData = async () => {
   };
 
 // ==========================================
-  // [18] 로그인 화면 (Render Login)
-  // ==========================================
-  if (!isLoggedIn) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
-        <style>{GLOVAL_STYLE}</style>
-        <div className="bg-white p-10 rounded-[2.5rem] w-full max-w-md shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-2 bg-yellow-500"></div>
-          <div className="flex justify-center mb-10">
-            <img 
-              src="https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/Hogwarts.png" 
-              alt="Hogwarts" 
-              className="w-56 h-auto object-contain" 
-            />
-          </div>
-          <div className="space-y-6">
-            <select className="w-full p-5 border-2 rounded-2xl font-bold text-slate-800 bg-slate-50 outline-none text-lg" value={selectedName} onChange={(e)=>setSelectedName(e.target.value)}>
-              <option value="">이름을 선택하세요</option>
-              {Object.keys(studentData || {}).sort(sortKorean).map(n => <option key={n} value={n}>{n}</option>)}
-            </select>
-            <input type="password" placeholder="PASSWORD" className="w-full p-5 border-2 rounded-2xl font-bold text-slate-800 bg-slate-50 outline-none text-lg" value={password} onChange={(e)=>setPassword(e.target.value)} onKeyDown={(e)=>e.key==='Enter' && handleLogin()} />
-            <button onClick={handleLogin} className="w-full bg-slate-900 text-yellow-500 py-5 rounded-2xl font-black shadow-lg uppercase text-xl active:scale-95 transition-transform">Enter Castle</button>
-          </div>
+// [18] 로그인 화면 (Render Login)
+// ==========================================
+if (!isLoggedIn) {
+  return (
+    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
+      <style>{GLOVAL_STYLE}</style>
+      <div className="bg-white p-10 rounded-[2.5rem] w-full max-w-md shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-2 bg-yellow-500"></div>
+        <div className="flex justify-center mb-10">
+          <img 
+            src="https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/Hogwarts.png" 
+            alt="Hogwarts" 
+            className="w-56 h-auto object-contain" 
+          />
+        </div>
+        <div className="space-y-6">
+          <select 
+            className="w-full p-5 border-2 rounded-2xl font-bold text-slate-800 bg-slate-50 outline-none text-lg" 
+            value={selectedName} 
+            onChange={(e)=>setSelectedName(e.target.value)}
+          >
+            <option value="">이름을 선택하세요</option>
+           {/* ✅ 수정: map 안의 name에 : string 타입을 명시하여 빨간 줄을 제거합니다. */}
+{(studentData || [])
+  .map((s: any) => s.student_name)
+  .sort(sortKorean)
+  .map((name: string) => ( // 👈 여기 : string 추가
+    <option key={name} value={name}>{name}</option>
+  ))
+}
+          </select>
+          <input 
+            type="password" 
+            placeholder="PASSWORD" 
+            className="w-full p-5 border-2 rounded-2xl font-bold text-slate-800 bg-slate-50 outline-none text-lg" 
+            value={password} 
+            onChange={(e)=>setPassword(e.target.value)} 
+            onKeyDown={(e)=>e.key==='Enter' && handleLogin()} 
+          />
+          <button 
+            onClick={handleLogin} 
+            className="w-full bg-slate-900 text-yellow-500 py-5 rounded-2xl font-black shadow-lg uppercase text-xl active:scale-95 transition-transform"
+          >
+            Enter Castle
+          </button>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   // ==========================================
   // [19] 메인 화면 데이터 준비 (학생 필터링 등)
   // ==========================================
   const displayList = isAdmin 
-    ? Object.keys(studentData || {}).sort((a, b) => {
-        const houseDiff = HOUSE_ORDER.indexOf(studentData[a].house) - HOUSE_ORDER.indexOf(studentData[b].house);
-        return houseDiff !== 0 ? houseDiff : sortKorean(a, b);
-      })
+    ? (studentData || [])
+        .sort((a: any, b: any) => {
+          // 1. 기수(House) 순서대로 정렬
+          const houseDiff = HOUSE_ORDER.indexOf(a.house) - HOUSE_ORDER.indexOf(b.house);
+          // 2. 기수가 같다면 이름순(sortKorean)으로 정렬
+          return houseDiff !== 0 ? houseDiff : sortKorean(a.student_name, b.student_name);
+        })
+        .map((s: any) => s.student_name) // 최종적으로 이름 문자열 배열로 변환
     : [selectedName];
 
   // ==========================================
@@ -789,43 +835,51 @@ const resetWeeklyData = async () => {
       )}
 
  {/*[22] 관리자 화면 요약 확인 팝업 (전체 기숙사 요약) */}
-      {showSummary && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowSummary(false)}>
-          <div className="bg-white rounded-[2rem] p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative" onClick={e => e.stopPropagation()}>
-            <button onClick={() => setShowSummary(false)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-800 transition-colors text-2xl font-black">✕</button>
-            <h3 className="text-2xl font-serif font-black text-slate-800 mb-8 italic tracking-tighter border-b-2 border-slate-100 pb-4 text-center">House Weekly Summary</h3>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border-t border-l border-slate-300 overflow-hidden rounded-xl">
-              {HOUSE_ORDER.map(house => {
-                const studentsInHouse = Object.keys(studentData || {}).filter(name => studentData[name].house === house);
-                const config = (HOUSE_CONFIG as any)[house];
-                return (
-                  <div key={house} className="flex flex-col border-r border-b border-slate-300">
-                    <div className={`${config.bg} p-2 text-white font-black text-center text-[11px] tracking-widest`}>{config.icon} {house}</div>
-                    <div className="flex flex-col flex-1 divide-y divide-slate-200">
-                      {studentsInHouse.sort(sortKorean).map(name => {
-                        const emoji = studentData[name].emoji || "👤";
-                        let tMins = 0;
-                        records.filter(r => r.student_name === name).forEach(r => {
-                          const [h, m] = (r.study_time || "").split(':').map(Number);
-                          tMins += (isNaN(h) ? 0 : h * 60) + (isNaN(m) ? 0 : m);
-                        });
-                        return (
-                          <div key={name} className="flex h-10">
-                            <div className={`w-10 flex items-center justify-center text-lg border-r border-slate-200 ${config.bg.replace('bg-', 'bg-opacity-10 bg-')}`}>{emoji}</div>
-                            <div className="flex-1 flex items-center justify-center font-black text-sm text-slate-700 bg-white">
-                              <span className={tMins < 1200 ? "text-red-500" : "text-slate-800"}>{tMins > 0 ? `${Math.floor(tMins/60)}:${(tMins%60).toString().padStart(2,'0')}` : "-"}</span>
-                            </div>
-                          </div>
-                        );
-                      })}
+{showSummary && (
+  <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowSummary(false)}>
+    <div className="bg-white rounded-[2rem] p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative" onClick={e => e.stopPropagation()}>
+      <button onClick={() => setShowSummary(false)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-800 transition-colors text-2xl font-black">✕</button>
+      <h3 className="text-2xl font-serif font-black text-slate-800 mb-8 italic tracking-tighter border-b-2 border-slate-100 pb-4 text-center">House Weekly Summary</h3>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border-t border-l border-slate-300 overflow-hidden rounded-xl">
+        {HOUSE_ORDER.map(house => {
+          // ✅ 수정: studentData가 배열이므로 .filter()를 직접 사용합니다.
+          const studentsInHouse = (studentData || []).filter((s: any) => s.house === house);
+          const config = (HOUSE_CONFIG as any)[house];
+
+          return (
+            <div key={house} className="flex flex-col border-r border-b border-slate-300">
+              <div className={`${config.bg} p-2 text-white font-black text-center text-[11px] tracking-widest`}>{config.icon} {house}</div>
+              <div className="flex flex-col flex-1 divide-y divide-slate-200">
+                {/* ✅ 수정: 이미 객체 배열이므로 student_name을 기준으로 정렬하고 맵핑합니다. */}
+                {studentsInHouse.sort((a: any, b: any) => sortKorean(a.student_name, b.student_name)).map((student: any) => {
+                  const name = student.student_name;
+                  const emoji = student.emoji || "👤";
+                  let tMins = 0;
+                  
+                  (records || []).filter(r => r.student_name === name).forEach(r => {
+                    const [h, m] = (r.study_time || "").split(':').map(Number);
+                    tMins += (isNaN(h) ? 0 : h * 60) + (isNaN(m) ? 0 : m);
+                  });
+
+                  return (
+                    <div key={name} className="flex h-10">
+                      <div className={`w-10 flex items-center justify-center text-lg border-r border-slate-200 ${config.bg.replace('bg-', 'bg-opacity-10 bg-')}`}>{emoji}</div>
+                      <div className="flex-1 flex items-center justify-center font-black text-sm text-slate-700 bg-white">
+                        <span className={tMins < 1200 ? "text-red-500" : "text-slate-800"}>
+                          {tMins > 0 ? `${Math.floor(tMins/60)}:${(tMins%60).toString().padStart(2,'0')}` : "-"}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          );
+        })}
+      </div>
+    </div>
+  </div>
+)}
 
       {/*[23] 상단 헤더 및 기숙사 점수판 구역 */}
       <div className="max-w-[1100px] mx-auto mb-8">
@@ -912,18 +966,20 @@ const resetWeeklyData = async () => {
               </tr>
             </thead>
             <tbody>
-              {displayList.map(name => {
-                const info = studentData[name];
-                const monRec = records.find(r => r.student_name === name && r.day_of_week === '월') || {};
-                const offCount = monRec.monthly_off_count ?? 4;
-                const rows = [{f:'off_type'},{f:'is_late'},{f:'am_3h'},{f:'study_time'},{f:'penalty'},{f:'bonus'},{f:'total'}];
-                let tMins = 0; let tPts = 0;
-                records.filter(r => r.student_name === name).forEach(r => {
-                  const res = calc(r);
-                  const [h, m] = (r.study_time || "").split(':').map(Number);
-                  tMins += (isNaN(h) ? 0 : h * 60) + (isNaN(m) ? 0 : m);
-                  tPts += res.total;
-                });
+              {displayList.map((name: string) => {
+  const info = (studentData || []).find((s: any) => s.student_name === name) || {};
+  
+  const monRec = (records || []).find(r => r.student_name === name && r.day_of_week === '월') || {};
+  const offCount = monRec.monthly_off_count ?? 4;
+  const rows = [{f:'off_type'},{f:'is_late'},{f:'am_3h'},{f:'study_time'},{f:'penalty'},{f:'bonus'},{f:'total'}];
+  
+  let tMins = 0; let tPts = 0;
+  (records || []).filter(r => r.student_name === name).forEach(r => {
+    const res = calc(r);
+    const [h, m] = (r.study_time || "").split(':').map(Number);
+    tMins += (isNaN(h) ? 0 : h * 60) + (isNaN(m) ? 0 : m);
+    tPts += res.total;
+  });
                 return (
                   <React.Fragment key={name}>
                     {isAdmin && (
