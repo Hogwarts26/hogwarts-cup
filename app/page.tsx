@@ -654,16 +654,16 @@ export default function HogwartsApp() {
       })
     : [selectedName];
 
-  // ==========================================
+// ==========================================
   // [20] 이름에서 이모지를 제거하는 유틸 함수 (호환성 버전)
   // ==========================================
   const formatDisplayName = (name: string) => {
     if (!name) return "";
-    
-    // 원래 사용하시던 정교한 유니코드 정규식을 그대로 사용합니다.
-    // .replace() 결과를 바로 return하게 해서 변수 선언 에러를 방지합니다.
     return name.replace(/[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]|\uD83E[\uAD00-\uADFF]/g, '').trim();
   };
+
+  return (
+    <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 font-sans relative">
       
 {/*[21] 기숙사별 공지사항 팝업 */}
       {selectedHouseNotice && (
