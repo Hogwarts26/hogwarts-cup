@@ -196,21 +196,45 @@ const sortKorean = (a: string, b: string) => {
 // [5] 메인 App 컴포넌트 및 상태(State) 관리
 // ==========================================
 export default function HogwartsApp() {
+  // --- [추가] 월요일 18:00 기준 날짜 조정 함수 ---
+  const getAdjustedToday = () => {
+    const now = new Date();
+    const day = now.getDay();    // 0(일), 1(월), 2(화)...
+    const hours = now.getHours();
+
+    // 월요일(1)이면서 오후 6시(18시) 이전인 경우에만 하루 전(일요일)으로 취급
+    if (day === 1 && hours < 18) {
+      const adjusted = new Date(now);
+      adjusted.setDate(now.getDate() - 1);
+      return adjusted;
+    }
+    return now;
+  };
+
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [selectedName, setSelectedName] = useState("");
   const [password, setPassword] = useState("");
   const [records, setRecords] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const [selectedHouseNotice, setSelectedHouseNotice] = useState<string | null>(null);
   
-  // 요약 확인 팝업 상태 추가
+  // ✅ [수정] 초기값을 조정된 날짜로 설정
+  const [currentTime, setCurrentTime] = useState(getAdjustedToday());
+  
+  const [selectedHouseNotice, setSelectedHouseNotice] = useState<string | null>(null);
   const [showSummary, setShowSummary] = useState(false); 
   const [selectedStudentReport, setSelectedStudentReport] = useState<string | null>(null);
-  
   const [dailyGoal, setDailyGoal] = useState("");
   const [isEditingGoal, setIsEditingGoal] = useState(false);
+
+  // --- [추가] 실시간 시간 업데이트 시에도 조정 로직 유지 ---
+  useEffect(() => {
+    const timer = setInterval(() => {
+      // 매분/매초 업데이트 시에도 18:00 기준을 체크하여 반영
+      setCurrentTime(getAdjustedToday());
+    }, 60000); // 1분마다 체크
+    return () => clearInterval(timer);
+  }, []);
 
   // ==========================================
   // [6] 초기 실행 (인증 확인 및 시계)
