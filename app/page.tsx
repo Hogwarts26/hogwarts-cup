@@ -973,9 +973,23 @@ export default function HogwartsApp() {
                 target.src = "https://via.placeholder.com/1200x675?text=Check+GitHub+Public+Folder";
               }}
             />
+
+            {/* ✨ 알 이미지 배치 */}
+            {!isFading && currentImageFile !== 'main.webp' && (
+              <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-6 px-4">
+                {[1, 2, 3].map((num) => (
+                  <img
+                    key={num}
+                    src={`https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/eggs/${currentImageFile.substring(0, 2).toLowerCase()}${num}.webp`}
+                    alt="Dragon Egg"
+                    className="w-10 h-10 md:w-14 md:h-14 object-contain drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] hover:scale-110 transition-transform cursor-pointer"
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
-      </div>
+      </div> {/* [26] 드래곤 키우기 전체 감싸는 div 닫기 */}
 
       {/* [27] 학생 개인 리포트 팝업 */}
         {selectedStudentReport && studentData[selectedStudentReport] && (
