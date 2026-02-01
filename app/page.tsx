@@ -235,6 +235,11 @@ export default function HogwartsApp() {
     }, 300);
   };
 
+    // 알 선택시 팝업
+const [eggStep, setEggStep] = useState<number>(0);
+const [tempEgg, setTempEgg] = useState<string | null>(null);
+const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
+
   // ==========================================
   // [6] 초기 실행 (인증 확인 및 시계)
   // ==========================================
@@ -920,89 +925,150 @@ export default function HogwartsApp() {
       </div>
 
 {/* [26] 드래곤 키우기 */}
-      <div className="mt-16 px-4 pb-24 text-left max-w-6xl mx-auto">
-        <hr className="border-slate-200 mb-10" />
-        
- <h2 
-  className="text-2xl font-black italic mb-8 uppercase" 
-  style={{ 
-    fontFamily: "'Cinzel', serif",
-    letterSpacing: '0.1em',
-    color: '#1e293b',
-    transform: 'skewX(-5deg)'
-  }}
->
-  Dragon Cave
-</h2>
+<div className="mt-16 px-4 pb-24 text-left max-w-6xl mx-auto">
+  <hr className="border-slate-200 mb-10" />
 
-        {/* 지역명 버튼: 3개씩 2줄 배치, 테이블 텍스트 스타일 통일 */}
-        <div className="grid grid-cols-3 gap-2 mb-8 max-w-sm">
-          {['volcano', 'jungle', 'forest', 'desert', 'coast', 'alpine'].map((region) => (
-            <button
-              key={region}
-              onClick={() => handleRegionClick(region)}
-              className={`py-2 text-[11px] font-black tracking-tighter transition-all rounded-md border uppercase
-                ${currentImageFile === `${region}.webp` 
-                  ? 'bg-slate-900 text-white border-slate-900 shadow-sm' 
-                  : 'bg-white text-slate-400 border-slate-100 hover:text-slate-600 hover:bg-slate-50' 
-                }`}
-            >
-              {region}
-            </button>
-          ))}
-        </div>
+  <h2 
+    className="text-2xl font-black italic mb-8 uppercase" 
+    style={{ 
+      fontFamily: "'Cinzel', serif",
+      letterSpacing: '0.1em',
+      color: '#1e293b',
+      transform: 'skewX(-5deg)'
+    }}
+  >
+    Dragon Cave
+  </h2>
 
-        {/* 리셋 버튼 & 이미지 영역 */}
-        <div className="relative">
-          <div className="flex justify-end mb-2">
-            <button
-              onClick={handleResetImage}
-              className="text-[9px] font-black text-slate-300 hover:text-slate-500 uppercase tracking-widest transition-colors"
-            >
-              [ Reset Habitat ]
-            </button>
-          </div>
-
-          <div className="w-full rounded-[1.5rem] md:rounded-[2rem] overflow-hidden shadow-2xl border border-slate-200 bg-slate-50 relative aspect-video">
-            <img 
-              src={`https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${currentImageFile}`}
-              alt="Dragon Habitat"
-              className={`w-full h-full object-cover transition-opacity duration-300 ease-in-out ${isFading ? 'opacity-0' : 'opacity-100'}`}
-              onError={(e) => {
-                const target = e.currentTarget as HTMLImageElement;
-                target.src = "https://via.placeholder.com/1200x675?text=Check+GitHub+Public+Folder";
-              }}
-            />
-
-            {/* ✨ 알 이미지 배치 (그림자 효과 강화 버전) */}
-{!isFading && currentImageFile !== 'main.webp' && (
-  <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-8 px-4 z-20">
-    {[1, 2, 3].map((num) => {
-      const prefix = currentImageFile.split('.')[0].substring(0, 2).toLowerCase();
-      const eggUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${num}.webp`;
-      
-      return (
-        <div key={num} className="relative group flex flex-col items-center">
-          {/* 1. 바닥 그림자: 알의 하단에 배치되는 반투명 검정 타원 */}
-          <div className="absolute -bottom-1 w-8 h-2 md:w-10 md:h-3 bg-black/40 rounded-[100%] blur-[4px] group-hover:scale-125 transition-transform duration-300" />
-          
-          {/* 2. 알 이미지 */}
-          <img
-            src={eggUrl}
-            alt={`Egg ${prefix}${num}`}
-            className="relative w-12 h-12 md:w-16 md:h-16 object-contain hover:-translate-y-2 transition-transform duration-300 cursor-pointer"
-            onError={(e) => {
-              e.currentTarget.parentElement!.style.display = 'none';
-            }}
-          />
-        </div>
-      );
-    })}
+  {/* 지역명 버튼 영역 */}
+  <div className="grid grid-cols-3 gap-2 mb-8 max-w-sm">
+    {['volcano', 'jungle', 'forest', 'desert', 'coast', 'alpine'].map((region) => (
+      <button
+        key={region}
+        onClick={() => handleRegionClick(region)}
+        className={`py-2 text-[11px] font-black tracking-tighter transition-all rounded-md border uppercase
+          ${currentImageFile === `${region}.webp` 
+            ? 'bg-slate-900 text-white border-slate-900 shadow-sm' 
+            : 'bg-white text-slate-400 border-slate-100 hover:text-slate-600 hover:bg-slate-50' 
+          }`}
+      >
+        {region}
+      </button>
+    ))}
   </div>
-)}
+
+  {/* 리셋 버튼 & 이미지 영역 */}
+  <div className="relative">
+    <div className="flex justify-end mb-2">
+      <button
+        onClick={handleResetImage}
+        className="text-[9px] font-black text-slate-300 hover:text-slate-500 uppercase tracking-widest transition-colors"
+      >
+        [ Reset Habitat ]
+      </button>
+    </div>
+
+    <div className="w-full rounded-[1.5rem] md:rounded-[2rem] overflow-hidden shadow-2xl border border-slate-200 bg-slate-50 relative aspect-video">
+      {/* 배경 이미지 */}
+      <img 
+        src={`https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${currentImageFile}`}
+        alt="Dragon Habitat"
+        className={`w-full h-full object-cover transition-opacity duration-300 ease-in-out ${isFading ? 'opacity-0' : 'opacity-100'}`}
+        onError={(e) => {
+          const target = e.currentTarget as HTMLImageElement;
+          target.src = "https://via.placeholder.com/1200x675?text=Check+GitHub+Public+Folder";
+        }}
+      />
+
+      {/* ✨ 1. 최종 선택된 알 표시 (메인 화면일 때만) */}
+      {selectedEgg && (currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
+          <div className="relative flex flex-col items-center">
+             {/* 메인 화면용 바닥 그림자 */}
+            <div className="absolute -bottom-2 w-16 h-4 bg-black/30 rounded-[100%] blur-[6px]" />
+            <img 
+              src={selectedEgg} 
+              alt="Selected Egg" 
+              className="relative w-24 h-24 md:w-32 md:h-32 object-contain drop-shadow-2xl"
+            />
           </div>
         </div>
-      </div> {/* [26] 드래곤 키우기 전체 감싸는 div 닫기 */}
+      )}
+
+      {/* ✨ 2. 지역별 알 선택 레이어 */}
+      {!isFading && currentImageFile !== 'main.webp' && currentImageFile !== 'x.jpg' && (
+        <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-8 px-4 z-20">
+          {[1, 2, 3].map((num) => {
+            const prefix = currentImageFile.split('.')[0].substring(0, 2).toLowerCase();
+            const eggUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${num}.webp`;
+            
+            return (
+              <div key={num} className="relative group flex flex-col items-center">
+                <div className="absolute -bottom-1 w-8 h-2 md:w-10 md:h-3 bg-black/40 rounded-[100%] blur-[4px] group-hover:scale-125 transition-transform duration-300" />
+                <img
+                  src={eggUrl}
+                  alt={`Egg ${prefix}${num}`}
+                  onClick={() => {
+                    setTempEgg(eggUrl);
+                    setEggStep(1);
+                  }}
+                  className="relative w-12 h-12 md:w-16 md:h-16 object-contain hover:-translate-y-2 transition-transform duration-300 cursor-pointer"
+                  onError={(e) => {
+                    e.currentTarget.parentElement!.style.display = 'none';
+                  }}
+                />
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  </div>
+
+  {/* ✨ 3. 이중 확인 팝업 (섹션 하단에 배치) */}
+  {eggStep > 0 && (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full mx-4 text-center border-4 border-slate-100">
+        {eggStep === 1 ? (
+          <>
+            <h3 className="text-xl font-black mb-2 text-slate-800 uppercase tracking-tighter" style={{ fontFamily: "'Cinzel', serif" }}>이 알을 데려갈까요?</h3>
+            <p className="text-slate-500 mb-6 text-sm italic">따스한 온기가 느껴지는 알입니다.</p>
+          </>
+        ) : (
+          <>
+            <h3 className="text-xl font-black mb-2 text-red-600 uppercase tracking-tighter" style={{ fontFamily: "'Cinzel', serif" }}>정말 이 알을 데려갈까요?</h3>
+            <p className="text-slate-500 mb-6 text-sm font-bold">한 번 데려가면 졸업 전까지<br/>함께 해야 합니다.</p>
+          </>
+        )}
+
+        <div className="flex flex-col gap-3">
+          <button
+            onClick={() => {
+              if (eggStep === 1) setEggStep(2);
+              else {
+                setSelectedEgg(tempEgg);
+                setEggStep(0);
+                handleResetImage(); // x.jpg 화면으로 이동
+              }
+            }}
+            className="w-full py-3 bg-slate-900 text-white font-black rounded-xl hover:bg-slate-700 transition-colors uppercase tracking-widest text-xs"
+          >
+            네
+          </button>
+          <button
+            onClick={() => {
+              setEggStep(0);
+              setTempEgg(null);
+            }}
+            className="w-full py-3 bg-slate-100 text-slate-400 font-bold rounded-xl hover:bg-slate-200 transition-colors uppercase tracking-widest text-[10px]"
+          >
+            고민해볼게요
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
+</div>
 
       {/* [27] 학생 개인 리포트 팝업 */}
         {selectedStudentReport && studentData[selectedStudentReport] && (
