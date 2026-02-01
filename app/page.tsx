@@ -317,12 +317,13 @@ export default function HogwartsApp() {
     setIsSaving(false);
   };
 
- // ==========================================
+// ==========================================
   // [11] 점수 계산 및 리포트 연동 로직
   // ==========================================
   const calc = (r: any) => {
     if (!r) return { penalty: 0, bonus: 0, total: 0, studyH: 0 };
     
+    // 1. 결석은 즉시 벌점 -5점
     if (r.off_type === '결석') return { penalty: -5, bonus: 0, total: -5, studyH: 0 };
     
     const timeVal = r.study_time || "";
@@ -347,7 +348,7 @@ export default function HogwartsApp() {
     // C. 시간당 상벌점 로직 (풀휴무/자율 제외)
     if (!isFullOff && r.off_type !== '자율') {
       
-      // ✅ [오전 3시간 체크] 수정: 반휴 계열(isHalfOff)이 아닐 때만 벌점 부여
+      // [오전 3시간 체크] 반휴 계열이 아니고 공부 기록이 조금이라도 있을 때 미달 시 -1
       if (!isHalfOff && r.am_3h === false && studyH > 0) {
         penalty -= 1;
       }
@@ -355,25 +356,25 @@ export default function HogwartsApp() {
       // [기준 시간 미달/초과 체크]
       const target = isHalfOff ? 4 : 9;
       
-      if (studyH > 0) {
-        if (studyH < target) {
-          // 월반휴인데 3:18이면 여기서 -1점 발생
-          penalty -= Math.ceil(target - studyH);
-        } else if (!isHalfOff && studyH >= target + 1) {
-          // 일반 출석 시에만 상점 부여
-          bonus += Math.floor(studyH - target);
-        }
+      // ✅ 수정: studyH > 0 조건을 제거하거나 0일 때도 포함하도록 변경
+      if (studyH < target) {
+        // 월반휴인데 0:00(0h)이면 4 - 0 = 4점 벌점 발생
+        // 월반휴인데 3:18(3.3h)이면 4 - 3.3 = 0.7 -> 올림하여 1점 벌점 발생
+        penalty -= Math.ceil(target - studyH);
+      } else if (!isHalfOff && studyH >= target + 1) {
+        // 일반 출석 시에만 상점 부여
+        bonus += Math.floor(studyH - target);
       }
     }
-    
+
     return { 
-      penalty: Math.max(penalty, -5), 
+      penalty, 
       bonus, 
-      total: Math.max(penalty, -5) + bonus, 
+      total: penalty + bonus, 
       studyH 
     };
   };
-
+  
   // ==========================================
   // [12] 요약 리포트 팝업 데이터 연동 함수
   // ==========================================
