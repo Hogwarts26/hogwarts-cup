@@ -980,20 +980,22 @@ const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
         }}
       />
 
-      {/* ✨ 1. 최종 선택된 알 표시 (메인 화면일 때만) */}
-      {selectedEgg && (currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-          <div className="relative flex flex-col items-center">
-             {/* 메인 화면용 바닥 그림자 */}
-            <div className="absolute -bottom-2 w-16 h-4 bg-black/30 rounded-[100%] blur-[6px]" />
-            <img 
-              src={selectedEgg} 
-              alt="Selected Egg" 
-              className="relative w-24 h-24 md:w-32 md:h-32 object-contain drop-shadow-2xl"
-            />
-          </div>
-        </div>
-      )}
+      {/* ✨ 1. 최종 선택된 알 표시 (사이즈 최적화 버전) */}
+{selectedEgg && (currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (
+  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
+    <div className="relative flex flex-col items-center translate-y-8 md:translate-y-12">
+      {/* 메인 화면용 바닥 그림자 (사이즈 축소) */}
+      <div className="absolute -bottom-1 w-10 h-2 md:w-12 md:h-3 bg-black/30 rounded-[100%] blur-[4px]" />
+      
+      {/* 선택된 알 이미지 */}
+      <img 
+        src={selectedEgg} 
+        alt="Selected Egg" 
+        className="relative w-12 h-12 md:w-16 md:h-16 object-contain drop-shadow-[0_10px_15px_rgba(0,0,0,0.3)]"
+      />
+    </div>
+  </div>
+)}
 
       {/* ✨ 2. 지역별 알 선택 레이어 */}
       {!isFading && currentImageFile !== 'main.webp' && currentImageFile !== 'x.jpg' && (
