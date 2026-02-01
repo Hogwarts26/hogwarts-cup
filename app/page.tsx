@@ -304,7 +304,7 @@ export default function HogwartsApp() {
 
     fetchInitialData();
   }, []);
-  
+
   // ==========================================
   // [6] 초기 실행 (인증 확인 및 시계)
   // ==========================================
@@ -349,30 +349,31 @@ export default function HogwartsApp() {
   };
 
   // ==========================================
-  // [9] 주간 데이터 초기화 및 용 성장 데이터 누적
-  // ==========================================
-  const resetWeeklyData = async () => {
-    // 1. 사용자 확인
-    if (!confirm("⚠️ 이번 주 기록을 합산하여 용을 성장시키고 표를 초기화하시겠습니까?")) return;
-    if (!confirm("정말로 진행하시겠습니까? 합산된 공부 시간은 되돌릴 수 없습니다.")) return;
+// [9] 주간 데이터 초기화 및 용 성장 데이터 누적
+// ==========================================
+const resetWeeklyData = async () => {
+  // 1. 사용자 확인
+  if (!confirm("⚠️ 이번 주 기록을 합산하여 용을 성장시키고 표를 초기화하시겠습니까?")) return;
+  if (!confirm("정말로 진행하시겠습니까? 합산된 공부 시간은 되돌릴 수 없습니다.")) return;
 
-    setIsSaving(true);
-    try {
-      const names = Object.keys(studentData);
+  setIsSaving(true);
+  try {
+    // ✅ [수정] studentData가 null일 경우를 대비해 빈 객체(|| {})를 기본값으로 줍니다.
+    const names = Object.keys(studentData || {});
 
-      // --- [단계 1] 용 성장을 위한 공부 시간 합산 및 마스터 테이블 누적 ---
-      const updatePromises = names.map(async (name) => {
-        // 현재 화면(records 상태값)에서 해당 학생의 월~일 기록 필터링
-        const studentRecords = records.filter(r => r.student_name === name);
-        
-        // 이번 주 공부 시간(HH:mm)을 '분' 단위로 합산
-        let weeklyMinutes = 0;
-        studentRecords.forEach(r => {
-          const [h, m] = (r.study_time || "0:00").split(':').map(Number);
-          if (!isNaN(h) && !isNaN(m)) {
-            weeklyMinutes += (h * 60) + m;
-          }
-        });
+    // --- [단계 1] 용 성장을 위한 공부 시간 합산 및 마스터 테이블 누적 ---
+    const updatePromises = names.map(async (name) => {
+      // records도 혹시 모를 에러 방지를 위해 || [] 처리를 해주면 더 안전합니다.
+      const studentRecords = (records || []).filter(r => r.student_name === name);
+      
+      // 이번 주 공부 시간(HH:mm)을 '분' 단위로 합산
+      let weeklyMinutes = 0;
+      studentRecords.forEach(r => {
+        const [h, m] = (r.study_time || "0:00").split(':').map(Number);
+        if (!isNaN(h) && !isNaN(m)) {
+          weeklyMinutes += (h * 60) + m;
+        }
+      });
 
         // 합산할 시간이 있는 경우에만 DB 업데이트 실행
         if (weeklyMinutes > 0) {
@@ -439,7 +440,7 @@ export default function HogwartsApp() {
     if (!confirm("⚠️ 주의: 모든 학생의 월휴 개수를 초기화하시겠습니까?")) return;
     setIsSaving(true);
 
-    const names = Object.keys(studentData);
+    const names = Object.keys(studentData || {});
     const resetData = [];
 
     // 현재 records에 있는 기존 데이터를 바탕으로 monthly_off_count만 4로 변경
@@ -594,7 +595,7 @@ export default function HogwartsApp() {
   // ==========================================
   const houseRankings = useMemo(() => {
     return HOUSE_ORDER.map(house => {
-      const students = Object.keys(studentData).filter(n => studentData[n].house === house);
+      const students = Object.keys(studentData || {}).filter(n => studentData[n].house === house);
       let tScore = 0, tH = 0;
       students.forEach(name => {
         DAYS.forEach(day => {
@@ -715,7 +716,7 @@ export default function HogwartsApp() {
           <div className="space-y-6">
             <select className="w-full p-5 border-2 rounded-2xl font-bold text-slate-800 bg-slate-50 outline-none text-lg" value={selectedName} onChange={(e)=>setSelectedName(e.target.value)}>
               <option value="">이름을 선택하세요</option>
-              {Object.keys(studentData).sort(sortKorean).map(n => <option key={n} value={n}>{n}</option>)}
+              {Object.keys(studentData || {}).sort(sortKorean).map(n => <option key={n} value={n}>{n}</option>)}
             </select>
             <input type="password" placeholder="PASSWORD" className="w-full p-5 border-2 rounded-2xl font-bold text-slate-800 bg-slate-50 outline-none text-lg" value={password} onChange={(e)=>setPassword(e.target.value)} onKeyDown={(e)=>e.key==='Enter' && handleLogin()} />
             <button onClick={handleLogin} className="w-full bg-slate-900 text-yellow-500 py-5 rounded-2xl font-black shadow-lg uppercase text-xl active:scale-95 transition-transform">Enter Castle</button>
@@ -729,7 +730,7 @@ export default function HogwartsApp() {
   // [19] 메인 화면 데이터 준비 (학생 필터링 등)
   // ==========================================
   const displayList = isAdmin 
-    ? Object.keys(studentData).sort((a, b) => {
+    ? Object.keys(studentData || {}).sort((a, b) => {
         const houseDiff = HOUSE_ORDER.indexOf(studentData[a].house) - HOUSE_ORDER.indexOf(studentData[b].house);
         return houseDiff !== 0 ? houseDiff : sortKorean(a, b);
       })
@@ -795,7 +796,7 @@ export default function HogwartsApp() {
             <h3 className="text-2xl font-serif font-black text-slate-800 mb-8 italic tracking-tighter border-b-2 border-slate-100 pb-4 text-center">House Weekly Summary</h3>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border-t border-l border-slate-300 overflow-hidden rounded-xl">
               {HOUSE_ORDER.map(house => {
-                const studentsInHouse = Object.keys(studentData).filter(name => studentData[name].house === house);
+                const studentsInHouse = Object.keys(studentData || {}).filter(name => studentData[name].house === house);
                 const config = (HOUSE_CONFIG as any)[house];
                 return (
                   <div key={house} className="flex flex-col border-r border-b border-slate-300">
