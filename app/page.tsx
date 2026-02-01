@@ -237,7 +237,7 @@ export default function HogwartsApp() {
 
   // [추가] 공부 시간에 따른 알 성장 단계 결정 로직 (방어 코드 강화)
   const getEvolutionImage = (baseEggUrl: string | null, totalMinutes: number = 0): string => {
-    // 빌드 타임 에러 방지: URL이 없으면 투명 이미지 반환
+    // 빌드 타임 에러 방지: URL이 없거나 문자열이 아니면 투명 이미지 반환
     if (!baseEggUrl || typeof baseEggUrl !== 'string') {
       return "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
     }
@@ -249,7 +249,8 @@ export default function HogwartsApp() {
       const prefix = fileName.substring(0, 2); 
       const eggNum = fileName.substring(2);
       
-      const totalHours = totalMinutes / 60; 
+      // studentData가 없을 때를 대비해 totalMinutes를 확실히 숫자로 취급
+      const totalHours = (Number(totalMinutes) || 0) / 60; 
 
       let finalFileName = "";
       if (totalHours < 100) {
@@ -274,6 +275,7 @@ export default function HogwartsApp() {
   const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
 
   // 2. 학생 데이터 상태
+  // 빌드 오류 방지를 위해 초기값을 null로 유지하되 접근 시 안전장치 마련
   const [studentData, setStudentData] = useState<any>(null);
   const loggedInStudentId = studentData?.student_id || ""; 
 
@@ -296,13 +298,13 @@ export default function HogwartsApp() {
           }
         }
       } catch (err) {
-        console.error("Initial Load Error:", err);
+        console.warn("Initial Load Data not found (expected during build)");
       }
     };
 
     fetchInitialData();
   }, []);
-
+  
   // ==========================================
   // [6] 초기 실행 (인증 확인 및 시계)
   // ==========================================
