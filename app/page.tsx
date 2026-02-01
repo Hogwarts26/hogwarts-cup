@@ -365,14 +365,6 @@ export default function HogwartsApp() {
         }
       }
     }
-
-    return { 
-      penalty, 
-      bonus, 
-      total: penalty + bonus, 
-      studyH 
-    };
-  };
     
     return { 
       penalty: Math.max(penalty, -5), 
