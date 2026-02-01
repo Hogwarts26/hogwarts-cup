@@ -924,9 +924,14 @@ export default function HogwartsApp() {
         <hr className="border-slate-200 mb-10" />
         
         {/* 타이틀: HOGWARTS SCHOOL과 동일한 Cinzel 폰트 적용 */}
-        <h2 className="text-2xl font-bold text-slate-800 tracking-[0.2em] mb-8 uppercase" 
-            style={{ fontFamily: "'Cinzel', serif" }}>
-          Dragon Cave
+        <h2 
+         className="text-2xl font-medium text-slate-800 uppercase" 
+         style={{ 
+         fontFamily: "'Cinzel', serif",
+         letterSpacing: '0.4em', // 👈 자간을 더 넓게 벌려서 고급스러운 로고 느낌을 줍니다.
+         wordSpacing: '0.2em'
+         }}
+>        Dragon Cave
         </h2>
 
         {/* 지역명 버튼: 3개씩 2줄 배치, 테이블 텍스트 스타일 통일 */}
