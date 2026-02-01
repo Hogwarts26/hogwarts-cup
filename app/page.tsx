@@ -591,7 +591,9 @@ export default function HogwartsApp() {
   // ==========================================
   // [20] 이름에서 이모지를 제거하는 유틸 함수
   // ==========================================
-  const formatDisplayName = (name: string) => name.replace(/[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, '').trim();
+  // 최신 유니코드 표준(u 플래그)을 사용하여 🪙 같은 최신 이모지도 완벽히 제거합니다.
+  const formatDisplayName = (name: string) => 
+    name.replace(/\p{Emoji_Presentation}|\p{Emoji}\uFE0F/gu, '').trim();
 
   return (
     <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 font-sans relative">
