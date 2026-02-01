@@ -235,26 +235,31 @@ export default function HogwartsApp() {
     }, 300);
   };
 
-  // [추가] 공부 시간에 따른 알 성장 단계 결정 로직
+  // [추가] 공부 시간에 따른 알 성장 단계 결정 로직 (방어 코드 강화)
   const getEvolutionImage = (baseEggUrl: string | null, totalMinutes: number = 0): string => {
-    if (!baseEggUrl) return "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+    // 빌드 타임 에러 방지: URL이 없으면 투명 이미지 반환
+    if (!baseEggUrl || typeof baseEggUrl !== 'string') {
+      return "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+    }
+
     try {
       const fileName = baseEggUrl.split('/').pop()?.split('.')[0] || ""; 
+      if (!fileName) return baseEggUrl;
+
       const prefix = fileName.substring(0, 2); 
       const eggNum = fileName.substring(2);
       
-      // DB 값이 '분' 단위이므로 60으로 나눠서 시간(Hours) 계산
       const totalHours = totalMinutes / 60; 
 
       let finalFileName = "";
       if (totalHours < 100) {
-        finalFileName = `${prefix}${eggNum}`; // 알
+        finalFileName = `${prefix}${eggNum}`;
       } else if (totalHours < 150) {
-        finalFileName = `${prefix}${eggNum}${eggNum}`; // 해츨링
+        finalFileName = `${prefix}${eggNum}${eggNum}`;
       } else if (totalHours < 200) {
-        finalFileName = `${prefix}${eggNum}${eggNum}${eggNum}`; // 날개
+        finalFileName = `${prefix}${eggNum}${eggNum}${eggNum}`;
       } else {
-        finalFileName = `${prefix}${eggNum}${eggNum}${eggNum}${eggNum}`; // 성체
+        finalFileName = `${prefix}${eggNum}${eggNum}${eggNum}${eggNum}`;
       }
 
       return `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${finalFileName}.webp`;
@@ -268,35 +273,35 @@ export default function HogwartsApp() {
   const [tempEgg, setTempEgg] = useState<string | null>(null);
   const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
 
-  // 2. 학생 데이터 상태 (이게 있어야 빨간 줄이 안 뜹니다)
+  // 2. 학생 데이터 상태
   const [studentData, setStudentData] = useState<any>(null);
-  // 로그인한 학생 ID 정의 (데이터가 있으면 그 ID를, 없으면 빈 값을 가짐)
   const loggedInStudentId = studentData?.student_id || ""; 
 
-// 3. 페이지 로드 시 Supabase에서 데이터 불러오기 (useEffect)
+  // 3. 페이지 로드 시 Supabase에서 데이터 불러오기
   useEffect(() => {
     const fetchInitialData = async () => {
-      // 현재 로그인된 유저 세션 가져오기
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        const { data, error } = await supabase
-          .from('student_master')
-          .select('selected_egg, total_study_time, student_id')
-          .eq('student_id', user.id) 
-          .single();
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          const { data, error } = await supabase
+            .from('student_master')
+            .select('selected_egg, total_study_time, student_id')
+            .eq('student_id', user.id) 
+            .single();
 
-        if (data && !error) {
-          // DB에 저장된 알 주소가 있으면 상태에 넣음 (새로고침 유지의 핵심)
-          setSelectedEgg(data.selected_egg); 
-          // 전체 데이터를 저장 (누적 공부 시간 포함)
-          setStudentData(data); 
+          if (data && !error) {
+            setSelectedEgg(data.selected_egg); 
+            setStudentData(data); 
+          }
         }
+      } catch (err) {
+        console.error("Initial Load Error:", err);
       }
     };
 
-    fetchInitialData(); // 함수를 정의한 후 호출해야 합니다.
-  }, []); // 의존성 배열은 여기서 닫힙니다.
+    fetchInitialData();
+  }, []);
 
   // ==========================================
   // [6] 초기 실행 (인증 확인 및 시계)
