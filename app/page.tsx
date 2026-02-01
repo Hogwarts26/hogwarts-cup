@@ -235,10 +235,68 @@ export default function HogwartsApp() {
     }, 300);
   };
 
-    // 알 선택시 팝업
-const [eggStep, setEggStep] = useState<number>(0);
-const [tempEgg, setTempEgg] = useState<string | null>(null);
-const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
+  // [추가] 공부 시간에 따른 알 성장 단계 결정 로직
+  const getEvolutionImage = (baseEggUrl: string | null, totalMinutes: number = 0): string => {
+    if (!baseEggUrl) return "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+    try {
+      const fileName = baseEggUrl.split('/').pop()?.split('.')[0] || ""; 
+      const prefix = fileName.substring(0, 2); 
+      const eggNum = fileName.substring(2);
+      
+      // DB 값이 '분' 단위이므로 60으로 나눠서 시간(Hours) 계산
+      const totalHours = totalMinutes / 60; 
+
+      let finalFileName = "";
+      if (totalHours < 100) {
+        finalFileName = `${prefix}${eggNum}`; // 알
+      } else if (totalHours < 150) {
+        finalFileName = `${prefix}${eggNum}${eggNum}`; // 해츨링
+      } else if (totalHours < 200) {
+        finalFileName = `${prefix}${eggNum}${eggNum}${eggNum}`; // 날개
+      } else {
+        finalFileName = `${prefix}${eggNum}${eggNum}${eggNum}${eggNum}`; // 성체
+      }
+
+      return `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${finalFileName}.webp`;
+    } catch (error) {
+      return baseEggUrl;
+    }
+  };
+
+  // 1. 드래곤 관련 상태 (useState)
+  const [eggStep, setEggStep] = useState<number>(0);
+  const [tempEgg, setTempEgg] = useState<string | null>(null);
+  const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
+
+  // 2. 학생 데이터 상태 (이게 있어야 빨간 줄이 안 뜹니다)
+  const [studentData, setStudentData] = useState<any>(null);
+  // 로그인한 학생 ID 정의 (데이터가 있으면 그 ID를, 없으면 빈 값을 가짐)
+  const loggedInStudentId = studentData?.student_id || ""; 
+
+// 3. 페이지 로드 시 Supabase에서 데이터 불러오기 (useEffect)
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      // 현재 로그인된 유저 세션 가져오기
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { data, error } = await supabase
+          .from('student_master')
+          .select('selected_egg, total_study_time, student_id')
+          .eq('student_id', user.id) 
+          .single();
+
+        if (data && !error) {
+          // DB에 저장된 알 주소가 있으면 상태에 넣음 (새로고침 유지의 핵심)
+          setSelectedEgg(data.selected_egg); 
+          // 전체 데이터를 저장 (누적 공부 시간 포함)
+          setStudentData(data); 
+        }
+      }
+    };
+
+    fetchInitialData(); // 함수를 정의한 후 호출해야 합니다.
+  }, []); // 의존성 배열은 여기서 닫힙니다.
 
   // ==========================================
   // [6] 초기 실행 (인증 확인 및 시계)
@@ -284,7 +342,7 @@ const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
   };
 
   // ==========================================
-  // [15] 주간 데이터 초기화 및 용 성장 데이터 누적
+  // [9] 주간 데이터 초기화 및 용 성장 데이터 누적
   // ==========================================
   const resetWeeklyData = async () => {
     // 1. 사용자 확인
@@ -980,22 +1038,24 @@ const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
         }}
       />
 
-      {/* ✨ 1. 최종 선택된 알 표시 (바닥 배치 버전) */}
+      {/* ✨ 1. 최종 선택된 드래곤 표시 (성장 로직 반영 버전) */}
 {selectedEgg && (currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (
   <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
     <div className="relative flex flex-col items-center translate-y-20 md:translate-y-28">
+      
+      {/* 바닥 그림자 */}
       <div className="absolute -bottom-0.5 w-10 h-2 md:w-12 md:h-2.5 bg-black/40 rounded-[100%] blur-[3px]" />
       
-      {/* 선택된 알 이미지: 아래쪽이 그림자에 닿는 느낌으로 배치 */}
+      {/* 선택된 드래곤 이미지: getEvolutionImage 함수로 단계별 이미지 출력 */}
       <img 
-        src={selectedEgg} 
-        alt="Selected Egg" 
+        // studentData.total_study_time은 int8 숫자이므로 기본값을 0으로 줍니다.
+        src={getEvolutionImage(selectedEgg, studentData?.total_study_time || 0)} 
+        alt="Growing Dragon" 
         className="relative w-14 h-14 md:w-18 md:h-18 object-contain drop-shadow-[0_4px_6px_rgba(0,0,0,0.2)]"
       />
     </div>
   </div>
 )}
-
       {/* ✨ 2. 지역별 알 선택 레이어 */}
       {!isFading && currentImageFile !== 'main.webp' && currentImageFile !== 'x.jpg' && (
         <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-8 px-4 z-20">
