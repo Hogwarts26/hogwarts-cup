@@ -919,12 +919,13 @@ export default function HogwartsApp() {
         </div>
       </div>
 
-{/* [Dragon Cave Section] */}
+{/* [26] 드래곤 키우기 */}
       <div className="mt-16 px-4 pb-24 text-left max-w-6xl mx-auto">
         <hr className="border-slate-200 mb-10" />
         
-        {/* 타이틀: 테이블 폰트 스타일 적용 */}
-        <h2 className="text-xl font-black text-slate-800 tracking-tighter mb-6 uppercase">
+        {/* 타이틀: HOGWARTS SCHOOL과 동일한 Cinzel 폰트 적용 */}
+        <h2 className="text-2xl font-bold text-slate-800 tracking-[0.2em] mb-8 uppercase" 
+            style={{ fontFamily: "'Cinzel', serif" }}>
           Dragon Cave
         </h2>
 
@@ -970,7 +971,7 @@ export default function HogwartsApp() {
         </div>
       </div>
 
-      {/* [26] 학생 개인 리포트 팝업 */}
+      {/* [27] 학생 개인 리포트 팝업 */}
         {selectedStudentReport && studentData[selectedStudentReport] && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
           <div className="bg-white p-5 md:px-10 md:py-8 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
