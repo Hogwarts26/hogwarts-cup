@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from './supabase';
 
 // ==========================================
-// [1] 기숙사컵 반짝이 스타일 및 애니메이션 설정
+// [1] 기숙사컵 스타일 및 애니메이션 설정
 // ==========================================
 const GLOVAL_STYLE = `
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap');
@@ -116,7 +116,7 @@ const studentData: { [key: string]: { house: string; emoji: string; color: strin
 };
 
 // ==========================================
-// [3] 기숙사 설정 및 공지사항 데이터
+// [3] 기숙사 설정 및 공지사항 내용
 // ==========================================
 const HOUSE_ORDER = ["슬리데린", "래번클로", "그리핀도르", "후플푸프"];
 const HOUSE_CONFIG = {
@@ -137,6 +137,7 @@ const HOUSE_NOTICES: { [key: string]: { title: string, content: string } } = {
 
 지혜는 공유할 때 더 빛나는 법입니다.`
   },
+
   "그리핀도르": {
     title: "망가진 마법 물품 수리 센터 운영",
     content: `그리핀도르 학우 여러분, 이번 주에 2등을 한 것은 조금 아쉽지만, 여러분이 보여준 용기 있는 도전들은 결코 헛되지 않았습니다. 특히 어둠의 마법 방어술 실습에서 두려움에 떨던 동료를 대신해 앞장섰던 학생들의 모습은 교수님을 감동시키기에 충분했습니다.
@@ -147,6 +148,7 @@ const HOUSE_NOTICES: { [key: string]: { title: string, content: string } } = {
 
 그리핀도르의 용기는 철저한 준비에서 시작된다는 것을 잊지 마십시오!`
   },
+
   "슬리데린": {
     title: "슬러그 클럽 초대권, 그리고 격조 높은 승리를 위하여!",
     content: `슬리데린 학우 여러분, 후플푸프의 예상을 뛰어넘는 활약에 잠시 자리를 내주었지만, 우리 기숙사의 실력은 여전히 독보적입니다. 슬러그혼 교수님께서는 특히 변신술 수업에서 보여준 고학년들의 정교한 마법 운용을 높이 평가하셨습니다.
@@ -157,6 +159,7 @@ const HOUSE_NOTICES: { [key: string]: { title: string, content: string } } = {
 
 1월 마지막 주 암호는 '순수한 승리'입니다.`
   },
+
   "후플푸프": {
     title: "주간 우승! 그리고 온실 파티 안내",
     content: `친애하는 후플푸프 학우 여러분! 우리가 해냈습니다! 1월의 마지막 주에 당당히 1위를 차지했습니다. 이번 주 마법약 수업에서 슬러그혼 교수님의 까다로운 질문에 차분히 대답해 가산점을 따낸 4학년 학생들과, 폭설 속에서도 올빼미장의 부엉이들을 함께 돌본 모든 학생의 따뜻한 마음이 모인 결과입니다. 스프라우트 교수님께서 여러분이 정말 자랑스럽다며 기뻐하고 계십니다.
@@ -253,7 +256,7 @@ export default function HogwartsApp() {
   };
 
   // ==========================================
-  // [9] 데이터 초기화 (Weekly Reset)
+  // [9] 주간 데이터 초기화 (Weekly Reset)
   // ==========================================
   const resetWeeklyData = async () => {
     if (!confirm("⚠️ 주의: 모든 학생의 이번 주 공부 기록을 초기화하시겠습니까?")) return;
@@ -282,8 +285,8 @@ export default function HogwartsApp() {
     setIsSaving(false);
   };
 
-// ==========================================
-  // [9.5] 월휴 초기화 (Monthly Reset)
+  // ==========================================
+  // [10] 월휴 초기화 (Monthly Reset)
   // ==========================================
   const resetMonthlyOff = async () => {
     if (!confirm("⚠️ 주의: 모든 학생의 월휴 개수를 초기화하시겠습니까?")) return;
@@ -314,8 +317,8 @@ export default function HogwartsApp() {
     setIsSaving(false);
   };
 
-// ==========================================
-  // [10] 점수 계산 및 리포트 연동 로직
+  // ==========================================
+  // [11] 점수 계산 및 리포트 연동 로직
   // ==========================================
   const calc = (r: any) => {
     if (!r) return { penalty: 0, bonus: 0, total: 0, studyH: 0 };
@@ -356,7 +359,9 @@ export default function HogwartsApp() {
     };
   };
 
-  // --- 리포트 팝업 실시간 데이터 연동 함수 ---
+  // ==========================================
+  // [12] 요약 리포트 팝업 데이터 연동 함수
+  // ==========================================
 
   const calculatePoints = (name: string) => {
     let bonus = 0;
@@ -438,7 +443,7 @@ export default function HogwartsApp() {
   };
 
   // ==========================================
-  // [11] 기숙사 랭킹 계산
+  // [13] 기숙사 랭킹 계산
   // ==========================================
   const houseRankings = useMemo(() => {
     return HOUSE_ORDER.map(house => {
@@ -455,8 +460,8 @@ export default function HogwartsApp() {
     }).sort((a, b) => b.finalPoint - a.finalPoint);
   }, [records]);
 
-// ==========================================
-  // [11.5] 배경음악(BGM) 로직
+  // ==========================================
+  // [14] 배경음악(BGM) 로직
   // ==========================================
   const [isPlaying, setIsPlaying] = useState(false);
   const [bgm] = useState(() => typeof Audio !== 'undefined' ? new Audio('/hedwig.mp3') : null);
@@ -472,8 +477,9 @@ export default function HogwartsApp() {
     }
     setIsPlaying(!isPlaying);
   };
-// ==========================================
-  // [12] 데이터 변경 및 저장 로직 (비밀번호, 목표, 학습 기록)
+
+  // ==========================================
+  // [15] 비밀번호 변경 및 저장 로직
   // ==========================================
   const handleChange = async (name: string, day: string, field: string, value: any) => {
     if (!isAdmin && field !== 'password' && field !== 'goal') return;
@@ -489,7 +495,9 @@ export default function HogwartsApp() {
     } 
     else if (field === 'goal') {
 
-// --- 오늘의 다짐(목표) 저장 구역 ---
+  // ==========================================
+  // [16] 목표 변경 및 저장 로직
+  // ==========================================
       const updatePayload = DAYS.map(d => {
         const existing = records.find(r => r.student_name === name && r.day_of_week === d) || {};
         return { 
@@ -514,7 +522,10 @@ export default function HogwartsApp() {
       }
     }
     else {
-      // --- 일반 학습 기록 수정 구역 (휴무, 지각, 시간 등) ---
+
+  // ==========================================
+  // [17] 일반 학습 기록 수정 구역 (휴무, 지각, 시간 등)
+  // ==========================================
       const newRecords = [...records];
       const idx = newRecords.findIndex(r => r.student_name === name && r.day_of_week === day);
       const current = newRecords[idx] || {};
@@ -539,7 +550,7 @@ export default function HogwartsApp() {
   };
 
 // ==========================================
-  // [13] 로그인 화면 (Render Login)
+  // [18] 로그인 화면 (Render Login)
   // ==========================================
   if (!isLoggedIn) {
     return (
@@ -567,8 +578,8 @@ export default function HogwartsApp() {
     );
   }
 
-// ==========================================
-  // [14] 메인 화면 데이터 준비 (학생 필터링 등)
+  // ==========================================
+  // [19] 메인 화면 데이터 준비 (학생 필터링 등)
   // ==========================================
   const displayList = isAdmin 
     ? Object.keys(studentData).sort((a, b) => {
@@ -578,10 +589,8 @@ export default function HogwartsApp() {
     : [selectedName];
 
   // ==========================================
-  // [15] 메인 화면 렌더링 (UI)
+  // [20] 이름에서 이모지를 제거하는 유틸 함수
   // ==========================================
-  
-  // 이름에서 이모지를 제거하는 유틸 함수
   const formatDisplayName = (name: string) => name.replace(/[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, '').trim();
 
   return (
@@ -611,7 +620,9 @@ export default function HogwartsApp() {
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
       `}</style>
       
-      {/* --- 마법 공지사항 팝업 구역 --- */}
+  // ==========================================
+  // [21] 기숙사별 공지사항 팝업
+  // ==========================================
       {selectedHouseNotice && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setSelectedHouseNotice(null)}>
           <div className="relative bg-[#f4e4bc] p-6 md:p-12 w-full max-w-2xl rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.3)] overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()} style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.05) 100%)' }}>
@@ -631,7 +642,9 @@ export default function HogwartsApp() {
         </div>
       )}
 
-      {/* --- 요약 확인 팝업 (전체 기숙사 요약) --- */}
+  // ==========================================
+  // [22] 관리자 화면 요약 확인 팝업 (전체 기숙사 요약)
+  // ==========================================
       {showSummary && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowSummary(false)}>
           <div className="bg-white rounded-[2rem] p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative" onClick={e => e.stopPropagation()}>
@@ -670,7 +683,9 @@ export default function HogwartsApp() {
         </div>
       )}
 
-{/* 음악 재생 버튼 */}
+  // ==========================================
+  // [23] 음악 재생 버튼
+  // ==========================================
             <button 
               onClick={toggleMusic} 
               className={`text-[10px] font-black px-3 py-1.5 rounded-full shadow-sm transition-all border-2 ${
@@ -705,7 +720,10 @@ export default function HogwartsApp() {
         </div>
       </div>
 
-      {/* --- 학생 개인 주간 요약 카드 --- */}
+     
+  // ==========================================
+  // [24] 학생 개인 주간 요약 팝업
+  // ==========================================
       {selectedStudentReport && studentData[selectedStudentReport] && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
           <div className="bg-white p-5 md:px-10 md:py-8 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
@@ -770,7 +788,9 @@ export default function HogwartsApp() {
         </div>
       )}
 
-{/* --- 월휴 리셋 버튼--- */}
+  // ==========================================
+  // [25] 관리자 화면 월휴 리셋 버튼
+  // ==========================================
 {isAdmin && (
   <button 
     onClick={resetMonthlyOff} 
@@ -780,13 +800,17 @@ export default function HogwartsApp() {
   </button>
 )}
 
-{/* --- 상단 기스크 점수판 --- */}
+  // ==========================================
+  // [26] 상단 기숙사 점수판
+  // ==========================================
       <div className="max-w-[1100px] mx-auto mb-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight">Hogwarts School</h2>
           <div className="flex gap-2">
 
-      {/* --- 학습 기록 메인 테이블 --- */}
+  // ==========================================
+  // [27] 학습 기록 메인 테이블
+  // ==========================================
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
         <div className="bg-slate-900 p-4 px-6 md:px-8 flex flex-col gap-2 text-white min-h-[60px]">
           <div className="flex justify-between items-center w-full">
