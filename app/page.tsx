@@ -240,15 +240,32 @@ export default function HogwartsApp() {
   // [6] 초기 실행 (인증 확인 및 시계)
   // ==========================================
   useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    // 1초마다 시간을 업데이트하되, 월요일 18:00 기준 로직을 적용합니다.
+    const timer = setInterval(() => {
+      const now = new Date();
+      const day = now.getDay();
+      const hours = now.getHours();
+
+      // 월요일(1)이면서 오후 6시(18시) 이전인 경우 하루 전으로 조정
+      if (day === 1 && hours < 18) {
+        const adjusted = new Date(now);
+        adjusted.setDate(now.getDate() - 1);
+        setCurrentTime(adjusted);
+      } else {
+        setCurrentTime(now);
+      }
+    }, 1000);
+
     const saved = localStorage.getItem('hg_auth');
     if (saved) {
       const { name, admin } = JSON.parse(saved);
-      setSelectedName(name); setIsAdmin(admin); setIsLoggedIn(true);
+      setSelectedName(name); 
+      setIsAdmin(admin); 
+      setIsLoggedIn(true);
     }
     return () => clearInterval(timer);
   }, []);
-
+  
   // ==========================================
   // [7] 데이터 불러오기 (Supabase 연결)
   // ==========================================
