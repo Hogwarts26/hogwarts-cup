@@ -92,7 +92,7 @@ const studentData: { [key: string]: { house: string; emoji: string; color: strin
   "🐡복어": { house: "슬리데린", emoji: "🐡", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🎂케이크": { house: "슬리데린", emoji: "🎂", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🐻곰돌": { house: "슬리데린", emoji: "🐻", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
-  "🍮푸딩": { house: "래번클로", emoji: "🍮", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
+  "🪙코인": { house: "래번클로", emoji: "🪙", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
   "💫별": { house: "래번클로", emoji: "💫", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
   "🍪쿠키": { house: "래번클로", emoji: "🍪", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
   "🐯호랑": { house: "래번클로", emoji: "🐯", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
@@ -212,6 +212,28 @@ export default function HogwartsApp() {
   const [dailyGoal, setDailyGoal] = useState("");
   const [isEditingGoal, setIsEditingGoal] = useState(false);
 
+  // [상태 관리] Dragon Cave 이미지 및 애니메이션
+  const [currentImageFile, setCurrentImageFile] = useState('x.jpg');
+  const [isFading, setIsFading] = useState(false);
+
+  const handleRegionClick = (regionName: string) => {
+    if (isFading || currentImageFile === `${regionName}.webp`) return;
+    setIsFading(true);
+    setTimeout(() => {
+      setCurrentImageFile(`${regionName}.webp`);
+      setTimeout(() => { setIsFading(false); }, 50);
+    }, 300);
+  };
+
+  const handleResetImage = () => {
+    if (isFading || currentImageFile === 'x.jpg') return;
+    setIsFading(true);
+    setTimeout(() => {
+      setCurrentImageFile('x.jpg');
+      setTimeout(() => { setIsFading(false); }, 50);
+    }, 300);
+  };
+
   // ==========================================
   // [6] 초기 실행 (인증 확인 및 시계)
   // ==========================================
@@ -256,33 +278,87 @@ export default function HogwartsApp() {
   };
 
   // ==========================================
-  // [9] 주간 데이터 초기화 (Weekly Reset)
+  // [15] 주간 데이터 초기화 및 용 성장 데이터 누적
   // ==========================================
   const resetWeeklyData = async () => {
-    if (!confirm("⚠️ 주의: 모든 학생의 이번 주 공부 기록을 초기화하시겠습니까?")) return;
-    if (!confirm("정말로 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) return;
+    // 1. 사용자 확인
+    if (!confirm("⚠️ 이번 주 기록을 합산하여 용을 성장시키고 표를 초기화하시겠습니까?")) return;
+    if (!confirm("정말로 진행하시겠습니까? 합산된 공부 시간은 되돌릴 수 없습니다.")) return;
+
     setIsSaving(true);
-    const names = Object.keys(studentData);
-    const resetData = [];
-    for (const name of names) {
-      for (const day of DAYS) {
-        const existing = records.find(r => r.student_name === name && r.day_of_week === day) || {};
-        resetData.push({
-          student_name: name, 
-          day_of_week: day, 
-          off_type: '-', 
-          is_late: false, 
-          am_3h: false, 
-          study_time: '',
-          password: existing.password || '0000', 
-          monthly_off_count: existing.monthly_off_count ?? 4,
-          goal: existing.goal || '' 
+    try {
+      const names = Object.keys(studentData);
+
+      // --- [단계 1] 용 성장을 위한 공부 시간 합산 및 마스터 테이블 누적 ---
+      const updatePromises = names.map(async (name) => {
+        // 현재 화면(records 상태값)에서 해당 학생의 월~일 기록 필터링
+        const studentRecords = records.filter(r => r.student_name === name);
+        
+        // 이번 주 공부 시간(HH:mm)을 '분' 단위로 합산
+        let weeklyMinutes = 0;
+        studentRecords.forEach(r => {
+          const [h, m] = (r.study_time || "0:00").split(':').map(Number);
+          if (!isNaN(h) && !isNaN(m)) {
+            weeklyMinutes += (h * 60) + m;
+          }
         });
+
+        // 합산할 시간이 있는 경우에만 DB 업데이트 실행
+        if (weeklyMinutes > 0) {
+          // student_master 테이블에서 현재 누적 시간을 먼저 가져옴
+          const { data: masterData } = await supabase
+            .from('student_master')
+            .select('total_study_time')
+            .eq('student_name', name)
+            .maybeSingle();
+
+          const newTotal = (masterData?.total_study_time || 0) + weeklyMinutes;
+
+          // 마스터 테이블에 누적된 시간 업데이트
+          return supabase
+            .from('student_master')
+            .update({ total_study_time: newTotal })
+            .eq('student_name', name);
+        }
+      });
+
+      // 모든 학생의 누적 업데이트가 끝날 때까지 대기
+      await Promise.all(updatePromises);
+
+      // --- [단계 2] 기존 주간 기록표(study_records) 초기화 (기존 로직) ---
+      const resetData = [];
+      for (const name of names) {
+        for (const day of DAYS) {
+          const existing = records.find(r => r.student_name === name && r.day_of_week === day) || {};
+          resetData.push({
+            student_name: name, 
+            day_of_week: day, 
+            off_type: '-', 
+            is_late: false, 
+            am_3h: false, 
+            study_time: '', // 시간 초기화
+            password: existing.password || '0000', 
+            monthly_off_count: existing.monthly_off_count ?? 4,
+            goal: existing.goal || '' 
+          });
+        }
       }
+
+      // DB의 주간 기록 테이블 초기화 업데이트
+      const { error } = await supabase.from('study_records').upsert(resetData, { onConflict: 'student_name,day_of_week' });
+      
+      if (!error) { 
+        setRecords(resetData); 
+        alert("이번 주 기록이 용의 먹이로 전환되었으며, 표가 초기화되었습니다!"); 
+      } else {
+        throw error;
+      }
+    } catch (err) {
+      console.error("Reset Error:", err);
+      alert("❌ 처리 중 오류가 발생했습니다. DB 연결 상태를 확인해주세요.");
+    } finally {
+      setIsSaving(false);
     }
-    const { error } = await supabase.from('study_records').upsert(resetData, { onConflict: 'student_name,day_of_week' });
-    if (!error) { setRecords(resetData); alert("✅ 기록이 초기화되었습니다."); }
-    setIsSaving(false);
   };
 
   // ==========================================
@@ -695,9 +771,9 @@ export default function HogwartsApp() {
               {isPlaying ? '🎵' : '🔇'}
             </button>
             {isAdmin && <button onClick={() => setShowSummary(true)} className="text-[10px] font-black text-white bg-indigo-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-indigo-700">요약</button>}
-            {isAdmin && <button onClick={resetWeeklyData} className="text-[10px] font-black text-white bg-red-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-red-700">주간 리셋</button>}
+            {isAdmin && <button onClick={resetWeeklyData} className="text-[10px] font-black text-white bg-red-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-red-700">W re</button>}
             {isAdmin && (
-              <button onClick={resetMonthlyOff} className="text-[10px] font-black text-white bg-orange-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-orange-700">월휴 리셋</button>
+              <button onClick={resetMonthlyOff} className="text-[10px] font-black text-white bg-orange-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-orange-700">M re</button>
             )}
             <button onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full shadow-sm">Logout</button>
           </div>
@@ -839,6 +915,51 @@ export default function HogwartsApp() {
               })}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* [Dragon Cave Section] */}
+      <div className="mt-20 px-4 pb-24 text-left max-w-6xl mx-auto">
+        <hr className="border-slate-200 mb-12" />
+        <h2 className="text-4xl font-bold text-slate-800 tracking-wider mb-8" style={{ fontFamily: "'Cinzel', serif" }}>
+          Dragon Cave
+        </h2>
+
+        <div className="flex flex-wrap gap-6 mb-10">
+          {['volcano', 'jungle', 'forest', 'desert', 'coast', 'alpine'].map((region) => (
+            <button
+              key={region}
+              onClick={() => handleRegionClick(region)}
+              className={`text-lg font-medium tracking-[0.2em] transition-colors uppercase
+                ${currentImageFile === `${region}.webp` 
+                  ? 'text-slate-900 border-b-2 border-slate-900 pb-1 cursor-default'
+                  : 'text-slate-400 hover:text-slate-700'}`}
+              style={{ fontFamily: "'Cinzel', serif" }}
+            >
+              {region}
+            </button>
+          ))}
+          <button
+            onClick={handleResetImage}
+            className={`text-lg font-medium tracking-[0.2em] transition-colors uppercase ml-auto
+              ${currentImageFile === 'x.jpg' ? 'text-slate-900 border-b-2 border-slate-900 pb-1' : 'text-slate-400 hover:text-slate-700'}`}
+            style={{ fontFamily: "'Cinzel', serif" }}
+          >
+            Reset
+          </button>
+        </div>
+
+        <div className="w-full rounded-xl overflow-hidden shadow-xl border border-slate-200 bg-slate-50 relative aspect-video">
+          <img 
+            src={`https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${currentImageFile}`}
+            alt="Dragon Habitat"
+            className={`w-full h-full object-cover transition-opacity duration-300 ease-in-out ${isFading ? 'opacity-0' : 'opacity-100'}`}
+            onError={(e) => {
+              // 💡 핵심 수정 부분: e.currentTarget을 이미지 엘리먼트로 정의하여 src 에러 해결
+              const target = e.currentTarget as HTMLImageElement;
+              target.src = "https://via.placeholder.com/1200x675?text=Check+GitHub+Public+Folder";
+            }}
+          />
         </div>
       </div>
 
