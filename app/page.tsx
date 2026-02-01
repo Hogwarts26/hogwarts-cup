@@ -449,15 +449,18 @@ export default function HogwartsApp() {
   };
 
   const getWeeklyDateRange = () => {
-    const today = new Date();
+    const today = currentTime; 
     const day = today.getDay();
     const diff = today.getDate() - (day === 0 ? 6 : day - 1);
-    const monday = new Date(new Date().setDate(diff));
-    const sunday = new Date(new Date().setDate(diff + 6));
-    // 출력 형식 수정: M.D - M.D -> M월 D일 ~ M월 D일
+    
+    // 기준일(today)로부터 계산된 월요일과 일요일 설정
+    const monday = new Date(new Date(today).setDate(diff));
+    const sunday = new Date(new Date(today).setDate(diff + 6));
+    
+    // 출력 형식: M월 D일 ~ M월 D일
     return `${monday.getMonth() + 1}월 ${monday.getDate()}일 ~ ${sunday.getMonth() + 1}월 ${sunday.getDate()}일`;
   };
-
+  
   const getDayDate = (targetDay: string) => {
     const dayIdx = DAYS.indexOf(targetDay);
     const today = new Date();
@@ -888,7 +891,7 @@ export default function HogwartsApp() {
         </div>
       </div>
 
-      {/* [26] 학생 개인 리포트 팝업 */}
+{/* [26] 학생 개인 리포트 팝업 */}
         {selectedStudentReport && studentData[selectedStudentReport] && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
           <div className="bg-white p-5 md:px-10 md:py-8 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
@@ -915,6 +918,7 @@ export default function HogwartsApp() {
                 </div>
               </div>
             </div>
+            {/* 상단 날짜 범위 표시: getWeeklyDateRange() 내부에서 currentTime을 쓰도록 수정되어 있어야 함 */}
             <div className="text-xl md:text-2xl font-black text-black mb-4 text-center tracking-tight">
               {getWeeklyDateRange()}
             </div>
@@ -934,6 +938,7 @@ export default function HogwartsApp() {
                                 : 'text-slate-400';
                 return (
                   <div key={day} className={`p-2.5 flex flex-col items-center justify-between h-24 rounded-2xl border shadow-sm transition-all ${cellClass}`}>
+                    {/* 각 요일 날짜 표시: getDayDate() 내부에서 currentTime을 쓰도록 수정되어 있어야 함 */}
                     <div className={`text-[10px] font-bold ${textClass}`}>{getDayDate(day)} {day}</div>
                     <div className="text-[18px] font-black text-slate-800">{rec.study_time || "0:00"}</div>
                     <div className={`text-[9px] font-black h-3 leading-none uppercase ${textClass}`}>
