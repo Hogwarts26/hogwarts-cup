@@ -283,6 +283,38 @@ export default function HogwartsApp() {
   };
 
 // ==========================================
+  // [9.5] 월휴 초기화 (Monthly Reset)
+  // ==========================================
+  const resetMonthlyOff = async () => {
+    if (!confirm("⚠️ 주의: 모든 학생의 월휴 개수를 초기화하시겠습니까?")) return;
+    setIsSaving(true);
+
+    const names = Object.keys(studentData);
+    const resetData = [];
+
+    // 현재 records에 있는 기존 데이터를 바탕으로 monthly_off_count만 4로 변경
+    for (const name of names) {
+      for (const day of DAYS) {
+        const existing = records.find(r => r.student_name === name && r.day_of_week === day) || {};
+        resetData.push({
+          ...existing, // 기존의 다른 데이터(비번, 시간 등)는 그대로 유지
+          student_name: name,
+          day_of_week: day,
+          monthly_off_count: 4 // 월휴만 4로 리셋
+        });
+      }
+    }
+
+    const { error } = await supabase.from('study_records').upsert(resetData, { onConflict: 'student_name,day_of_week' });
+    
+    if (!error) { 
+      setRecords(resetData); 
+      alert("✅ 월휴 개수가 초기화되었습니다."); 
+    }
+    setIsSaving(false);
+  };
+
+// ==========================================
   // [10] 점수 계산 및 리포트 연동 로직
   // ==========================================
   const calc = (r: any) => {
