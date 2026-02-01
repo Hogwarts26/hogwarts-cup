@@ -740,6 +740,7 @@ export default function HogwartsApp() {
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight">Hogwarts School</h2>
           <div className="flex gap-2">
+
 {/* 음악 재생 버튼 추가 */}
             <button 
               onClick={toggleMusic} 
@@ -774,6 +775,15 @@ export default function HogwartsApp() {
           })}
         </div>
       </div>
+
+{isAdmin && (
+  <button 
+    onClick={resetMonthlyOff} 
+    className="text-[10px] font-black text-white bg-orange-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-orange-700 transition-colors"
+  >
+    Monthly Reset
+  </button>
+)}
 
       {/* --- 학습 기록 메인 테이블 --- */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
