@@ -474,21 +474,25 @@ export default function HogwartsApp() {
     const monday = new Date(new Date(today).setDate(diff));
     const sunday = new Date(new Date(today).setDate(diff + 6));
     
-    // 출력 형식: M월 D일 ~ M월 D일
+   // 출력 형식: M월 D일 ~ M월 D일
     return `${monday.getMonth() + 1}월 ${monday.getDate()}일 ~ ${sunday.getMonth() + 1}월 ${sunday.getDate()}일`;
   };
-  
+
   const getDayDate = (targetDay: string) => {
     const dayIdx = DAYS.indexOf(targetDay);
-    const today = new Date();
+    // ✅ 진짜 오늘 날짜(new Date()) 대신, 조정된 시계(currentTime)를 사용합니다.
+    const today = currentTime; 
     const currentDay = today.getDay();
     const diff = today.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + dayIdx;
-    const target = new Date(new Date().setDate(diff));
+    
+    // ✅ target 계산 시에도 기준이 되는 today(currentTime)를 넣어줘야 정확합니다.
+    const target = new Date(new Date(today).setDate(diff));
     return `${target.getMonth() + 1}.${target.getDate()}`;
   };
 
   const getMonthAccumulatedTime = (name: string) => {
-    const currentMonth = new Date().getMonth() + 1;
+    // ✅ 여기도 currentTime을 기준으로 월을 판단합니다.
+    const currentMonth = currentTime.getMonth() + 1; 
     let totalMinutes = 0;
     
     // records 배열에 있는 모든 study_time을 합산하여 월 누적치 생성
