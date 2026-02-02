@@ -649,18 +649,16 @@ export default function HogwartsApp() {
       })
     : [selectedName];
 
-  // [20] 모든 종류의 이모지 및 특수문자를 제거하여 이름만 남김
-  const formatDisplayName = (name: string) => {
-    if (!name) return "";
+ // [20] 모든 종류의 이모지 및 특수문자를 제거하여 이름만 남김 (빌드 오류 방지 버전)
+  const formatDisplayName = (name: any): string => {
+    if (!name || typeof name !== 'string') return "";
     try {
-      // 한글, 영문, 숫자, 공백을 제외한 모든 문자(이모지 포함)를 제거
+      // 한글, 영문, 숫자, 공백만 남기고 모두 제거
       return name.replace(/[^ㄱ-ㅎㅏ-ㅣ가-힣a-zA-Z0-9 ]/g, "").trim();
     } catch (e) {
-      return name; // 에러 발생 시 원본 반환 (안전장치)
+      return String(name); 
     }
   };
-
-  return (
       
 {/*[21] 기숙사별 공지사항 팝업 */}
       {selectedHouseNotice && (
