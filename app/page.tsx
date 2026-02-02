@@ -191,7 +191,7 @@ const sortKorean = (a: string, b: string) => {
 // [5] 메인 App 컴포넌트 및 상태(State) 관리
 // ==========================================
 export default function HogwartsApp() {
-  // 월요일 18:00 기준 날짜 조정 함수 ---
+  // --- [추가] 월요일 18:00 기준 날짜 조정 함수 ---
   const getAdjustedToday = () => {
     const now = new Date();
     const day = now.getDay();    // 0(일), 1(월), 2(화)...
@@ -213,7 +213,7 @@ export default function HogwartsApp() {
   const [records, setRecords] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   
-  // 초기값을 조정된 날짜로 설정
+  // ✅ [수정] 초기값을 조정된 날짜로 설정
   const [currentTime, setCurrentTime] = useState(getAdjustedToday());
   
   const [selectedHouseNotice, setSelectedHouseNotice] = useState<string | null>(null);
@@ -222,10 +222,10 @@ export default function HogwartsApp() {
   const [dailyGoal, setDailyGoal] = useState("");
   const [isEditingGoal, setIsEditingGoal] = useState(false);
 
-  // 실시간 시간 업데이트 시에도 조정 로직 유지 ---
+  // --- [추가] 실시간 시간 업데이트 시에도 조정 로직 유지 ---
   useEffect(() => {
     const timer = setInterval(() => {
-  // 매분/매초 업데이트 시에도 18:00 기준을 체크하여 반영
+      // 매분/매초 업데이트 시에도 18:00 기준을 체크하여 반영
       setCurrentTime(getAdjustedToday());
     }, 60000); // 1분마다 체크
     return () => clearInterval(timer);
@@ -235,7 +235,7 @@ export default function HogwartsApp() {
   // [6] 초기 실행 (인증 확인 및 시계)
   // ==========================================
   useEffect(() => {
-    // 1초마다 시간을 업데이트하되, 월요일 18:00 기준 로직을 적용
+    // 1초마다 시간을 업데이트하되, 월요일 18:00 기준 로직을 적용합니다.
     const timer = setInterval(() => {
       const now = new Date();
       const day = now.getDay();
@@ -292,7 +292,7 @@ export default function HogwartsApp() {
   };
 
   // ==========================================
-  // [9] 주간 데이터 초기화
+  // [9] 주간 데이터 초기화 (Weekly Reset)
   // ==========================================
   const resetWeeklyData = async () => {
     if (!confirm("⚠️ 주의: 모든 학생의 이번 주 공부 기록을 초기화하시겠습니까?")) return;
@@ -317,12 +317,12 @@ export default function HogwartsApp() {
       }
     }
     const { error } = await supabase.from('study_records').upsert(resetData, { onConflict: 'student_name,day_of_week' });
-    if (!error) { setRecords(resetData); alert("기록이 초기화되었습니다."); }
+    if (!error) { setRecords(resetData); alert("✅ 기록이 초기화되었습니다."); }
     setIsSaving(false);
   };
 
   // ==========================================
-  // [10] 월휴 초기화
+  // [10] 월휴 초기화 (Monthly Reset)
   // ==========================================
   const resetMonthlyOff = async () => {
     if (!confirm("⚠️ 주의: 모든 학생의 월휴 개수를 초기화하시겠습니까?")) return;
@@ -348,12 +348,12 @@ export default function HogwartsApp() {
     
     if (!error) { 
       setRecords(resetData); 
-      alert("월휴 개수가 초기화되었습니다."); 
+      alert("✅ 월휴 개수가 초기화되었습니다."); 
     }
     setIsSaving(false);
   };
 
-  // ==========================================
+// ==========================================
   // [11] 점수 계산 및 리포트 연동 로직
   // ==========================================
   const calc = (r: any) => {
@@ -421,7 +421,7 @@ export default function HogwartsApp() {
     let bonus = 0;
     let penalty = 0;
     let usedWeeklyOff = 0;   // 주간 휴무 (1.5 기준)
-    // usedMonthlyOff 변수는 이제 직접적인 연동을 위해 사용하지 않거나, 초기화만 유지
+    // usedMonthlyOff 변수는 이제 직접적인 연동을 위해 사용하지 않거나, 초기화만 유지합니다.
 
     const studentRecords = records.filter(r => r.student_name === name);
 
@@ -435,8 +435,8 @@ export default function HogwartsApp() {
       if (['주휴', '늦휴'].includes(r.off_type)) usedWeeklyOff += 1.0;
     });
 
-    // 잔여 월휴 연동: 
-    // 테이블 우측의 월휴 동그라미(monthly_off_count) 값을 직접 가져옴옴
+    // [수정 요청 사항 반영] 잔여 월휴 연동: 
+    // 테이블 우측의 월휴 동그라미(monthly_off_count) 값을 직접 가져옵니다.
     const monRec = studentRecords.find(r => r.day_of_week === '월');
     const offCount = monRec?.monthly_off_count ?? 4;
 
@@ -475,16 +475,18 @@ export default function HogwartsApp() {
 
   const getDayDate = (targetDay: string) => {
     const dayIdx = DAYS.indexOf(targetDay);
-    // 진짜 오늘 날짜(new Date()) 대신, 조정된 시계(currentTime)를 사용
+    // ✅ 진짜 오늘 날짜(new Date()) 대신, 조정된 시계(currentTime)를 사용합니다.
     const today = currentTime; 
     const currentDay = today.getDay();
     const diff = today.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + dayIdx;
     
+    // ✅ target 계산 시에도 기준이 되는 today(currentTime)를 넣어줘야 정확합니다.
     const target = new Date(new Date(today).setDate(diff));
     return `${target.getMonth() + 1}.${target.getDate()}`;
   };
 
   const getMonthAccumulatedTime = (name: string) => {
+    // ✅ 여기도 currentTime을 기준으로 월을 판단합니다.
     const currentMonth = currentTime.getMonth() + 1; 
     let totalMinutes = 0;
     
@@ -572,12 +574,12 @@ export default function HogwartsApp() {
       const { error } = await supabase.from('study_records').upsert(updatePayload, { onConflict: 'student_name,day_of_week' });
       
       if (!error) {
-        // 전체 records에서 해당 학생의 모든 요일 목표를 value로 통일
+        // [수정/저장 반영] 전체 records에서 해당 학생의 모든 요일 목표를 value로 통일
         setRecords(prev => prev.map(r => r.student_name === name ? { ...r, goal: value } : r));
         
-        // UI 상태 동기화
+        // UI 상태 동기화 (저장 버튼 클릭 후 입력 모드 해제 등)
         setDailyGoal(value);
-        setIsEditingGoal(false);
+        setIsEditingGoal(false); // 수정 완료 후 버튼 상태를 다시 '수정'으로 변경하기 위함
       }
     }
     else {
@@ -608,7 +610,7 @@ export default function HogwartsApp() {
     setIsSaving(false);
   };
 
-  // ==========================================
+// ==========================================
   // [18] 로그인 화면 (Render Login)
   // ==========================================
   if (!isLoggedIn) {
@@ -638,7 +640,7 @@ export default function HogwartsApp() {
   }
 
   // ==========================================
-  // [19] 메인 화면 데이터
+  // [19] 메인 화면 데이터 준비 (학생 필터링 등)
   // ==========================================
   const displayList = isAdmin 
     ? Object.keys(studentData).sort((a, b) => {
@@ -648,19 +650,40 @@ export default function HogwartsApp() {
     : [selectedName];
 
   // ==========================================
-  // [20] 이름에서 이모지를 제거하는 유틸 함수
+  // [20] 이름에서 이모지를 제거하는 유틸 함수 (호환성 버전)
   // ==========================================
   const formatDisplayName = (name: string) => {
     if (!name) return "";
-    try {
-      return name.replace(/[^ㄱ-ㅎㅏ-ㅣ가-힣a-zA-Z0-9 ]/g, "").trim() || name;
-    } catch (e) {
-      return name; 
-    }
+    // \p{...} 대신 가장 넓은 범위의 이모지 유니코드 대역을 지정하여 🪙까지 잡아냅니다.
+    return name.replace(/[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]|\uD83E[\uAD00-\uADFF]/g, '').trim();
   };
 
   return (
     <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 font-sans relative">
+      <style>{`
+        ${GLOVAL_STYLE}
+        .late-checkbox {
+          appearance: none;
+          -webkit-appearance: none;
+          width: 1.25rem;
+          height: 1.25rem;
+          border: 2px solid #cbd5e1;
+          border-radius: 50%;
+          cursor: pointer;
+          transition: background 0.2s, border-color 0.2s;
+          position: relative;
+          background: white;
+          outline: none;
+          margin: 0 auto;
+          display: block;
+        }
+        .late-checkbox:checked { background: #f59e0b; border-color: #f59e0b; }
+        .late-checkbox:disabled { cursor: default; }
+        .winner-sparkle { box-shadow: 0 0 20px rgba(250, 204, 21, 0.4); }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+      `}</style>
       
 {/*[21] 기숙사별 공지사항 팝업 */}
       {selectedHouseNotice && (
@@ -682,7 +705,7 @@ export default function HogwartsApp() {
         </div>
       )}
 
- {/*[22] 관리자 화면 요약 확인 팝업 */}
+ {/*[22] 관리자 화면 요약 확인 팝업 (전체 기숙사 요약) */}
       {showSummary && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowSummary(false)}>
           <div className="bg-white rounded-[2rem] p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative" onClick={e => e.stopPropagation()}>
@@ -721,7 +744,7 @@ export default function HogwartsApp() {
         </div>
       )}
 
- {/*[23] 상단 헤더 및 기숙사 점수판 구역 */}
+      {/*[23] 상단 헤더 및 기숙사 점수판 구역 */}
       <div className="max-w-[1100px] mx-auto mb-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight">Hogwarts School</h2>
@@ -744,6 +767,7 @@ export default function HogwartsApp() {
             <button onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full shadow-sm">Logout</button>
           </div>
         </div>
+
         <div className="grid grid-cols-4 gap-1.5 md:gap-4">
           {houseRankings.map((item, idx) => {
             const config = (HOUSE_CONFIG as any)[item.house];
@@ -763,8 +787,6 @@ export default function HogwartsApp() {
         </div>
       </div>
 
-
-      
       {/* [25] 학습 기록 메인 테이블 및 목표 */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
         <div className="bg-slate-900 p-4 px-6 md:px-8 flex flex-col gap-2 text-white min-h-[60px]">
