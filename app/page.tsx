@@ -649,11 +649,18 @@ export default function HogwartsApp() {
       })
     : [selectedName];
 
-  // [20] 이름 출력 시 이모지 중복 방지
+  // [20] 모든 종류의 이모지 및 특수문자를 제거하여 이름만 남김
   const formatDisplayName = (name: string) => {
     if (!name) return "";
-    return name.split('🪙')[0].trim();
+    try {
+      // 한글, 영문, 숫자, 공백을 제외한 모든 문자(이모지 포함)를 제거
+      return name.replace(/[^ㄱ-ㅎㅏ-ㅣ가-힣a-zA-Z0-9 ]/g, "").trim();
+    } catch (e) {
+      return name; // 에러 발생 시 원본 반환 (안전장치)
+    }
   };
+
+  return (
       
 {/*[21] 기숙사별 공지사항 팝업 */}
       {selectedHouseNotice && (
