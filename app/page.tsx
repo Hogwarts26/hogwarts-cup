@@ -17,86 +17,65 @@ const GLOVAL_STYLE = `
   /* 폰트 강조가 필요한 serif 클래스에 Cinzel 적용 */
   .font-serif { font-family: 'Cinzel', serif; }
 
-/* Pixie Dust 효과 - 1등 기숙사 강조 */
+  /* Pixie Dust 효과 */
   .winner-sparkle {
     position: relative;
     overflow: hidden;
-    animation: winner-glow 2s infinite alternate ease-in-out;
-    border: 3px solid #ffd700 !important; /* 금색 테두리 강제 적용 */
-    z-index: 10;
+    animation: winner-glow 2s infinite alternate;
   }
 
   .winner-sparkle::before, .winner-sparkle::after {
-    content: ''; /* 필수 */
+    content: '';
     position: absolute;
-    inset: -100px; /* 범위를 더 넓게 */
+    inset: -50px;
     background-image: 
-      radial-gradient(2px 2px at 20px 30px, #ffffff, rgba(255,255,255,0)),
-      radial-gradient(3px 3px at 50px 80px, #ffffff, rgba(255,255,255,0)),
-      radial-gradient(2px 2px at 90px 20px, #ffd700, rgba(255,255,255,0)),
-      radial-gradient(3px 3px at 130px 60px, #ffffff, rgba(255,255,255,0)),
-      radial-gradient(2px 2px at 160px 110px, #ffd700, rgba(255,255,255,0)),
-      radial-gradient(2.5px 2.5px at 210px 40px, #ffffff, rgba(255,255,255,0)),
-      radial-gradient(3px 3px at 240px 100px, #ffd700, rgba(255,255,255,0)),
-      radial-gradient(2px 2px at 280px 20px, #ffffff, rgba(255,255,255,0));
-    background-size: 200px 150px; /* 입자 밀도를 높임 */
-    background-repeat: repeat; /* 별가루가 꽉 차게 */
+      radial-gradient(1.5px 1.5px at 20px 30px, white, rgba(255,255,255,0)),
+      radial-gradient(2px 2px at 50px 80px, white, rgba(255,255,255,0)),
+      radial-gradient(1px 1px at 90px 20px, white, rgba(255,255,255,0)),
+      radial-gradient(2px 2px at 130px 60px, white, rgba(255,255,255,0)),
+      radial-gradient(1.5px 1.5px at 160px 110px, white, rgba(255,255,255,0)),
+      radial-gradient(1px 1px at 210px 40px, white, rgba(255,255,255,0)),
+      radial-gradient(2px 2px at 240px 100px, white, rgba(255,255,255,0)),
+      radial-gradient(1.5px 1.5px at 280px 20px, white, rgba(255,255,255,0));
+    background-size: 300px 150px;
     opacity: 0;
     pointer-events: none;
     z-index: 5;
   }
 
   .winner-sparkle::before {
-    animation: pixie-dust 4s infinite linear;
+    animation: pixie-dust 3s infinite linear;
   }
 
   .winner-sparkle::after {
-    background-position: 100px 75px;
-    animation: pixie-dust 6s infinite linear reverse;
+    background-position: 150px 75px;
+    animation: pixie-dust 4s infinite linear reverse;
   }
 
   @keyframes pixie-dust {
-    0% { transform: translateY(0) scale(1); opacity: 0; }
-    20% { opacity: 0.9; }
-    50% { transform: translateY(-20px) scale(1.1); opacity: 1; filter: brightness(1.8) blur(0.3px); }
-    80% { opacity: 0.9; }
-    100% { transform: translateY(-40px) scale(1.2); opacity: 0; }
+    0% { transform: scale(0.8) translate(0, 0); opacity: 0; }
+    20% { opacity: 0.8; }
+    50% { transform: scale(1.1) translate(5px, -10px); opacity: 1; filter: brightness(1.5) blur(0.5px); }
+    80% { opacity: 0.8; }
+    100% { transform: scale(1.2) translate(10px, -20px); opacity: 0; }
   }
 
   @keyframes winner-glow {
-    from { 
-      box-shadow: 0 0 15px rgba(255, 215, 0, 0.4), inset 0 0 8px rgba(255, 255, 255, 0.2);
-      border-color: rgba(255, 215, 0, 0.6);
-    }
-    to { 
-      box-shadow: 0 0 40px rgba(255, 215, 0, 0.8), inset 0 0 25px rgba(255, 255, 255, 0.5);
-      border-color: rgba(255, 215, 0, 1);
-    }
-  }
-  
- /* 테이블 헤더 및 모든 셀 정중앙 정렬 */
-  table th, table td {
-    text-align: center !important;
-    vertical-align: middle !important;
+    from { box-shadow: 0 0 15px rgba(255, 215, 0, 0.4), inset 0 0 8px rgba(255, 255, 255, 0.1); }
+    to { box-shadow: 0 0 35px rgba(255, 215, 0, 0.7), inset 0 0 20px rgba(255, 255, 255, 0.3); }
   }
 
-  /* 테이블 내 드롭다운(select) 및 입력창 중앙 정렬 */
-  table select, table input {
+  /* 테이블 내 휴무 드롭다운만 정중앙 정렬 */
+  table select {
     appearance: none;
     -webkit-appearance: none;
-    text-align: center !important;
-    text-align-last: center !important; /* iOS/Safari 대응 */
+    text-align-last: center;
     padding: 0 !important;
     margin: 0 !important;
     line-height: 1.2 !important;
     height: 100%;
-    width: 100%;
-    background-color: transparent;
-    border: none;
-    outline: none;
   }
 
-  /* 스크롤바 스타일 */
   .custom-scrollbar::-webkit-scrollbar { width: 4px; }
   .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
   .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
