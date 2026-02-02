@@ -74,17 +74,29 @@ const GLOVAL_STYLE = `
     }
   }
   
-  /* 테이블 내 휴무 드롭다운만 정중앙 정렬 */
-  table select {
+ /* 테이블 헤더 및 모든 셀 정중앙 정렬 */
+  table th, table td {
+    text-align: center !important;
+    vertical-align: middle !important;
+  }
+
+  /* 테이블 내 드롭다운(select) 및 입력창 중앙 정렬 */
+  table select, table input {
     appearance: none;
     -webkit-appearance: none;
-    text-align-last: center;
+    text-align: center !important;
+    text-align-last: center !important; /* iOS/Safari 대응 */
     padding: 0 !important;
     margin: 0 !important;
     line-height: 1.2 !important;
     height: 100%;
+    width: 100%;
+    background-color: transparent;
+    border: none;
+    outline: none;
   }
 
+  /* 스크롤바 스타일 */
   .custom-scrollbar::-webkit-scrollbar { width: 4px; }
   .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
   .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
