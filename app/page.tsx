@@ -730,14 +730,17 @@ export default function HogwartsApp() {
         </div>
       )}
 
-      {/* [23] 상단 헤더 및 기숙사 점수판 구역 */}
+{/* [23] 상단 헤더 및 기숙사 점수판 구역 */}
       <div className="max-w-[1100px] mx-auto mb-8">
-        {/* 타이틀 부분 */}
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight">Hogwarts School</h2>
+        
+        {/* 1. 헤더 타이틀 */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight">
+            Hogwarts School
+          </h2>
         </div>
 
-        {/* 기숙사 점수판 (4컬럼 그리드) */}
+        {/* 2. 기숙사 점수판 (랭킹 카드들) */}
         <div className="grid grid-cols-4 gap-1.5 md:gap-4 mb-6">
           {houseRankings.map((item, idx) => {
             const config = (HOUSE_CONFIG as any)[item.house];
@@ -760,8 +763,8 @@ export default function HogwartsApp() {
           })}
         </div>
 
-        {/* [24] 음악 및 관리자 버튼들 (점수판 아래로 이동) */}
-        <div className="flex flex-wrap gap-2 justify-end">
+        {/* 3. [24] 음악 및 관리자 버튼 */}
+        <div className="flex justify-end gap-2">
           <button 
             onClick={toggleMusic} 
             className={`text-[10px] font-black px-3 py-1.5 rounded-full shadow-sm transition-all border-2 ${
@@ -779,7 +782,7 @@ export default function HogwartsApp() {
           <button onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full shadow-sm">Logout</button>
         </div>
       </div>
-
+      
       {/* [25] 학습 기록 메인 테이블 및 목표 */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
         <div className="bg-slate-900 p-4 px-6 md:px-8 flex flex-col gap-2 text-white min-h-[60px]">
