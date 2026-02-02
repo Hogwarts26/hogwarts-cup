@@ -650,12 +650,15 @@ export default function HogwartsApp() {
   // ==========================================
   // [20] 이름에서 이모지를 제거하는 유틸 함수
   // ==========================================
-    const formatDisplayName = (name: string) => {
+  const formatDisplayName = (name: string) => {
     if (!name) return "";
     // 최신 이모지 🪙까지 확실히 지우는 안전한 정규식입니다.
     const pure = name.replace(/[^가-힣a-zA-Z0-9\s]/g, '').trim();
     return pure || name;
   };
+
+  return (
+    <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 font-sans relative">
       
 {/*[21] 기숙사별 공지사항 팝업 */}
       {selectedHouseNotice && (
