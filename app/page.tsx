@@ -649,20 +649,17 @@ export default function HogwartsApp() {
       })
     : [selectedName];
 
-// ==========================================
-  // [20] 이름에서 이모지를 제거하는 유틸 함수
-  // ==========================================
-  const formatDisplayName = (name: string) => {
-    if (!name) return "";
-    try {
-      return name.replace(/[^ㄱ-ㅎㅏ-ㅣ가-힣a-zA-Z0-9 ]/g, "").trim() || name;
-    } catch (e) {
-      return name; 
-    }
+// [20] 애니메이션과 로직을 방해하지 않는 안전한 이름 가공
+  const formatDisplayName = (name: any): string => {
+    if (!name || typeof name !== 'string') return "";
+    
+    // 1. 이름에서 첫 번째 공백이나 이모지가 나오기 전 '진짜 이름'만 추출
+    // 보통 "🤖로봇" 또는 "로봇 🪙" 형태이므로 한글/영문 글자만 먼저 찾습니다.
+    const match = name.match(/[ㄱ-ㅎㅏ-ㅣ가-힣a-zA-Z0-9]+/);
+    
+    // 2. 매칭되는 이름이 있으면 그것만 반환, 없으면 원본 그대로(안전장치)
+    return match ? match[0] : name;
   };
-
-  return (
-    <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 font-sans relative">
       
 {/*[21] 기숙사별 공지사항 팝업 */}
       {selectedHouseNotice && (
