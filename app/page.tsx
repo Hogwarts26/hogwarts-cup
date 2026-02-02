@@ -649,13 +649,17 @@ export default function HogwartsApp() {
       })
     : [selectedName];
 
-  // ==========================================
-  // [20] 이름에서 이모지를 제거하는 유틸 함수 (호환성 버전)
-  // ==========================================
-  const formatDisplayName = (name: string) => {
-    if (!name) return "";
-    // \p{...} 대신 가장 넓은 범위의 이모지 유니코드 대역을 지정하여 🪙까지 잡아냅니다.
-    return name.replace(/[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]|\uD83E[\uAD00-\uADFF]/g, '').trim();
+  // [20] 애니메이션/체크박스 충돌 없는 안전한 이름 추출 함수
+  const formatDisplayName = (name: any): string => {
+    if (!name || typeof name !== 'string') return "";
+    try {
+      // 이모지를 지우는 대신, "한글/영어/숫자" 덩어리만 찾아서 가져옵니다.
+      // 복잡한 유니코드 범위를 건드리지 않아 애니메이션과 디자인이 깨지지 않습니다.
+      const match = name.match(/[가-힣a-zA-Z0-9]+/);
+      return match ? match[0].trim() : name;
+    } catch (e) {
+      return String(name);
+    }
   };
 
   return (
