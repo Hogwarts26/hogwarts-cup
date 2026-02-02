@@ -730,26 +730,34 @@ export default function HogwartsApp() {
         </div>
       )}
 
-{/* [23] 상단 헤더 및 기숙사 점수판 구역 */}
+ {/*[23] 상단 헤더 및 기숙사 점수판 구역 */}
       <div className="max-w-[1100px] mx-auto mb-8">
-        
-        {/* 1. 헤더 타이틀 */}
-        <div className="mb-6">
-          <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight">
-            Hogwarts School
-          </h2>
-        </div>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight">Hogwarts School</h2>
+          <div className="flex gap-2">
 
-        {/* 2. 기숙사 점수판 (랭킹 카드들) */}
-        <div className="grid grid-cols-4 gap-1.5 md:gap-4 mb-6">
+            {/* [24] 음악 및 관리자 버튼들 */}
+            <button 
+              onClick={toggleMusic} 
+              className={`text-[10px] font-black px-3 py-1.5 rounded-full shadow-sm transition-all border-2 ${
+                isPlaying ? 'bg-white border-yellow-400 text-yellow-500 animate-pulse' : 'bg-white border-slate-200 text-slate-400'
+              }`}
+            >
+              {isPlaying ? '🎵' : '🔇'}
+            </button>
+            {isAdmin && <button onClick={() => setShowSummary(true)} className="text-[10px] font-black text-white bg-indigo-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-indigo-700">요약</button>}
+            {isAdmin && <button onClick={resetWeeklyData} className="text-[10px] font-black text-white bg-red-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-red-700">주간 리셋</button>}
+            {isAdmin && (
+              <button onClick={resetMonthlyOff} className="text-[10px] font-black text-white bg-orange-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-orange-700">월휴 리셋</button>
+            )}
+            <button onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full shadow-sm">Logout</button>
+          </div>
+        </div>
+        <div className="grid grid-cols-4 gap-1.5 md:gap-4">
           {houseRankings.map((item, idx) => {
             const config = (HOUSE_CONFIG as any)[item.house];
             return (
-              <div 
-                key={item.house} 
-                onClick={() => setSelectedHouseNotice(item.house as any)} 
-                className={`${config.bg} ${config.border} ${idx === 0 ? 'winner-sparkle ring-4 ring-yellow-400 ring-offset-2' : ''} border-b-4 p-1.5 md:p-5 rounded-xl md:rounded-[2rem] text-white shadow-xl relative cursor-pointer active:scale-95 transition-all hover:brightness-110 overflow-hidden`}
-              >
+              <div key={item.house} onClick={() => setSelectedHouseNotice(item.house as any)} className={`${config.bg} ${config.border} ${idx === 0 ? 'winner-sparkle ring-4 ring-yellow-400 ring-offset-2' : ''} border-b-4 p-1.5 md:p-5 rounded-xl md:rounded-[2rem] text-white shadow-xl relative cursor-pointer active:scale-95 transition-all hover:brightness-110 overflow-hidden`}>
                 <div className="absolute right-[-10px] bottom-[-10px] text-5xl md:text-7xl opacity-20 pointer-events-none">{config.icon}</div>
                 <div className="relative z-10">
                   <div className="flex justify-between items-start mb-1">
@@ -762,26 +770,9 @@ export default function HogwartsApp() {
             );
           })}
         </div>
-
-        {/* 3. [24] 음악 및 관리자 버튼 */}
-        <div className="flex justify-end gap-2">
-          <button 
-            onClick={toggleMusic} 
-            className={`text-[10px] font-black px-3 py-1.5 rounded-full shadow-sm transition-all border-2 ${
-              isPlaying ? 'bg-white border-yellow-400 text-yellow-500 animate-pulse' : 'bg-white border-slate-200 text-slate-400'
-            }`}
-          >
-            {isPlaying ? '🎵' : '🔇'}
-          </button>
-          
-          {isAdmin && <button onClick={() => setShowSummary(true)} className="text-[10px] font-black text-white bg-indigo-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-indigo-700">요약</button>}
-          {isAdmin && <button onClick={resetWeeklyData} className="text-[10px] font-black text-white bg-red-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-red-700">주간 리셋</button>}
-          {isAdmin && (
-            <button onClick={resetMonthlyOff} className="text-[10px] font-black text-white bg-orange-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-orange-700">월휴 리셋</button>
-          )}
-          <button onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full shadow-sm">Logout</button>
-        </div>
       </div>
+
+
       
       {/* [25] 학습 기록 메인 테이블 및 목표 */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
