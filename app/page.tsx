@@ -650,9 +650,11 @@ export default function HogwartsApp() {
   // ==========================================
   // [20] 이름에서 이모지를 제거하는 유틸 함수
   // ==========================================
-  const formatDisplayName = (name: string) => {
+    const formatDisplayName = (name: string) => {
     if (!name) return "";
-    return name.replace(/[^가-힣a-zA-Z0-9\s]/g, '').trim();
+    // 최신 이모지 🪙까지 확실히 지우는 안전한 정규식입니다.
+    const pure = name.replace(/[^가-힣a-zA-Z0-9\s]/g, '').trim();
+    return pure || name;
   };
       
 {/*[21] 기숙사별 공지사항 팝업 */}
@@ -675,7 +677,7 @@ export default function HogwartsApp() {
         </div>
       )}
 
- {/*[22] 관리자 화면 요약 확인 팝업 (전체 기숙사 요약) */}
+ {/*[22] 관리자 화면 요약 확인 팝업 */}
       {showSummary && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowSummary(false)}>
           <div className="bg-white rounded-[2rem] p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative" onClick={e => e.stopPropagation()}>
