@@ -652,14 +652,13 @@ export default function HogwartsApp() {
 // [20] 애니메이션과 로직을 방해하지 않는 안전한 이름 가공
   const formatDisplayName = (name: any): string => {
     if (!name || typeof name !== 'string') return "";
-    
-    // 1. 이름에서 첫 번째 공백이나 이모지가 나오기 전 '진짜 이름'만 추출
-    // 보통 "🤖로봇" 또는 "로봇 🪙" 형태이므로 한글/영문 글자만 먼저 찾습니다.
     const match = name.match(/[ㄱ-ㅎㅏ-ㅣ가-힣a-zA-Z0-9]+/);
-    
-    // 2. 매칭되는 이름이 있으면 그것만 반환, 없으면 원본 그대로(안전장치)
     return match ? match[0] : name;
   };
+
+  // ✅ [1]번 구역에 스타일이 이미 있으니, 여기서는 바로 화면을 그립니다.
+  return (
+    <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 font-sans relative">
       
 {/*[21] 기숙사별 공지사항 팝업 */}
       {selectedHouseNotice && (
