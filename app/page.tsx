@@ -648,13 +648,15 @@ export default function HogwartsApp() {
     : [selectedName];
 
   // ==========================================
-  // [20] 이름에서 이모지를 제거하는 유틸 함수 (아이패드 호환성 강화)
+  // [20] 이름에서 이모지를 제거하는 유틸 함수
   // ==========================================
   const formatDisplayName = (name: string) => {
     if (!name) return "";
-    const pure = name.replace(/[^\uAC00-\uD7A3a-zA-Z0-9 ]/g, "").trim();
-    
-    return pure || name;
+    try {
+      return name.replace(/[^ㄱ-ㅎㅏ-ㅣ가-힣a-zA-Z0-9 ]/g, "").trim() || name;
+    } catch (e) {
+      return name; 
+    }
   };
 
   return (
