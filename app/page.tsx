@@ -1084,46 +1084,45 @@ export default function HogwartsApp() {
               }}
             />
 
-          {/* 드래곤 성장 표시 로직 (확정형 테스트) */}
+          {/* 드래곤 성장 표시 로직 (진짜 최종 해결) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
-              // 1. 설정값 (테스트를 위해 13000으로 고정)
               const testEgg = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1.webp";
               const currentEgg = selectedEgg || testEgg;
-              const testMinutes = 13000; // 👈 여기 숫자가 12000 이상인지 확인!
 
-              // 2. 파일명 분석
-              const fileName = currentEgg.split('/').pop().split('.')[0]; // "vo1"
+              // 1. 파일명에서 순수 지역 코드와 알 번호만 추출
+              // 예: "vo111.webp"가 들어와도 "vo"와 "1"만 남깁니다.
+              const fileName = currentEgg.split('/').pop().split('.')[0]; 
               const prefix = fileName.substring(0, 2); // "vo"
-              const eggNum = fileName.slice(-1);       // "1"
+              
+              // 🥚 중요: 파일명에서 '첫 번째로 나오는 숫자' 하나만 가져옵니다. (1, 2, 3 중 하나)
+              const eggNum = (fileName.match(/\d/) || ["1"])[0];
 
-              // 3. 단계 결정 (가장 확실한 비교 방식)
+              const testMinutes = 13000;
+
+              // 2. 단계 결정
               let levelCount = 1;
-              if (testMinutes >= 12000) {
-                levelCount = 4;
-              } else if (testMinutes >= 9000) {
-                levelCount = 3;
-              } else if (testMinutes >= 6000) {
-                levelCount = 2;
-              } else {
-                levelCount = 1;
-              }
+              if (testMinutes >= 12000) levelCount = 4;
+              else if (testMinutes >= 9000) levelCount = 3;
+              else if (testMinutes >= 6000) levelCount = 2;
 
-              // 4. 경로 조립
-              const repeatNum = eggNum.repeat(levelCount); // 4단계면 "1111"
-              const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${repeatNum}.webp`;
+              // 3. 파일명 조립 (이 부분이 핵심!)
+              // repeat(levelCount)를 사용하여 숫자를 개수만큼 반복
+              const repeatPart = eggNum.repeat(levelCount); 
+              const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${repeatPart}.webp`;
 
-              console.log("현재 단계:", levelCount, "파일명:", `${prefix}${repeatNum}.webp`);
+              // 확인용 콘솔 로그 (여기서 vo1111이 찍혀야 합니다)
+              console.log(`알번호: ${eggNum}, 단계: ${levelCount}, 최종파일명: ${prefix}${repeatPart}.webp`);
 
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
                   <div className="relative flex flex-col items-center translate-y-16 md:translate-y-24">
                     <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
                     <img 
+                      key={finalUrl}
                       src={finalUrl} 
                       alt="Dragon"
                       className="relative w-10 h-10 md:w-14 md:h-14 object-contain drop-shadow-xl animate-bounce-slow mb-1"
                       onError={(e) => { 
-                        console.error("이미지 로드 실패 주소:", finalUrl);
                         e.currentTarget.src = currentEgg; 
                       }} 
                     />
