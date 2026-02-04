@@ -1084,35 +1084,38 @@ export default function HogwartsApp() {
               }}
             />
 
-       {/* 하얀 화면 복구 및 성룡 소환 코드 */}
+      {/* 드래곤 성장 표시 로직 (최종 복구 버전) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
-              const currentEgg = selectedEgg || "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1.webp";
+              // 1. 기본 알 이미지 설정
+              const baseEgg = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1.webp";
+              const currentEgg = selectedEgg || baseEgg;
               
-              // 1. 파일명 추출
+              // 2. 파일명에서 접두어(vo, co 등)와 숫자 추출
               const fileName = currentEgg.split('/').pop().split('.')[0]; 
               const prefix = fileName.substring(0, 2); 
               const eggNum = (fileName.match(/\d/) || ["1"])[0];
 
-              // 2. 점수 고정
-              const totalMinutes = 13000; 
-              let repeatCount = 1;
-              if (totalMinutes >= 12000) repeatCount = 4;
-              else if (totalMinutes >= 9000) repeatCount = 3;
-              else if (totalMinutes >= 6000) repeatCount = 2;
+              // 3. 단계 계산 (13000점 고정 테스트)
+              const testTime = 13000; 
+              let level = 1;
+              if (testTime >= 12000) level = 4;
+              else if (testTime >= 9000) level = 3;
+              else if (testTime >= 6000) level = 2;
 
-              // 3. 주소 조립 (v= 값을 고정해서 무한 루프 방지)
-              const repeatPart = eggNum.repeat(repeatCount);
-              const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${repeatPart}.webp?v=fix100`;
+              // 4. 주소 조립 (v= 값을 고정하여 Hydration 에러 및 무한 루프 방지)
+              const repeatPart = eggNum.repeat(level);
+              const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${repeatPart}.webp?v=fix_final_1`;
 
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
                   <div className="relative flex flex-col items-center translate-y-16 md:translate-y-24">
                     <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
                     <img 
+                      key={`dragon-${prefix}-${level}`} // 고정 키값으로 리액트 충돌 방지
                       src={finalUrl} 
                       alt="Dragon"
                       className="relative w-10 h-10 md:w-14 md:h-14 object-contain drop-shadow-xl animate-bounce-slow mb-1"
-                      loading="lazy"
+                      onError={(e) => { e.currentTarget.src = currentEgg; }}
                     />
                   </div>
                 </div>
