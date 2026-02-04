@@ -1040,6 +1040,7 @@ const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
     </div>
 
     <div className="w-full rounded-[1.5rem] md:rounded-[2rem] overflow-hidden shadow-2xl border border-slate-200 bg-slate-50 relative aspect-video">
+   
       {/* 배경 이미지 */}
       <img 
         src={`https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${currentImageFile}`}
@@ -1051,7 +1052,7 @@ const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
         }}
       />
 
-   {/* ✨ 1. 최종 선택된 알 표시 (바닥 배치 버전) */}
+   {/* 1. 최종 선택된 알 표시 (바닥 배치 버전) */}
       {selectedEgg && (currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
           <div className="relative flex flex-col items-center translate-y-12 md:translate-y-16">
@@ -1065,7 +1066,7 @@ const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
         </div>
       )}
 
-      {/* ✨ 2. 지역별 알 선택 레이어 */}
+      {/* 2. 지역별 알 선택 레이어 */}
       {!isFading && currentImageFile !== 'main.webp' && currentImageFile !== 'x.jpg' && (
         <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-8 px-4 z-20">
           {[1, 2, 3].map((num) => {
@@ -1093,6 +1094,8 @@ const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
           })}
         </div>
       )}
+     </div>
+    </div> 
 
       {/* ✨ 3. 이중 확인 팝업 */}
   {eggStep > 0 && (
