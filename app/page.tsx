@@ -197,7 +197,6 @@ export default function HogwartsApp() {
     const day = now.getDay();    // 0(일), 1(월), 2(화)...
     const hours = now.getHours();
 
-    // 월요일(1)이면서 오후 6시(18시) 이전인 경우에만 하루 전(일요일)으로 취급
     if (day === 1 && hours < 18) {
       const adjusted = new Date(now);
       adjusted.setDate(now.getDate() - 1);
@@ -213,21 +212,25 @@ export default function HogwartsApp() {
   const [records, setRecords] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   
-  // ✅ [수정] 초기값을 조정된 날짜로 설정
+  // ✅ [추가] 학생들의 누적 데이터(알 정보 포함)를 저장할 상태
+  const [studentMasterData, setStudentMasterData] = useState<any>({});
+
   const [currentTime, setCurrentTime] = useState(getAdjustedToday());
-  
   const [selectedHouseNotice, setSelectedHouseNotice] = useState<string | null>(null);
   const [showSummary, setShowSummary] = useState(false); 
   const [selectedStudentReport, setSelectedStudentReport] = useState<string | null>(null);
   const [dailyGoal, setDailyGoal] = useState("");
   const [isEditingGoal, setIsEditingGoal] = useState(false);
 
-  // --- [추가] 실시간 시간 업데이트 시에도 조정 로직 유지 ---
+  // ✅ [추가] 현재 로그인한 사용자를 객체 형태로 정의 (빨간 줄 방지)
+  const currentUser = useMemo(() => {
+    return selectedName ? { name: selectedName } : null;
+  }, [selectedName]);
+
   useEffect(() => {
     const timer = setInterval(() => {
-      // 매분/매초 업데이트 시에도 18:00 기준을 체크하여 반영
       setCurrentTime(getAdjustedToday());
-    }, 60000); // 1분마다 체크
+    }, 60000);
     return () => clearInterval(timer);
   }, []);
 
@@ -253,12 +256,22 @@ export default function HogwartsApp() {
     }, 300);
   };
 
-    // 알 선택시 팝업
-const [eggStep, setEggStep] = useState<number>(0);
-const [tempEgg, setTempEgg] = useState<string | null>(null);
-const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
+  // 알 선택시 팝업 상태
+  const [eggStep, setEggStep] = useState<number>(0);
+  const [tempEgg, setTempEgg] = useState<string | null>(null);
+  const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
 
-    // ==========================================
+  // ✅ [수정] DB에서 저장된 알 정보를 불러오는 로직
+  useEffect(() => {
+    if (currentUser && studentMasterData && studentMasterData[currentUser.name]) {
+      const savedEgg = studentMasterData[currentUser.name].selected_egg;
+      if (savedEgg) {
+        setSelectedEgg(savedEgg);
+      }
+    }
+  }, [currentUser, studentMasterData]);
+
+  // ==========================================
   // [6] 초기 실행 (인증 확인 및 시계)
   // ==========================================
   useEffect(() => {
@@ -292,16 +305,34 @@ const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
   // [7] 데이터 불러오기 (Supabase 연결)
   // ==========================================
   const fetchRecords = async () => {
-    const { data } = await supabase.from('study_records').select('*');
-    if (data) {
-      setRecords(data);
-      const myRecords = data.filter(r => r.student_name === selectedName);
+    const [resRecords, resMaster] = await Promise.all([
+      supabase.from('study_records').select('*'),
+      supabase.from('student_master').select('*')
+    ]);
+
+    // 1. 주간 기록 세팅
+    if (resRecords.data) {
+      setRecords(resRecords.data);
+      const myRecords = resRecords.data.filter(r => r.student_name === selectedName);
       const savedGoal = myRecords.find(r => r.goal && r.goal !== "")?.goal || "";
       setDailyGoal(savedGoal);
     }
+
+    // 2. 마스터 데이터 세팅 (student_name 컬럼 사용)
+    if (resMaster.data) {
+      const masterObj: any = {};
+      resMaster.data.forEach((item: any) => {
+        // 컬럼명이 student_name이므로 이를 키값으로 저장합니다.
+        const key = item.student_name; 
+        masterObj[key] = item;
+      });
+      setStudentMasterData(masterObj);
+    }
   };
 
-  useEffect(() => { if (isLoggedIn) fetchRecords(); }, [isLoggedIn, selectedName]);
+  useEffect(() => { 
+    if (isLoggedIn) fetchRecords(); 
+  }, [isLoggedIn, selectedName]);
 
   // ==========================================
   // [8] 로그인 로직
@@ -319,23 +350,22 @@ const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
   };
 
   // ==========================================
-  // [15] 주간 데이터 초기화 및 용 성장 데이터 누적
+  // [9] 주간 데이터 초기화 및 용 성장 데이터 누적
   // ==========================================
   const resetWeeklyData = async () => {
-    // 1. 사용자 확인
     if (!confirm("⚠️ 이번 주 기록을 합산하여 용을 성장시키고 표를 초기화하시겠습니까?")) return;
     if (!confirm("정말로 진행하시겠습니까? 합산된 공부 시간은 되돌릴 수 없습니다.")) return;
 
     setIsSaving(true);
     try {
       const names = Object.keys(studentData);
+      // 화면 즉시 반영을 위해 현재 마스터 데이터를 복사합니다.
+      const newMasterData = { ...studentMasterData };
 
       // --- [단계 1] 용 성장을 위한 공부 시간 합산 및 마스터 테이블 누적 ---
       const updatePromises = names.map(async (name) => {
-        // 현재 화면(records 상태값)에서 해당 학생의 월~일 기록 필터링
         const studentRecords = records.filter(r => r.student_name === name);
         
-        // 이번 주 공부 시간(HH:mm)을 '분' 단위로 합산
         let weeklyMinutes = 0;
         studentRecords.forEach(r => {
           const [h, m] = (r.study_time || "0:00").split(':').map(Number);
@@ -344,9 +374,7 @@ const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
           }
         });
 
-        // 합산할 시간이 있는 경우에만 DB 업데이트 실행
         if (weeklyMinutes > 0) {
-          // student_master 테이블에서 현재 누적 시간을 먼저 가져옴
           const { data: masterData } = await supabase
             .from('student_master')
             .select('total_study_time')
@@ -354,8 +382,12 @@ const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
             .maybeSingle();
 
           const newTotal = (masterData?.total_study_time || 0) + weeklyMinutes;
+          
+          // ✅ 로컬 상태 업데이트 (화면 즉시 반영용)
+          if (newMasterData[name]) {
+            newMasterData[name].total_study_time = newTotal;
+          }
 
-          // 마스터 테이블에 누적된 시간 업데이트
           return supabase
             .from('student_master')
             .update({ total_study_time: newTotal })
@@ -363,10 +395,11 @@ const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
         }
       });
 
-      // 모든 학생의 누적 업데이트가 끝날 때까지 대기
       await Promise.all(updatePromises);
+      // ✅ 합산된 전체 데이터를 상태에 한 번에 저장합니다.
+      setStudentMasterData(newMasterData);
 
-      // --- [단계 2] 기존 주간 기록표(study_records) 초기화 (기존 로직) ---
+      // --- [단계 2] 기존 주간 기록표(study_records) 초기화 ---
       const resetData = [];
       for (const name of names) {
         for (const day of DAYS) {
@@ -377,7 +410,7 @@ const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
             off_type: '-', 
             is_late: false, 
             am_3h: false, 
-            study_time: '', // 시간 초기화
+            study_time: '', 
             password: existing.password || '0000', 
             monthly_off_count: existing.monthly_off_count ?? 4,
             goal: existing.goal || '' 
@@ -385,7 +418,6 @@ const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
         }
       }
 
-      // DB의 주간 기록 테이블 초기화 업데이트
       const { error } = await supabase.from('study_records').upsert(resetData, { onConflict: 'student_name,day_of_week' });
       
       if (!error) { 
@@ -996,216 +1028,235 @@ const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
       </div>
 
 {/* [26] 드래곤 키우기 */}
-<div className="mt-16 px-4 pb-24 text-left max-w-6xl mx-auto">
-  <hr className="border-slate-200 mb-10" />
+      <div className="mt-16 px-4 pb-24 text-left max-w-6xl mx-auto">
+        <hr className="border-slate-200 mb-10" />
 
-  <h2 
-    className="text-2xl font-black italic mb-8 uppercase" 
-    style={{ 
-      fontFamily: "'Cinzel', serif",
-      letterSpacing: '0.1em',
-      color: '#1e293b',
-      transform: 'skewX(-5deg)'
-    }}
-  >
-    Dragon Cave
-  </h2>
+        <h2 
+          className="text-2xl font-black italic mb-8 uppercase" 
+          style={{ 
+            fontFamily: "'Cinzel', serif",
+            letterSpacing: '0.1em',
+            color: '#1b1e21',
+            transform: 'skewX(-5deg)'
+          }}
+        >
+          Dragon Cave
+        </h2>
 
-  {/* 지역명 버튼 영역 */}
-  <div className="grid grid-cols-3 gap-2 mb-8 max-w-sm">
-    {['volcano', 'jungle', 'forest', 'desert', 'coast', 'alpine'].map((region) => (
-      <button
-        key={region}
-        onClick={() => handleRegionClick(region)}
-        className={`py-2 text-[11px] font-black tracking-tighter transition-all rounded-md border uppercase
-          ${currentImageFile === `${region}.webp` 
-            ? 'bg-slate-900 text-white border-slate-900 shadow-sm' 
-            : 'bg-white text-slate-400 border-slate-100 hover:text-slate-600 hover:bg-slate-50' 
-          }`}
-      >
-        {region}
-      </button>
-    ))}
-  </div>
+        {/* 지역명 버튼 영역 */}
+        <div className="grid grid-cols-3 gap-2 mb-8 max-w-sm">
+          {['volcano', 'jungle', 'forest', 'desert', 'coast', 'alpine'].map((region) => (
+            <button
+              key={region}
+              onClick={() => handleRegionClick(region)}
+              className={`py-2 text-[11px] font-black tracking-tighter transition-all rounded-md border uppercase
+                ${currentImageFile === `${region}.webp` 
+                  ? 'bg-slate-900 text-white border-slate-900 shadow-sm' 
+                  : 'bg-white text-slate-400 border-slate-100 hover:text-slate-600 hover:bg-slate-50' 
+                }`}
+            >
+              {region}
+            </button>
+          ))}
+        </div>
 
-  {/* 리셋 버튼 & 이미지 영역 */}
-  <div className="relative">
-    <div className="flex justify-end mb-2">
-      <button
-        onClick={handleResetImage}
-        className="text-[9px] font-black text-slate-300 hover:text-slate-500 uppercase tracking-widest transition-colors"
-      >
-        [ Reset Habitat ]
-      </button>
-    </div>
+        {/* 리셋 버튼 & 이미지 영역 */}
+        <div className="relative">
+          <div className="flex justify-end mb-2">
+            <button
+              onClick={handleResetImage}
+              className="text-[9px] font-black text-slate-300 hover:text-slate-500 uppercase tracking-widest transition-colors"
+            >
+              [ Reset Habitat ]
+            </button>
+          </div>
 
-    <div className="w-full rounded-[1.5rem] md:rounded-[2rem] overflow-hidden shadow-2xl border border-slate-200 bg-slate-50 relative aspect-video">
-   
-      {/* 배경 이미지 */}
-      <img 
-        src={`https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${currentImageFile}`}
-        alt="Dragon Habitat"
-        className={`w-full h-full object-cover transition-opacity duration-300 ease-in-out ${isFading ? 'opacity-0' : 'opacity-100'}`}
-        onError={(e) => {
-          const target = e.currentTarget as HTMLImageElement;
-          target.src = "https://via.placeholder.com/1200x675?text=Check+GitHub+Public+Folder";
-        }}
-      />
-
-   {/* 1. 최종 선택된 알 표시 (바닥 배치 버전) */}
-      {selectedEgg && (currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-          <div className="relative flex flex-col items-center translate-y-12 md:translate-y-16">
-            <div className="absolute -bottom-1 w-6 h-1.5 md:w-8 md:h-2 bg-black/40 rounded-[100%] blur-[4px]" />
+          <div className="w-full rounded-[1.5rem] md:rounded-[2rem] overflow-hidden shadow-2xl border border-slate-200 bg-slate-50 relative aspect-video">
+          
+            {/* 배경 이미지 */}
             <img 
-              src={selectedEgg} 
-              alt="Selected Egg" 
-              className="relative w-10 h-10 md:w-12 md:h-12 object-contain drop-shadow-[0_4px_6px_rgba(0,0,0,0.2)]"
+              src={`https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${currentImageFile}`}
+              alt="Dragon Habitat"
+              className={`w-full h-full object-cover transition-opacity duration-300 ease-in-out ${isFading ? 'opacity-0' : 'opacity-100'}`}
+              onError={(e) => {
+                const target = e.currentTarget as HTMLImageElement;
+                target.src = "https://via.placeholder.com/1200x675?text=Habitat+Image+Not+Found";
+              }}
             />
+
+            {/* 드래곤 성장 표시 로직 */}
+            {selectedEgg && (currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
+              const eggFileName = selectedEgg.split('/').pop() || "";
+              const prefix = eggFileName.substring(0, 2); 
+              const eggNum = eggFileName.replace(/[^0-9]/g, '').charAt(0);
+
+              // ✅ 현재 로그인한 사용자의 실시간 누적 공부 시간 가져오기
+              const studentName = selectedName; // 현재 선택된(로그인된) 학생 이름
+              const masterData = studentMasterData[studentName];
+              const totalMinutes = Number(masterData?.total_study_time || 0);
+
+              // 📈 성장 단계 계산 (12000분 = 200시간)
+              let levelCount = 1;
+              if (totalMinutes >= 12000) levelCount = 4;
+              else if (totalMinutes >= 9000) levelCount = 3;
+              else if (totalMinutes >= 6000) levelCount = 2;
+
+              const baseUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/";
+              const repeatNum = eggNum.repeat(levelCount); 
+              const evolutionImage = `${baseUrl}${prefix}${repeatNum}.webp`;
+
+              return (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
+                  <div className="relative flex flex-col items-center translate-y-12 md:translate-y-16">
+                    <div className="absolute -bottom-1 w-6 h-1.5 md:w-12 md:h-3 bg-black/30 rounded-[100%] blur-[6px]" />
+                    <img 
+                      src={evolutionImage} 
+                      alt="Dragon"
+                      className="relative w-16 h-16 md:w-24 md:h-24 object-contain drop-shadow-2xl animate-bounce-slow"
+                      onError={(e) => { e.currentTarget.src = selectedEgg; }} 
+                    />
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 지역별 알 선택 레이어 */}
+            {!isFading && !['main.webp', 'x.jpg'].includes(currentImageFile) && (
+              <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-8 px-4 z-20">
+                {[1, 2, 3].map((num) => {
+                  const prefix = currentImageFile.split('.')[0].substring(0, 2).toLowerCase();
+                  const eggUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${num}.webp`;
+                  
+                  return (
+                    <div key={num} className="relative group flex flex-col items-center">
+                      <div className="absolute -bottom-1 w-6 h-1.5 md:w-8 md:h-2 bg-black/40 rounded-[100%] blur-[4px] group-hover:scale-125 transition-transform duration-300" />
+                      <img
+                        src={eggUrl}
+                        alt="Dragon Egg"
+                        onClick={() => { setTempEgg(eggUrl); setEggStep(1); }}
+                        className="relative w-12 h-12 md:w-16 md:h-16 object-contain hover:-translate-y-2 transition-transform duration-300 cursor-pointer"
+                        onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none'; }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
-      )}
 
-      {/* 2. 지역별 알 선택 레이어 */}
-      {!isFading && currentImageFile !== 'main.webp' && currentImageFile !== 'x.jpg' && (
-        <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-8 px-4 z-20">
-          {[1, 2, 3].map((num) => {
-            const prefix = currentImageFile.split('.')[0].substring(0, 2).toLowerCase();
-            const eggUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${num}.webp`;
-            
-            return (
-              <div key={num} className="relative group flex flex-col items-center">
-                <div className="absolute -bottom-1 w-6 h-1.5 md:w-8 md:h-2 bg-black/40 rounded-[100%] blur-[4px] group-hover:scale-125 transition-transform duration-300" />
-                <img
-                  src={eggUrl}
-                  alt={`Egg ${prefix}${num}`}
-                  onClick={() => {
-                    setTempEgg(eggUrl);
-                    setEggStep(1);
+        {/* 이중 확인 팝업 */}
+        {eggStep > 0 && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full mx-4 text-center border-4 border-slate-100">
+              <h3 className="text-xl font-black mb-2 text-slate-800 uppercase tracking-tighter" style={{ fontFamily: "'Cinzel', serif" }}>
+                {eggStep === 1 ? "이 알을 데려갈까요?" : "정말 이 알을 데려갈까요?"}
+              </h3>
+              <p className="text-slate-500 mb-6 text-sm italic">
+                {eggStep === 1 ? "따스한 온기가 느껴지는 알입니다." : "한 번 데려가면 졸업 전까지 함께 해야 합니다."}
+              </p>
+
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={async () => {
+                    if (eggStep === 1) setEggStep(2);
+                    else {
+                      // ✅ DB 업데이트 (컬럼명 student_name으로 수정 완료)
+                      if (selectedName && tempEgg) {
+                        try {
+                          await supabase
+                            .from('student_master')
+                            .update({ selected_egg: tempEgg })
+                            .eq('student_name', selectedName);
+                        } catch (error) {
+                          console.error("Egg Save Error:", error);
+                        }
+                      }
+                      setSelectedEgg(tempEgg);
+                      setEggStep(0);
+                      handleResetImage();
+                    }
                   }}
-                  className="relative w-10 h-10 md:w-12 md:h-12 object-contain hover:-translate-y-2 transition-transform duration-300 cursor-pointer"
-                  onError={(e) => {
-                    const parent = e.currentTarget.parentElement;
-                    if (parent) parent.style.display = 'none';
-                  }}
-                />
+                  className="w-full py-3 bg-slate-900 text-white font-black rounded-xl hover:bg-slate-700 transition-colors uppercase tracking-widest text-xs"
+                >
+                  네
+                </button>
+                <button
+                  onClick={() => { setEggStep(0); setTempEgg(null); }}
+                  className="w-full py-3 bg-slate-100 text-slate-400 font-bold rounded-xl hover:bg-slate-200 transition-colors uppercase tracking-widest text-[10px]"
+                >
+                  고민해볼게요
+                </button>
               </div>
-            );
-          })}
-        </div>
-      )}
-     </div>
-    </div> 
-
-      {/* ✨ 3. 이중 확인 팝업 */}
-  {eggStep > 0 && (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full mx-4 text-center border-4 border-slate-100">
-        {eggStep === 1 ? (
-          <>
-            <h3 className="text-xl font-black mb-2 text-slate-800 uppercase tracking-tighter" style={{ fontFamily: "'Cinzel', serif" }}>이 알을 데려갈까요?</h3>
-            <p className="text-slate-500 mb-6 text-sm italic">따스한 온기가 느껴지는 알입니다.</p>
-          </>
-        ) : (
-          <>
-            <h3 className="text-xl font-black mb-2 text-red-600 uppercase tracking-tighter" style={{ fontFamily: "'Cinzel', serif" }}>정말 이 알을 데려갈까요?</h3>
-            <p className="text-slate-500 mb-6 text-sm font-bold">한 번 데려가면 졸업 전까지<br/>함께 해야 합니다.</p>
-          </>
+            </div>
+          </div>
         )}
-
-        <div className="flex flex-col gap-3">
-          <button
-            onClick={() => {
-              if (eggStep === 1) setEggStep(2);
-              else {
-                setSelectedEgg(tempEgg);
-                setEggStep(0);
-                handleResetImage(); // x.jpg 화면으로 이동
-              }
-            }}
-            className="w-full py-3 bg-slate-900 text-white font-black rounded-xl hover:bg-slate-700 transition-colors uppercase tracking-widest text-xs"
-          >
-            네
-          </button>
-          <button
-            onClick={() => {
-              setEggStep(0);
-              setTempEgg(null);
-            }}
-            className="w-full py-3 bg-slate-100 text-slate-400 font-bold rounded-xl hover:bg-slate-200 transition-colors uppercase tracking-widest text-[10px]"
-          >
-            고민해볼게요
-          </button>
-        </div>
-      </div>
-    </div>
-  )}
-</div>
-
-      {/* [27] 학생 개인 리포트 팝업 */}
+        
+        {/* [27] 학생 개인 리포트 팝업 */}
         {selectedStudentReport && studentData[selectedStudentReport] && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
-          <div className="bg-white p-5 md:px-10 md:py-8 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-            <div className="flex items-end justify-center mb-6 w-full">
-              <div className="w-[45%] flex justify-end">
-                <img 
-                  src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} 
-                  alt="Logo" 
-                  className="w-36 h-36 md:w-44 md:h-44 object-contain drop-shadow-md" 
-                />
-              </div>
-              <div className="w-[55%] flex flex-col justify-end items-start pl-4">
-                <div className="flex items-baseline gap-1.5 mb-0">
-                  <span className="text-5xl md:text-6xl">{studentData[selectedStudentReport].emoji}</span>
-                  <span className="font-bold text-xs md:text-sm text-slate-400 tracking-tight leading-none">{formatDisplayName(selectedStudentReport)}</span>
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
+            <div className="bg-white p-5 md:px-10 md:py-8 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+              <div className="flex items-end justify-center mb-6 w-full">
+                <div className="w-[45%] flex justify-end">
+                  <img 
+                    src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} 
+                    alt="Logo" 
+                    className="w-36 h-36 md:w-44 md:h-44 object-contain drop-shadow-md" 
+                  />
                 </div>
-                <div className="flex flex-col items-start">
-                  <div className="text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-tight italic">
-                    {calculateWeeklyTotal(selectedStudentReport)}
+                <div className="w-[55%] flex flex-col justify-end items-start pl-4">
+                  <div className="flex items-baseline gap-1.5 mb-0">
+                    <span className="text-5xl md:text-6xl">{studentData[selectedStudentReport].emoji}</span>
+                    <span className="font-bold text-xs md:text-sm text-slate-400 tracking-tight leading-none">{formatDisplayName(selectedStudentReport)}</span>
                   </div>
-                  <div className="text-sm md:text-base font-bold text-slate-500 tracking-tight mt-1">
-                    {records.find(r => r.student_name === selectedStudentReport && r.goal)?.goal || ""}
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="text-xl md:text-2xl font-black text-black mb-4 text-center tracking-tight">
-              {getWeeklyDateRange()}
-            </div>
-            <div className="grid grid-cols-4 gap-2.5 mb-2">
-              {DAYS.map(day => {
-                const rec = records.find(r => r.student_name === selectedStudentReport && r.day_of_week === day) || {};
-                const isGreen = ['반휴','월반휴','늦반휴','늦월반휴'].includes(rec.off_type);
-                const isBlue = ['주휴','월휴','늦휴','늦월휴'].includes(rec.off_type);
-                const isRed = rec.off_type === '결석';
-                const cellClass = isGreen ? 'bg-green-100/60 border-green-200' 
-                                : isBlue ? 'bg-blue-100/60 border-blue-200'
-                                : isRed ? 'bg-red-100/60 border-red-200'
-                                : 'bg-slate-50 border-slate-100';
-                const textClass = isGreen ? 'text-green-700'
-                                : isBlue ? 'text-blue-700'
-                                : isRed ? 'text-red-700'
-                                : 'text-slate-400';
-                return (
-                  <div key={day} className={`p-2.5 flex flex-col items-center justify-between h-24 rounded-2xl border shadow-sm transition-all ${cellClass}`}>
-                    <div className={`text-[10px] font-bold ${textClass}`}>{getDayDate(day)} {day}</div>
-                    <div className="text-[18px] font-black text-slate-800">{rec.study_time || "0:00"}</div>
-                    <div className={`text-[9px] font-black h-3 leading-none uppercase ${textClass}`}>
-                      {['반휴','월반휴','주휴','결석'].includes(rec.off_type) ? rec.off_type : ""}
+                  <div className="flex flex-col items-start">
+                    <div className="text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-tight italic">
+                      {calculateWeeklyTotal(selectedStudentReport)}
+                    </div>
+                    <div className="text-sm md:text-base font-bold text-slate-500 tracking-tight mt-1">
+                      {records.find(r => r.student_name === selectedStudentReport && r.goal)?.goal || ""}
                     </div>
                   </div>
-                );
-              })}
-              <div className="p-3 text-[10px] font-black leading-relaxed flex flex-col justify-center gap-1 bg-slate-900 text-white rounded-2xl shadow-lg">
-                <div className="flex justify-between"><span>상점</span><span className="text-blue-400">+{calculatePoints(selectedStudentReport).bonus}</span></div>
-                <div className="flex justify-between"><span>벌점</span><span className="text-red-400">{calculatePoints(selectedStudentReport).penalty}</span></div>
-                <div className="flex justify-between text-yellow-400 mt-0.5"><span>휴무</span><span>{calculatePoints(selectedStudentReport).remainingWeeklyOff}</span></div>
-                <div className="flex justify-between text-cyan-400"><span>월휴</span><span>{calculatePoints(selectedStudentReport).remainingMonthlyOff}</span></div>
+                </div>
+              </div>
+              <div className="text-xl md:text-2xl font-black text-black mb-4 text-center tracking-tight">
+                {getWeeklyDateRange()}
+              </div>
+              <div className="grid grid-cols-4 gap-2.5 mb-2">
+                {DAYS.map(day => {
+                  const rec = records.find(r => r.student_name === selectedStudentReport && r.day_of_week === day) || {};
+                  const isGreen = ['반휴','월반휴','늦반휴','늦월반휴'].includes(rec.off_type);
+                  const isBlue = ['주휴','월휴','늦휴','늦월휴'].includes(rec.off_type);
+                  const isRed = rec.off_type === '결석';
+                  const cellClass = isGreen ? 'bg-green-100/60 border-green-200' 
+                                  : isBlue ? 'bg-blue-100/60 border-blue-200'
+                                  : isRed ? 'bg-red-100/60 border-red-200'
+                                  : 'bg-slate-50 border-slate-100';
+                  const textClass = isGreen ? 'text-green-700'
+                                  : isBlue ? 'text-blue-700'
+                                  : isRed ? 'text-red-700'
+                                  : 'text-slate-400';
+                  return (
+                    <div key={day} className={`p-2.5 flex flex-col items-center justify-between h-24 rounded-2xl border shadow-sm transition-all ${cellClass}`}>
+                      <div className={`text-[10px] font-bold ${textClass}`}>{getDayDate(day)} {day}</div>
+                      <div className="text-[18px] font-black text-slate-800">{rec.study_time || "0:00"}</div>
+                      <div className={`text-[9px] font-black h-3 leading-none uppercase ${textClass}`}>
+                        {['반휴','월반휴','주휴','결석'].includes(rec.off_type) ? rec.off_type : ""}
+                      </div>
+                    </div>
+                  );
+                })}
+                <div className="p-3 text-[10px] font-black leading-relaxed flex flex-col justify-center gap-1 bg-slate-900 text-white rounded-2xl shadow-lg">
+                  <div className="flex justify-between"><span>상점</span><span className="text-blue-400">+{calculatePoints(selectedStudentReport).bonus}</span></div>
+                  <div className="flex justify-between"><span>벌점</span><span className="text-red-400">{calculatePoints(selectedStudentReport).penalty}</span></div>
+                  <div className="flex justify-between text-yellow-400 mt-0.5"><span>휴무</span><span>{calculatePoints(selectedStudentReport).remainingWeeklyOff}</span></div>
+                  <div className="flex justify-between text-cyan-400"><span>월휴</span><span>{calculatePoints(selectedStudentReport).remainingMonthlyOff}</span></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
