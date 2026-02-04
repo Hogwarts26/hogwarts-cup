@@ -85,15 +85,14 @@ const GLOVAL_STYLE = `
 // [2] 학생 명단 데이터 (이름, 기숙사, 이모지, 색상)
 // ==========================================
 const studentData: { [key: string]: { house: string; emoji: string; color: string; accent: string, text: string } } = {
-  "🧃피크닉": { house: "슬리데린", emoji: "🧃", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🤖로봇": { house: "슬리데린", emoji: "🤖", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🐾발자국": { house: "슬리데린", emoji: "🐾", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🐆표범": { house: "슬리데린", emoji: "🐆", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🐡복어": { house: "슬리데린", emoji: "🐡", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
+  "🐶강쥐": { house: "슬리데린", emoji: "🐶", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🎂케이크": { house: "슬리데린", emoji: "🎂", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🐻곰돌": { house: "슬리데린", emoji: "🐻", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
-  "🍮푸딩": { house: "래번클로", emoji: "🍮", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
-  "🪙코인": { house: "래번클로", emoji: "🪙", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
+  "🪙갈레온": { house: "래번클로", emoji: "🪙", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
   "💫별": { house: "래번클로", emoji: "💫", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
   "🍪쿠키": { house: "래번클로", emoji: "🍪", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
   "🐯호랑": { house: "래번클로", emoji: "🐯", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
@@ -111,8 +110,8 @@ const studentData: { [key: string]: { house: string; emoji: string; color: strin
   "🐎말": { house: "후플푸프", emoji: "🐎", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🐈‍⬛깜냥": { house: "후플푸프", emoji: "🐈‍⬛", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🦊여우": { house: "후플푸프", emoji: "🦊", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
-  "🧄마늘": { house: "후플푸프", emoji: "🧄", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🦖공룡": { house: "후플푸프", emoji: "🦖", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
+  "💚초록": { house: "후플푸프", emoji: "💚", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🐿️다람": { house: "후플푸프", emoji: "🐿️", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" }
 };
 
@@ -129,47 +128,42 @@ const HOUSE_CONFIG = {
 
 const HOUSE_NOTICES: { [key: string]: { title: string, content: string } } = {
   "래번클로": {
-    title: "지식의 확장과 <이러쿵저러쿵> 1월호 최종 결산",
-    content: `래번클로 학생 여러분! 이번 주 우리 기숙사는 4위를 기록했습니다. 하지만 점수판의 숫자보다 우리가 이번 주 도서관에서 찾아낸 '고대 마법의 기하학적 해석'에 대한 열띤 토론이 훨씬 가치 있었다고 생각합니다. 플리트윅 교수님께서도 여러분의 지적인 호기심에 찬사를 보내셨습니다.
+    title: "움직이는 계단의 규칙성 탐구",
+    content: `래번클로 여러분, 이번 주 우리는 54점을 기록했습니다. 점수판의 숫자보다 제가 주목한 것은 이번 주 마법 수업에서 우리가 보여준 무언 주문의 완벽한 성공률입니다. 플리트윅 교수님께서도 우리 기숙사 학생들의 집중력에 깊은 감명을 받으셨다고 전해오셨습니다.
 
-게시판에 <이러쿵저러쿵> 1월 최종호가 게시되었습니다. 이번 호의 핵심 기사는 '2월의 안개 속에 숨어 사는 투명 요정들을 부르는 노래'입니다. 혹시 밤마다 복도에서 들리는 정체불명의 휘파람 소리가 이들과 관련이 있는지 분석해볼 학생들은 천문탑 모임에 참석해 주세요.
-
-또한, 최근 독수리 문고리가 "어둠과 빛 중 무엇이 더 무거운가?"라는 난해한 질문을 던지기 시작했습니다. 입구에서 명상에 잠기는 학생들 때문에 통행이 지연되고 있으니, 개인적인 사색은 휴게실 안쪽 서재를 이용해 주시길 바랍니다. 
-
-지혜는 공유할 때 더 빛나는 법입니다.`
+다음 주부터 시작될 성내 결계 보수 작업에 대비해, 몇몇 상급생들이 움직이는 계단의 새로운 패턴을 분석한 차트를 휴게실 게시판에 붙여두었습니다. 길을 잃어 시간을 낭비하고 싶지 않다면 이동 전에 반드시 숙지하십시오. 지혜로운 자는 환경의 변화를 미리 예측하는 법입니다.
+ 
+참, 독수리 문고리가 최근 '시간의 본질'에 대해 묻기 시작했으니, 철학적인 답변을 미리 준비해두는 것이 좋을 겁니다.
+`
   },
 
   "그리핀도르": {
-    title: "망가진 마법 물품 수리 센터 운영",
-    content: `그리핀도르 학우 여러분, 이번 주에 2등을 한 것은 조금 아쉽지만, 여러분이 보여준 용기 있는 도전들은 결코 헛되지 않았습니다. 특히 어둠의 마법 방어술 실습에서 두려움에 떨던 동료를 대신해 앞장섰던 학생들의 모습은 교수님을 감동시키기에 충분했습니다.
+    title: "아쉬운 2위, 복도 결투 금지령",
+    content: `그리핀도르 학우 여러분, 이번 주 59.1점으로 아쉽게 2위를 기록했습니다. 마지막 마법 방어술 실습에서 보여준 여러분의 열정은 대단했지만, 쉬는 시간 복도에서 슬리데린 학생들과 비공식 결투를 벌이다 감점된 점수가 결과적으로 뼈아픈 실책이 되었습니다.
 
-한 가지 공지사항이 있습니다. 최근 휴게실 내에서 무분별한 주문 연습으로 인해 귀에서 연기가 나는 부작용을 겪는 학생들이 늘고 있습니다. 장난감 폭죽은 물론이고 검증되지 않은 주문 연습은 자제해 주세요. 사감실의 기억력 향상 선인장이 지난 소동 이후로 여전히 민감한 상태이니, 실내에서는 가급적 정숙을 유지해 주시기 바랍니다.
+네빌 롱보텀 교수님께서는 여러분의 용기가 무모한 자존심 싸움으로 번지는 것을 경계하고 계십니다. 교수님께서는 이번 주말, 여러분의 넘치는 에너지를 건전하게 해소할 수 있도록 그리핀도르 기숙사 대항 마법 체스 대회를 개최하기로 하셨습니다. 우승자에게는 맥고나걸 교장 선생님께 특별히 허가받은 고급 양피지 세트가 부상으로 주어집니다.
 
-대신, 이번 주말에는 반장들이 주도하여 고장 난 지팡이 및 마법 물품 점검 시간을 가질 예정입니다. 사소한 고장이 큰 사고로 이어지기 전에 미리미리 점검받으세요. 
-
-그리핀도르의 용기는 철저한 준비에서 시작된다는 것을 잊지 마십시오!`
+또한, 최근 휴게실 벽난로 근처에서 위즐리 형제의 폭죽을 개조해 불꽃놀이를 시도한 2학년들은 자중하십시오. 그리핀도르의 사자 동상이 연기 때문에 재채기를 하느라 밤잠을 설쳤다고 불평이 대단합니다. 우리 기숙사의 상징을 존중해 주길 바랍니다.`
   },
 
   "슬리데린": {
-    title: "슬러그 클럽 초대권, 그리고 격조 높은 승리를 위하여!",
-    content: `슬리데린 학우 여러분, 후플푸프의 예상을 뛰어넘는 활약에 잠시 자리를 내주었지만, 우리 기숙사의 실력은 여전히 독보적입니다. 슬러그혼 교수님께서는 특히 변신술 수업에서 보여준 고학년들의 정교한 마법 운용을 높이 평가하셨습니다.
+    title: "슬러그 클럽의 만찬과 격조 높은 승리를 위하여!",
+    content: `슬리데린 학우 여러분, 이번 주 우리는 50점을 기록하며 잠시 주춤했습니다. 하지만 슬러그혼 교수님께서는 "진정한 보석은 흙 속에서도 빛난다"며, 이번 주 마법약 수업에서 완벽한 기분 전환 물약을 제조해낸 학생들의 이름을 하나하나 수첩에 적으셨습니다.
 
-교수님께서는 이번 주말, 특별히 선발된 몇몇 학생을 대상으로 설탕 절임 파인애플 시식회를 겸한 작은 소모임을 가질 예정이십니다. 초대장을 받은 학생들은 슬리데린의 품격에 맞는 복장을 갖추고 참석하십시오. 이번 기회를 통해 자신의 가치를 증명해 보이길 바랍니다.
+이번 주말, 교수님께 특별 초대장을 받은 학생들은 설탕 절임 파인애플 시식회에 참석하십시오. 이는 단순히 간식을 먹는 자리가 아니라, 호그와트에서 가장 영향력 있는 인맥을 쌓는 '슬러그 클럽'의 입구입니다. 자신의 가치를 증명할 준비를 마친 채 품격 있는 복장으로 나타나길 기대하겠습니다.
 
-그리고 최근 지하 감옥 복도 벽면에 타 기스크를 비방하는 낙서를 하는 이들이 있습니다. 슬리데린은 그런 유치한 수단이 아닌, 오직 결과와 실력으로 상대를 압도하는 곳입니다. 자부심을 가지되 불필요한 마찰은 피하십시오.
+최근 복도 벽면에 유치한 낙서를 남기는 이들이 있는데, 슬리데린은 그런 하급 장난에 휘말리지 않습니다. 오직 완벽한 결과로 상대를 압도하십시오.
 
-1월 마지막 주 암호는 '순수한 승리'입니다.`
+이번주 기숙사 암호는 '고귀한 야심'입니다.`
   },
 
   "후플푸프": {
-    title: "주간 우승! 그리고 온실 파티 안내",
-    content: `친애하는 후플푸프 학우 여러분! 우리가 해냈습니다! 1월의 마지막 주에 당당히 1위를 차지했습니다. 이번 주 마법약 수업에서 슬러그혼 교수님의 까다로운 질문에 차분히 대답해 가산점을 따낸 4학년 학생들과, 폭설 속에서도 올빼미장의 부엉이들을 함께 돌본 모든 학생의 따뜻한 마음이 모인 결과입니다. 스프라우트 교수님께서 여러분이 정말 자랑스럽다며 기뻐하고 계십니다.
+    title: "온실 속의 작은 축제",
+    content: `우리 후플푸프가 1월의 마지막을 승리로 장식했습니다! 0.5점이라는 간발의 차이는 여러분이 이번 주 약초학 실습 후 도구를 깨끗이 정리하고, 도움이 필요한 저학년들의 과제를 함께 고민해준 덕분에 얻은 소중한 가산점 덕분입니다. 스프라우트 교수님께서 여러분의 이런 조용한 성실함이 결국 빛을 발했다며 매우 기뻐하고 계십니다.
 
-우승을 기념하여 오늘 저녁 휴게실에서는 특별한 벌꿀 차와 호박 파이가 제공됩니다. 또한, 스프라우트 교수님께서 우승 선물로 주신 노래하는 수선화를 휴게실 곳곳에 배치했습니다. 이 꽃들은 기분이 좋을 때 부드러운 콧노래를 부르니, 공부하다 지칠 때 곁에서 휴식을 취해보세요.
-
-주의할 점은, 최근 누군가 휴게실 입구 근처에 끈적이는 발판 마법을 걸어두어 몇몇 학우가 넘어질 뻔했습니다. 장난도 좋지만 서로를 배려하는 후플푸프의 정신을 잊지 마세요. 
-
-2월에도 이 결속력을 이어가도록 합시다!`
+승리를 축하하기 위해 오늘 저녁 휴게실에는 주방에서 갓 구운 메이플 시럽 스콘이 배달됩니다. 
+그리고 특별한 소식이 있습니다. 교수님께서 우승 선물로 주신 자장가를 부르는 이끼를 휴게실 구석 소파 근처에 배치했습니다. 시험 공부로 지친 머리를 식히고 싶다면 그 근처에서 잠시 휴식을 취해보세요. 스트레스 해소에 큰 도움이 될 겁니다!
+`
   }
 };
 
@@ -197,21 +191,45 @@ const sortKorean = (a: string, b: string) => {
 // [5] 메인 App 컴포넌트 및 상태(State) 관리
 // ==========================================
 export default function HogwartsApp() {
+  // --- [추가] 월요일 18:00 기준 날짜 조정 함수 ---
+  const getAdjustedToday = () => {
+    const now = new Date();
+    const day = now.getDay();    // 0(일), 1(월), 2(화)...
+    const hours = now.getHours();
+
+    // 월요일(1)이면서 오후 6시(18시) 이전인 경우에만 하루 전(일요일)으로 취급
+    if (day === 1 && hours < 18) {
+      const adjusted = new Date(now);
+      adjusted.setDate(now.getDate() - 1);
+      return adjusted;
+    }
+    return now;
+  };
+
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [selectedName, setSelectedName] = useState("");
   const [password, setPassword] = useState("");
   const [records, setRecords] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const [selectedHouseNotice, setSelectedHouseNotice] = useState<string | null>(null);
   
-  // 요약 확인 팝업 상태 추가
+  // ✅ [수정] 초기값을 조정된 날짜로 설정
+  const [currentTime, setCurrentTime] = useState(getAdjustedToday());
+  
+  const [selectedHouseNotice, setSelectedHouseNotice] = useState<string | null>(null);
   const [showSummary, setShowSummary] = useState(false); 
   const [selectedStudentReport, setSelectedStudentReport] = useState<string | null>(null);
-  
   const [dailyGoal, setDailyGoal] = useState("");
   const [isEditingGoal, setIsEditingGoal] = useState(false);
+
+  // --- [추가] 실시간 시간 업데이트 시에도 조정 로직 유지 ---
+  useEffect(() => {
+    const timer = setInterval(() => {
+      // 매분/매초 업데이트 시에도 18:00 기준을 체크하여 반영
+      setCurrentTime(getAdjustedToday());
+    }, 60000); // 1분마다 체크
+    return () => clearInterval(timer);
+  }, []);
 
   // [상태 관리] Dragon Cave 이미지 및 애니메이션
   const [currentImageFile, setCurrentImageFile] = useState('x.jpg');
@@ -235,85 +253,37 @@ export default function HogwartsApp() {
     }, 300);
   };
 
-  // [추가] 공부 시간에 따른 알 성장 단계 결정 로직 (방어 코드 강화)
-  const getEvolutionImage = (baseEggUrl: string | null, totalMinutes: number = 0): string => {
-    // 빌드 타임 에러 방지: URL이 없거나 문자열이 아니면 투명 이미지 반환
-    if (!baseEggUrl || typeof baseEggUrl !== 'string') {
-      return "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-    }
+    // 알 선택시 팝업
+const [eggStep, setEggStep] = useState<number>(0);
+const [tempEgg, setTempEgg] = useState<string | null>(null);
+const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
 
-    try {
-      const fileName = baseEggUrl.split('/').pop()?.split('.')[0] || ""; 
-      if (!fileName) return baseEggUrl;
-
-      const prefix = fileName.substring(0, 2); 
-      const eggNum = fileName.substring(2);
-      
-      // studentData가 없을 때를 대비해 totalMinutes를 확실히 숫자로 취급
-      const totalHours = (Number(totalMinutes) || 0) / 60; 
-
-      let finalFileName = "";
-      if (totalHours < 100) {
-        finalFileName = `${prefix}${eggNum}`;
-      } else if (totalHours < 150) {
-        finalFileName = `${prefix}${eggNum}${eggNum}`;
-      } else if (totalHours < 200) {
-        finalFileName = `${prefix}${eggNum}${eggNum}${eggNum}`;
-      } else {
-        finalFileName = `${prefix}${eggNum}${eggNum}${eggNum}${eggNum}`;
-      }
-
-      return `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${finalFileName}.webp`;
-    } catch (error) {
-      return baseEggUrl;
-    }
-  };
-
-  // 1. 드래곤 관련 상태 (useState)
-  const [eggStep, setEggStep] = useState<number>(0);
-  const [tempEgg, setTempEgg] = useState<string | null>(null);
-  const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
-
-  // 2. 학생 데이터 상태
-  // 빌드 오류 방지를 위해 초기값을 null로 유지하되 접근 시 안전장치 마련
-  const [studentData, setStudentData] = useState<any>(null);
-  const loggedInStudentId = studentData?.student_id || ""; 
-
-  // 3. 페이지 로드 시 Supabase에서 데이터 불러오기
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (user) {
-          const { data, error } = await supabase
-            .from('student_master')
-            .select('selected_egg, total_study_time, student_id')
-            .eq('student_id', user.id) 
-            .single();
-
-          if (data && !error) {
-            setSelectedEgg(data.selected_egg); 
-            setStudentData(data); 
-          }
-        }
-      } catch (err) {
-        console.warn("Initial Load Data not found (expected during build)");
-      }
-    };
-
-    fetchInitialData();
-  }, []);
-
-  // ==========================================
+    // ==========================================
   // [6] 초기 실행 (인증 확인 및 시계)
   // ==========================================
   useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    // 1초마다 시간을 업데이트하되, 월요일 18:00 기준 로직을 적용합니다.
+    const timer = setInterval(() => {
+      const now = new Date();
+      const day = now.getDay();
+      const hours = now.getHours();
+
+      // 월요일(1)이면서 오후 6시(18시) 이전인 경우 하루 전으로 조정
+      if (day === 1 && hours < 18) {
+        const adjusted = new Date(now);
+        adjusted.setDate(now.getDate() - 1);
+        setCurrentTime(adjusted);
+      } else {
+        setCurrentTime(now);
+      }
+    }, 1000);
+
     const saved = localStorage.getItem('hg_auth');
     if (saved) {
       const { name, admin } = JSON.parse(saved);
-      setSelectedName(name); setIsAdmin(admin); setIsLoggedIn(true);
+      setSelectedName(name); 
+      setIsAdmin(admin); 
+      setIsLoggedIn(true);
     }
     return () => clearInterval(timer);
   }, []);
@@ -348,33 +318,31 @@ export default function HogwartsApp() {
     localStorage.setItem('hg_auth', JSON.stringify({ name: selectedName, admin }));
   };
 
-// ==========================================
-// [9] 주간 데이터 초기화 및 용 성장 데이터 누적
-// ==========================================
-const resetWeeklyData = async () => {
-  // 1. 사용자 확인
-  if (!confirm("⚠️ 이번 주 기록을 합산하여 용을 성장시키고 표를 초기화하시겠습니까?")) return;
-  if (!confirm("정말로 진행하시겠습니까? 합산된 공부 시간은 되돌릴 수 없습니다.")) return;
+  // ==========================================
+  // [15] 주간 데이터 초기화 및 용 성장 데이터 누적
+  // ==========================================
+  const resetWeeklyData = async () => {
+    // 1. 사용자 확인
+    if (!confirm("⚠️ 이번 주 기록을 합산하여 용을 성장시키고 표를 초기화하시겠습니까?")) return;
+    if (!confirm("정말로 진행하시겠습니까? 합산된 공부 시간은 되돌릴 수 없습니다.")) return;
 
-  setIsSaving(true);
-  try {
-    // studentData가 null일 경우를 대비해 빈 객체(|| {})를 기본값으로 줍니다.
-    const names = (studentData || []).map((s: any) => s.student_name);
+    setIsSaving(true);
+    try {
+      const names = Object.keys(studentData);
 
-    // --- [단계 1] 용 성장을 위한 공부 시간 합산 및 마스터 테이블 누적 ---
-// ✅ 수정: (name) 뒤에 : string 타입을 추가합니다.
-const updatePromises = names.map(async (name: string) => { 
-  // records도 혹시 모를 에러 방지를 위해 || [] 처리를 해주면 더 안전합니다.
-  const studentRecords = (records || []).filter(r => r.student_name === name);
-      
-      // 이번 주 공부 시간(HH:mm)을 '분' 단위로 합산
-      let weeklyMinutes = 0;
-      studentRecords.forEach(r => {
-        const [h, m] = (r.study_time || "0:00").split(':').map(Number);
-        if (!isNaN(h) && !isNaN(m)) {
-          weeklyMinutes += (h * 60) + m;
-        }
-      });
+      // --- [단계 1] 용 성장을 위한 공부 시간 합산 및 마스터 테이블 누적 ---
+      const updatePromises = names.map(async (name) => {
+        // 현재 화면(records 상태값)에서 해당 학생의 월~일 기록 필터링
+        const studentRecords = records.filter(r => r.student_name === name);
+        
+        // 이번 주 공부 시간(HH:mm)을 '분' 단위로 합산
+        let weeklyMinutes = 0;
+        studentRecords.forEach(r => {
+          const [h, m] = (r.study_time || "0:00").split(':').map(Number);
+          if (!isNaN(h) && !isNaN(m)) {
+            weeklyMinutes += (h * 60) + m;
+          }
+        });
 
         // 합산할 시간이 있는 경우에만 DB 업데이트 실행
         if (weeklyMinutes > 0) {
@@ -437,15 +405,12 @@ const updatePromises = names.map(async (name: string) => {
   // ==========================================
   // [10] 월휴 초기화 (Monthly Reset)
   // ==========================================
-    const resetMonthlyOff = async () => {
+  const resetMonthlyOff = async () => {
     if (!confirm("⚠️ 주의: 모든 학생의 월휴 개수를 초기화하시겠습니까?")) return;
     setIsSaving(true);
 
-    // map을 사용하여 실제 학생 이름 배열을 만듭니다.
-    const names = (studentData || []).map((s: any) => s.student_name);
+    const names = Object.keys(studentData);
     const resetData = [];
-    
-    // ... 이후 로직
 
     // 현재 records에 있는 기존 데이터를 바탕으로 monthly_off_count만 4로 변경
     for (const name of names) {
@@ -473,8 +438,12 @@ const updatePromises = names.map(async (name: string) => {
   // [11] 점수 계산 및 리포트 연동 로직
   // ==========================================
   const calc = (r: any) => {
-    if (!r) return { penalty: 0, bonus: 0, total: 0, studyH: 0 };
-    // 결석은 즉시 벌점 -5점
+    // 1. 데이터가 없거나, 버튼이 '-' 상태인 경우 점수 계산 안 함 (0점)
+    if (!r || !r.off_type || r.off_type === '-' || r.off_type === '') {
+      return { penalty: 0, bonus: 0, total: 0, studyH: 0 };
+    }
+    
+    // 2. 결석은 즉시 벌점 -5점
     if (r.off_type === '결석') return { penalty: -5, bonus: 0, total: -5, studyH: 0 };
     
     const timeVal = r.study_time || "";
@@ -482,36 +451,50 @@ const updatePromises = names.map(async (name: string) => {
     const studyH = (isNaN(h) ? 0 : h) + (isNaN(m) ? 0 : m / 60);
     
     let penalty = 0, bonus = 0;
+    
     const isHalfOff = ['반휴', '월반휴', '늦반휴', '늦월반휴'].includes(r.off_type);
     const isFullOff = ['주휴', '월휴', '자율', '늦휴', '늦월휴'].includes(r.off_type);
     
-    // 늦은 휴무 사용 시 벌점 -1 (중복 적용 가능)
-    if (['늦반휴', '늦휴', '늦월반휴', '늦월휴'].includes(r.off_type)) penalty -= 1;
-    // 지각 시 벌점 -1 (풀휴무 제외)
-    if (r.is_late && !isFullOff) penalty -= 1;
-    // 오전 3시간 미달성 시 벌점 -1 (공부한 기록이 있을 때만 체크)
-    if ((r.off_type === '-' || r.off_type === '출석') && r.am_3h === false && studyH > 0) penalty -= 1;
+    // A. 늦은 휴무 신청 자체 벌점 (-1)
+    if (['늦반휴', '늦휴', '늦월반휴', '늦월휴'].includes(r.off_type)) {
+      penalty -= 1;
+    }
     
-    // 시간당 상벌점 (풀휴무/자율 제외)
-    if (!isFullOff && r.off_type !== '자율' && studyH > 0) {
+    // B. 지각 벌점 (풀휴무/자율 제외)
+    if (r.is_late && !isFullOff && r.off_type !== '자율') {
+      penalty -= 1;
+    }
+    
+    // C. 시간당 상벌점 로직 (풀휴무/자율 제외)
+    if (!isFullOff && r.off_type !== '자율') {
+      
+      // [오전 3시간 체크] 반휴 계열이 아니고 공부 기록이 있을 때 미달 시 -1
+      if (!isHalfOff && r.am_3h === false && studyH > 0) {
+        penalty -= 1;
+      }
+
+      // [기준 시간 미달/초과 체크]
       const target = isHalfOff ? 4 : 9;
+      
       if (studyH < target) {
         penalty -= Math.ceil(target - studyH);
       } else if (!isHalfOff && studyH >= target + 1) {
-        // 일반 출석 시 10시간부터 상점 부여
         bonus += Math.floor(studyH - target);
       }
     }
-    
+
+    // D. 벌점 한도 적용: 벌점은 하루 최대 -5점까지만
+    const finalPenalty = Math.max(penalty, -5);
+
     return { 
-      penalty: Math.max(penalty, -5), 
+      penalty: finalPenalty, 
       bonus, 
-      total: Math.max(penalty, -5) + bonus, 
+      total: finalPenalty + bonus, 
       studyH 
     };
   };
 
-  // ==========================================
+ // ==========================================
   // [12] 요약 리포트 팝업 데이터 연동 함수
   // ==========================================
 
@@ -559,26 +542,33 @@ const updatePromises = names.map(async (name: string) => {
   };
 
   const getWeeklyDateRange = () => {
-    const today = new Date();
+    const today = currentTime; 
     const day = today.getDay();
     const diff = today.getDate() - (day === 0 ? 6 : day - 1);
-    const monday = new Date(new Date().setDate(diff));
-    const sunday = new Date(new Date().setDate(diff + 6));
-    // 출력 형식 수정: M.D - M.D -> M월 D일 ~ M월 D일
+    
+    // 기준일(today)로부터 계산된 월요일과 일요일 설정
+    const monday = new Date(new Date(today).setDate(diff));
+    const sunday = new Date(new Date(today).setDate(diff + 6));
+    
+   // 출력 형식: M월 D일 ~ M월 D일
     return `${monday.getMonth() + 1}월 ${monday.getDate()}일 ~ ${sunday.getMonth() + 1}월 ${sunday.getDate()}일`;
   };
 
   const getDayDate = (targetDay: string) => {
     const dayIdx = DAYS.indexOf(targetDay);
-    const today = new Date();
+    // ✅ 진짜 오늘 날짜(new Date()) 대신, 조정된 시계(currentTime)를 사용합니다.
+    const today = currentTime; 
     const currentDay = today.getDay();
     const diff = today.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + dayIdx;
-    const target = new Date(new Date().setDate(diff));
+    
+    // ✅ target 계산 시에도 기준이 되는 today(currentTime)를 넣어줘야 정확합니다.
+    const target = new Date(new Date(today).setDate(diff));
     return `${target.getMonth() + 1}.${target.getDate()}`;
   };
 
   const getMonthAccumulatedTime = (name: string) => {
-    const currentMonth = new Date().getMonth() + 1;
+    // ✅ 여기도 currentTime을 기준으로 월을 판단합니다.
+    const currentMonth = currentTime.getMonth() + 1; 
     let totalMinutes = 0;
     
     // records 배열에 있는 모든 study_time을 합산하여 월 누적치 생성
@@ -598,34 +588,19 @@ const updatePromises = names.map(async (name: string) => {
   // [13] 기숙사 랭킹 계산
   // ==========================================
   const houseRankings = useMemo(() => {
-    // 1. HOUSE_ORDER가 없거나 studentData가 로드 전일 때 빈 배열 반환
-    if (!HOUSE_ORDER || !studentData) return [];
-
     return HOUSE_ORDER.map(house => {
-      // ✅ 수정: studentData(배열)에서 해당 기수 학생들만 필터링
-      const studentsInHouse = (studentData || []).filter((s: any) => s.house === house);
-      
+      const students = Object.keys(studentData).filter(n => studentData[n].house === house);
       let tScore = 0, tH = 0;
-
-      // 2. 해당 기수 학생들의 점수 합산
-      studentsInHouse.forEach((student: any) => {
-        const name = student.student_name;
+      students.forEach(name => {
         DAYS.forEach(day => {
-          const record = (records || []).find(r => r.student_name === name && r.day_of_week === day);
-          const res = calc(record); // calc 함수가 외부에 정의되어 있어야 합니다.
-          tScore += res.total; 
-          tH += res.studyH;
+          const res = calc(records.find(r => r.student_name === name && r.day_of_week === day));
+          tScore += res.total; tH += res.studyH;
         });
       });
-
-      // 3. 평균 점수 계산 (학생 수로 나눔)
-      const avg = studentsInHouse.length > 0 
-        ? (tScore / studentsInHouse.length) + Math.floor(tH / studentsInHouse.length) 
-        : 0;
-
+      const avg = students.length > 0 ? (tScore / students.length) + Math.floor(tH / students.length) : 0;
       return { house, finalPoint: avg };
-    }).sort((a, b) => b.finalPoint - a.finalPoint); // 점수 높은 순 정렬
-  }, [records, studentData]);
+    }).sort((a, b) => b.finalPoint - a.finalPoint);
+  }, [records]);
 
   // ==========================================
   // [14] 배경음악(BGM) 로직
@@ -717,75 +692,58 @@ const updatePromises = names.map(async (name: string) => {
   };
 
 // ==========================================
-// [18] 로그인 화면 (Render Login)
-// ==========================================
-if (!isLoggedIn) {
-  return (
-    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
-      <style>{GLOVAL_STYLE}</style>
-      <div className="bg-white p-10 rounded-[2.5rem] w-full max-w-md shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-2 bg-yellow-500"></div>
-        <div className="flex justify-center mb-10">
-          <img 
-            src="https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/Hogwarts.png" 
-            alt="Hogwarts" 
-            className="w-56 h-auto object-contain" 
-          />
-        </div>
-        <div className="space-y-6">
-          <select 
-            className="w-full p-5 border-2 rounded-2xl font-bold text-slate-800 bg-slate-50 outline-none text-lg" 
-            value={selectedName} 
-            onChange={(e)=>setSelectedName(e.target.value)}
-          >
-            <option value="">이름을 선택하세요</option>
-           {/* ✅ 수정: map 안의 name에 : string 타입을 명시하여 빨간 줄을 제거합니다. */}
-{(studentData || [])
-  .map((s: any) => s.student_name)
-  .sort(sortKorean)
-  .map((name: string) => ( // 👈 여기 : string 추가
-    <option key={name} value={name}>{name}</option>
-  ))
-}
-          </select>
-          <input 
-            type="password" 
-            placeholder="PASSWORD" 
-            className="w-full p-5 border-2 rounded-2xl font-bold text-slate-800 bg-slate-50 outline-none text-lg" 
-            value={password} 
-            onChange={(e)=>setPassword(e.target.value)} 
-            onKeyDown={(e)=>e.key==='Enter' && handleLogin()} 
-          />
-          <button 
-            onClick={handleLogin} 
-            className="w-full bg-slate-900 text-yellow-500 py-5 rounded-2xl font-black shadow-lg uppercase text-xl active:scale-95 transition-transform"
-          >
-            Enter Castle
-          </button>
+  // [18] 로그인 화면 (Render Login)
+  // ==========================================
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
+        <style>{GLOVAL_STYLE}</style>
+        <div className="bg-white p-10 rounded-[2.5rem] w-full max-w-md shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-2 bg-yellow-500"></div>
+          <div className="flex justify-center mb-10">
+            <img 
+              src="https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/Hogwarts.png" 
+              alt="Hogwarts" 
+              className="w-56 h-auto object-contain" 
+            />
+          </div>
+          <div className="space-y-6">
+            <select className="w-full p-5 border-2 rounded-2xl font-bold text-slate-800 bg-slate-50 outline-none text-lg" value={selectedName} onChange={(e)=>setSelectedName(e.target.value)}>
+              <option value="">이름을 선택하세요</option>
+              {Object.keys(studentData).sort(sortKorean).map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+            <input type="password" placeholder="PASSWORD" className="w-full p-5 border-2 rounded-2xl font-bold text-slate-800 bg-slate-50 outline-none text-lg" value={password} onChange={(e)=>setPassword(e.target.value)} onKeyDown={(e)=>e.key==='Enter' && handleLogin()} />
+            <button onClick={handleLogin} className="w-full bg-slate-900 text-yellow-500 py-5 rounded-2xl font-black shadow-lg uppercase text-xl active:scale-95 transition-transform">Enter Castle</button>
+          </div>
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   // ==========================================
   // [19] 메인 화면 데이터 준비 (학생 필터링 등)
   // ==========================================
   const displayList = isAdmin 
-    ? (studentData || [])
-        .sort((a: any, b: any) => {
-          // 1. 기수(House) 순서대로 정렬
-          const houseDiff = HOUSE_ORDER.indexOf(a.house) - HOUSE_ORDER.indexOf(b.house);
-          // 2. 기수가 같다면 이름순(sortKorean)으로 정렬
-          return houseDiff !== 0 ? houseDiff : sortKorean(a.student_name, b.student_name);
-        })
-        .map((s: any) => s.student_name) // 최종적으로 이름 문자열 배열로 변환
+    ? Object.keys(studentData).sort((a, b) => {
+        const houseDiff = HOUSE_ORDER.indexOf(studentData[a].house) - HOUSE_ORDER.indexOf(studentData[b].house);
+        return houseDiff !== 0 ? houseDiff : sortKorean(a, b);
+      })
     : [selectedName];
 
   // ==========================================
-  // [20] 이름에서 이모지를 제거하는 유틸 함수
+  // [20] 애니메이션/체크박스 충돌 없는 안전한 이름 추출 함수
   // ==========================================
-  const formatDisplayName = (name: string) => name.replace(/[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, '').trim();
+  const formatDisplayName = (name: any): string => {
+    if (!name || typeof name !== 'string') return "";
+    try {
+      // 이모지를 지우는 대신, "한글/영어/숫자" 덩어리만 찾아서 가져옵니다.
+      // 복잡한 유니코드 범위를 건드리지 않아 애니메이션과 디자인이 깨지지 않습니다.
+      const match = name.match(/[가-힣a-zA-Z0-9]+/);
+      return match ? match[0].trim() : name;
+    } catch (e) {
+      return String(name);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 font-sans relative">
@@ -814,6 +772,7 @@ if (!isLoggedIn) {
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
       `}</style>
       
+      
 {/*[21] 기숙사별 공지사항 팝업 */}
       {selectedHouseNotice && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setSelectedHouseNotice(null)}>
@@ -835,51 +794,43 @@ if (!isLoggedIn) {
       )}
 
  {/*[22] 관리자 화면 요약 확인 팝업 (전체 기숙사 요약) */}
-{showSummary && (
-  <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowSummary(false)}>
-    <div className="bg-white rounded-[2rem] p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative" onClick={e => e.stopPropagation()}>
-      <button onClick={() => setShowSummary(false)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-800 transition-colors text-2xl font-black">✕</button>
-      <h3 className="text-2xl font-serif font-black text-slate-800 mb-8 italic tracking-tighter border-b-2 border-slate-100 pb-4 text-center">House Weekly Summary</h3>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border-t border-l border-slate-300 overflow-hidden rounded-xl">
-        {HOUSE_ORDER.map(house => {
-          // ✅ 수정: studentData가 배열이므로 .filter()를 직접 사용합니다.
-          const studentsInHouse = (studentData || []).filter((s: any) => s.house === house);
-          const config = (HOUSE_CONFIG as any)[house];
-
-          return (
-            <div key={house} className="flex flex-col border-r border-b border-slate-300">
-              <div className={`${config.bg} p-2 text-white font-black text-center text-[11px] tracking-widest`}>{config.icon} {house}</div>
-              <div className="flex flex-col flex-1 divide-y divide-slate-200">
-                {/* ✅ 수정: 이미 객체 배열이므로 student_name을 기준으로 정렬하고 맵핑합니다. */}
-                {studentsInHouse.sort((a: any, b: any) => sortKorean(a.student_name, b.student_name)).map((student: any) => {
-                  const name = student.student_name;
-                  const emoji = student.emoji || "👤";
-                  let tMins = 0;
-                  
-                  (records || []).filter(r => r.student_name === name).forEach(r => {
-                    const [h, m] = (r.study_time || "").split(':').map(Number);
-                    tMins += (isNaN(h) ? 0 : h * 60) + (isNaN(m) ? 0 : m);
-                  });
-
-                  return (
-                    <div key={name} className="flex h-10">
-                      <div className={`w-10 flex items-center justify-center text-lg border-r border-slate-200 ${config.bg.replace('bg-', 'bg-opacity-10 bg-')}`}>{emoji}</div>
-                      <div className="flex-1 flex items-center justify-center font-black text-sm text-slate-700 bg-white">
-                        <span className={tMins < 1200 ? "text-red-500" : "text-slate-800"}>
-                          {tMins > 0 ? `${Math.floor(tMins/60)}:${(tMins%60).toString().padStart(2,'0')}` : "-"}
-                        </span>
-                      </div>
+      {showSummary && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowSummary(false)}>
+          <div className="bg-white rounded-[2rem] p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setShowSummary(false)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-800 transition-colors text-2xl font-black">✕</button>
+            <h3 className="text-2xl font-serif font-black text-slate-800 mb-8 italic tracking-tighter border-b-2 border-slate-100 pb-4 text-center">House Weekly Summary</h3>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border-t border-l border-slate-300 overflow-hidden rounded-xl">
+              {HOUSE_ORDER.map(house => {
+                const studentsInHouse = Object.keys(studentData).filter(name => studentData[name].house === house);
+                const config = (HOUSE_CONFIG as any)[house];
+                return (
+                  <div key={house} className="flex flex-col border-r border-b border-slate-300">
+                    <div className={`${config.bg} p-2 text-white font-black text-center text-[11px] tracking-widest`}>{config.icon} {house}</div>
+                    <div className="flex flex-col flex-1 divide-y divide-slate-200">
+                      {studentsInHouse.sort(sortKorean).map(name => {
+                        const emoji = studentData[name].emoji || "👤";
+                        let tMins = 0;
+                        records.filter(r => r.student_name === name).forEach(r => {
+                          const [h, m] = (r.study_time || "").split(':').map(Number);
+                          tMins += (isNaN(h) ? 0 : h * 60) + (isNaN(m) ? 0 : m);
+                        });
+                        return (
+                          <div key={name} className="flex h-10">
+                            <div className={`w-10 flex items-center justify-center text-lg border-r border-slate-200 ${config.bg.replace('bg-', 'bg-opacity-10 bg-')}`}>{emoji}</div>
+                            <div className="flex-1 flex items-center justify-center font-black text-sm text-slate-700 bg-white">
+                              <span className={tMins < 1200 ? "text-red-500" : "text-slate-800"}>{tMins > 0 ? `${Math.floor(tMins/60)}:${(tMins%60).toString().padStart(2,'0')}` : "-"}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
-      </div>
-    </div>
-  </div>
-)}
+          </div>
+        </div>
+      )}
 
       {/*[23] 상단 헤더 및 기숙사 점수판 구역 */}
       <div className="max-w-[1100px] mx-auto mb-8">
@@ -966,20 +917,18 @@ if (!isLoggedIn) {
               </tr>
             </thead>
             <tbody>
-              {displayList.map((name: string) => {
-  const info = (studentData || []).find((s: any) => s.student_name === name) || {};
-  
-  const monRec = (records || []).find(r => r.student_name === name && r.day_of_week === '월') || {};
-  const offCount = monRec.monthly_off_count ?? 4;
-  const rows = [{f:'off_type'},{f:'is_late'},{f:'am_3h'},{f:'study_time'},{f:'penalty'},{f:'bonus'},{f:'total'}];
-  
-  let tMins = 0; let tPts = 0;
-  (records || []).filter(r => r.student_name === name).forEach(r => {
-    const res = calc(r);
-    const [h, m] = (r.study_time || "").split(':').map(Number);
-    tMins += (isNaN(h) ? 0 : h * 60) + (isNaN(m) ? 0 : m);
-    tPts += res.total;
-  });
+              {displayList.map(name => {
+                const info = studentData[name];
+                const monRec = records.find(r => r.student_name === name && r.day_of_week === '월') || {};
+                const offCount = monRec.monthly_off_count ?? 4;
+                const rows = [{f:'off_type'},{f:'is_late'},{f:'am_3h'},{f:'study_time'},{f:'penalty'},{f:'bonus'},{f:'total'}];
+                let tMins = 0; let tPts = 0;
+                records.filter(r => r.student_name === name).forEach(r => {
+                  const res = calc(r);
+                  const [h, m] = (r.study_time || "").split(':').map(Number);
+                  tMins += (isNaN(h) ? 0 : h * 60) + (isNaN(m) ? 0 : m);
+                  tPts += res.total;
+                });
                 return (
                   <React.Fragment key={name}>
                     {isAdmin && (
@@ -1102,24 +1051,22 @@ if (!isLoggedIn) {
         }}
       />
 
-      {/* ✨ 1. 최종 선택된 드래곤 표시 (성장 로직 반영 버전) */}
+      {/* ✨ 1. 최종 선택된 알 표시 (바닥 배치 버전) */}
 {selectedEgg && (currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (
   <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
     <div className="relative flex flex-col items-center translate-y-20 md:translate-y-28">
-      
-      {/* 바닥 그림자 */}
       <div className="absolute -bottom-0.5 w-10 h-2 md:w-12 md:h-2.5 bg-black/40 rounded-[100%] blur-[3px]" />
       
-      {/* 선택된 드래곤 이미지: getEvolutionImage 함수로 단계별 이미지 출력 */}
+      {/* 선택된 알 이미지: 아래쪽이 그림자에 닿는 느낌으로 배치 */}
       <img 
-        // studentData.total_study_time은 int8 숫자이므로 기본값을 0으로 줍니다.
-        src={getEvolutionImage(selectedEgg, studentData?.total_study_time || 0)} 
-        alt="Growing Dragon" 
+        src={selectedEgg} 
+        alt="Selected Egg" 
         className="relative w-14 h-14 md:w-18 md:h-18 object-contain drop-shadow-[0_4px_6px_rgba(0,0,0,0.2)]"
       />
     </div>
   </div>
 )}
+
       {/* ✨ 2. 지역별 알 선택 레이어 */}
       {!isFading && currentImageFile !== 'main.webp' && currentImageFile !== 'x.jpg' && (
         <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-8 px-4 z-20">
