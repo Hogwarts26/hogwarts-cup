@@ -1051,14 +1051,11 @@ const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
         }}
       />
 
-     {/* ✨ 1. 최종 선택된 알 표시 (바닥 배치 버전) */}
+    {/* ✨ 1. 최종 선택된 알 표시 (바닥 배치 버전) */}
       {selectedEgg && (currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-          {/* x.jpg에서 잘리지 않도록 translate-y 값을 줄여 위로 올렸습니다 (기존 20/28 -> 12/16) */}
           <div className="relative flex flex-col items-center translate-y-12 md:translate-y-16">
             <div className="absolute -bottom-1 w-6 h-1.5 md:w-8 md:h-2 bg-black/40 rounded-[100%] blur-[4px]" />
-            
-            {/* 알 사이즈 축소 (기존 12/16 -> 10/12) */}
             <img 
               src={selectedEgg} 
               alt="Selected Egg" 
@@ -1085,7 +1082,6 @@ const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
                     setTempEgg(eggUrl);
                     setEggStep(1);
                   }}
-                  {/* 알 사이즈 */}
                   className="relative w-10 h-10 md:w-12 md:h-12 object-contain hover:-translate-y-2 transition-transform duration-300 cursor-pointer"
                   onError={(e) => {
                     e.currentTarget.parentElement!.style.display = 'none';
