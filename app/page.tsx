@@ -1084,58 +1084,43 @@ export default function HogwartsApp() {
               }}
             />
 
-        {/* 드래곤 성장 표시 로직 (12000 돌파 버전) */}
+        {/* 드래곤 성장 표시 로직 (깜빡임 해결 버전) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
               const testEgg = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1.webp";
               const currentEgg = selectedEgg || testEgg;
-
-              // 1️⃣ 파일명 분석 (지역코드와 숫자 추출)
               const fileName = currentEgg.split('/').pop().split('.')[0].trim(); 
               const prefix = fileName.substring(0, 2); 
               const eggNum = (fileName.match(/\d/) || ["1"])[0];
 
-              // 2️⃣ 시간 설정 (테스트 점수)
-              // 혹시 모를 타입 오류 방지를 위해 명시적 숫자 변환
+              // 1. 시간 데이터 (13000 고정)
               const testTime = 13000; 
 
-              // 3️⃣ 단계 계산 (가장 큰 숫자부터 우선 순위 부여)
+              // 2. 단계 계산
               let levelCount = 1;
-              if (testTime >= 12000) {
-                levelCount = 4;
-              } else if (testTime >= 9000) {
-                levelCount = 3;
-              } else if (testTime >= 6000) {
-                levelCount = 2;
-              } else {
-                levelCount = 1;
-              }
+              if (testTime >= 12000) levelCount = 4;
+              else if (testTime >= 9000) levelCount = 3;
+              else if (testTime >= 6000) levelCount = 2;
 
-              // 4️⃣ 파일명 생성 (repeat 대신 더 직관적인 방식)
+              // 3. 파일명 생성
               let repeatPart = eggNum;
               if (levelCount === 4) repeatPart = `${eggNum}${eggNum}${eggNum}${eggNum}`;
               else if (levelCount === 3) repeatPart = `${eggNum}${eggNum}${eggNum}`;
               else if (levelCount === 2) repeatPart = `${eggNum}${eggNum}`;
 
-              const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${repeatPart}.webp?v=${new Date().getTime()}`;
-
-              // 🕵️ 범인 검거용 로그 (콘솔에서 이 값을 확인하세요!)
-              console.log("--- 드래곤 로직 검증 ---");
-              console.log("입력시간:", testTime);
-              console.log("확정레벨:", levelCount);
-              console.log("최종주소:", finalUrl);
+              // 🚀 핵심: v= 뒤에 시간을 빼고 levelCount를 넣어 주소를 고정합니다.
+              // 이렇게 해야 무한 새로고침이 멈추고 이미지가 제대로 보입니다.
+              const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${repeatPart}.webp?v=${levelCount}`;
 
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
                   <div className="relative flex flex-col items-center translate-y-16 md:translate-y-24">
                     <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
                     <img 
-                      key={finalUrl} 
+                      key={levelCount} // 레벨이 변할 때만 새로 그림
                       src={finalUrl} 
-                      alt="Dragon Evolution"
+                      alt="Dragon"
                       className="relative w-10 h-10 md:w-14 md:h-14 object-contain drop-shadow-xl animate-bounce-slow mb-1"
-                      onError={(e) => { 
-                        e.currentTarget.src = currentEgg; 
-                      }} 
+                      onError={(e) => { e.currentTarget.src = currentEgg; }} 
                     />
                   </div>
                 </div>
