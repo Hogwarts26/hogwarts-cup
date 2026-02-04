@@ -1086,39 +1086,41 @@ export default function HogwartsApp() {
 
 {/* 드래곤 성장 표시 로직 (테스트 모드) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
-              // 1️⃣ 테스트용 설정: volcano 1번 알 기준
+              // 1️⃣ [가짜 알 설정]: DB 연동 없이도 volcano 1번 알을 가졌다고 가정
               const testEgg = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1.webp";
-              
-              // 현재 선택된 알이 없으면 테스트용 알(vo1)을 사용
               const currentEgg = selectedEgg || testEgg; 
 
               const eggFileName = currentEgg.split('/').pop() || "";
-              const prefix = eggFileName.substring(0, 2); // 'vo' 추출
+              const prefix = eggFileName.substring(0, 2); 
+              const eggNum = eggFileName.replace(/[^0-9]/g, '').charAt(0);
 
-              // 2️⃣ 테스트를 위해 4단계 파일명("1111") 강제 지정
-              const repeatNum = "1111"; 
+              const studentName = selectedName; 
+              const masterData = studentMasterData[studentName];
+              const totalMinutes = 8000;
+
+              let levelCount = 1;
+              if (totalMinutes >= 12000) levelCount = 4;
+              else if (totalMinutes >= 9000) levelCount = 3;
+              else if (totalMinutes >= 6000) levelCount = 2;
 
               const baseUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/";
-              
-              // 💡 중요: 캐시 방지를 위해 주소 뒤에 ?v=1 등을 붙여 최신 파일을 불러오게 함
-              const evolutionImage = `${baseUrl}${prefix}${repeatNum}.webp?v=1`;
+              const repeatNum = eggNum.repeat(levelCount); 
+              const evolutionImage = `${baseUrl}${prefix}${repeatNum}.webp`;
 
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
+                  {/* 📍 위치 조정: 너무 바닥 끝에 붙지 않도록 y값을 20/28에서 16/24로 살짝 올렸습니다. */}
                   <div className="relative flex flex-col items-center translate-y-16 md:translate-y-24">
                     
-                    {/* 🌑 그림자 */}
+                    {/* 🌑 그림자: 이미지와 그림자 사이에 간격을 주어 쾌적하게 배치 */}
                     <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
                     
                     <img 
                       src={evolutionImage} 
                       alt="Dragon"
+                      /* 📏 크기: 너무 크지 않게 조절하고, 그림자와의 간격을 위해 bottom 마진(mb-1) 추가 */
                       className="relative w-10 h-10 md:w-14 md:h-14 object-contain drop-shadow-xl animate-bounce-slow mb-1"
-                      onError={(e) => { 
-                        // 로드 실패 시 콘솔에 에러 출력 및 테스트 알로 대체
-                        console.error("4단계 이미지 로드 실패:", evolutionImage);
-                        e.currentTarget.src = testEgg; 
-                      }} 
+                      onError={(e) => { e.currentTarget.src = selectedEgg; }} 
                     />
                   </div>
                 </div>
