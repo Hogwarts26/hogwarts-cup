@@ -1090,12 +1090,10 @@ export default function HogwartsApp() {
               const prefix = eggFileName.substring(0, 2); 
               const eggNum = eggFileName.replace(/[^0-9]/g, '').charAt(0);
 
-              // ✅ 현재 로그인한 사용자의 실시간 누적 공부 시간 가져오기
-              const studentName = selectedName; // 현재 선택된(로그인된) 학생 이름
+              const studentName = selectedName; 
               const masterData = studentMasterData[studentName];
               const totalMinutes = Number(masterData?.total_study_time || 0);
 
-              // 📈 성장 단계 계산 (12000분 = 200시간)
               let levelCount = 1;
               if (totalMinutes >= 12000) levelCount = 4;
               else if (totalMinutes >= 9000) levelCount = 3;
@@ -1107,12 +1105,17 @@ export default function HogwartsApp() {
 
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-                  <div className="relative flex flex-col items-center translate-y-12 md:translate-y-16">
-                    <div className="absolute -bottom-1 w-6 h-1.5 md:w-12 md:h-3 bg-black/30 rounded-[100%] blur-[6px]" />
+                  {/* 📍 위치 조정: 너무 바닥 끝에 붙지 않도록 y값을 20/28에서 16/24로 살짝 올렸습니다. */}
+                  <div className="relative flex flex-col items-center translate-y-16 md:translate-y-24">
+                    
+                    {/* 🌑 그림자: 이미지와 그림자 사이에 간격을 주어 쾌적하게 배치 */}
+                    <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
+                    
                     <img 
                       src={evolutionImage} 
                       alt="Dragon"
-                      className="relative w-16 h-16 md:w-24 md:h-24 object-contain drop-shadow-2xl animate-bounce-slow"
+                      /* 📏 크기: 너무 크지 않게 조절하고, 그림자와의 간격을 위해 bottom 마진(mb-1) 추가 */
+                      className="relative w-10 h-10 md:w-14 md:h-14 object-contain drop-shadow-xl animate-bounce-slow mb-1"
                       onError={(e) => { e.currentTarget.src = selectedEgg; }} 
                     />
                   </div>
@@ -1191,7 +1194,7 @@ export default function HogwartsApp() {
             </div>
           </div>
         )}
-        
+
         {/* [27] 학생 개인 리포트 팝업 */}
         {selectedStudentReport && studentData[selectedStudentReport] && (
           <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
