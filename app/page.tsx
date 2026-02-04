@@ -1084,53 +1084,58 @@ export default function HogwartsApp() {
               }}
             />
 
-         {/* 드래곤 성장 표시 로직 (시간 기준 정밀 보정) */}
+        {/* 드래곤 성장 표시 로직 (12000 돌파 버전) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
-              // 1. 데이터 준비
               const testEgg = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1.webp";
               const currentEgg = selectedEgg || testEgg;
-              
-              // 파일명에서 지역(vo)과 알번호(1) 추출
-              const fileName = currentEgg.split('/').pop().split('.')[0]; 
+
+              // 1️⃣ 파일명 분석 (지역코드와 숫자 추출)
+              const fileName = currentEgg.split('/').pop().split('.')[0].trim(); 
               const prefix = fileName.substring(0, 2); 
               const eggNum = (fileName.match(/\d/) || ["1"])[0];
 
-              // 2. 시간 설정 (공부 시간 데이터)
-              // 숫자가 아닌 문자열로 들어올 경우를 대비해 Number()로 확실히 변환합니다.
-              const totalMinutes = 13000; 
+              // 2️⃣ 시간 설정 (테스트 점수)
+              // 혹시 모를 타입 오류 방지를 위해 명시적 숫자 변환
+              const testTime = 13000; 
 
-              // 3. 단계 계산 (범위를 더 명확하게 구분)
+              // 3️⃣ 단계 계산 (가장 큰 숫자부터 우선 순위 부여)
               let levelCount = 1;
-              if (Number(totalMinutes) >= 12000) {
+              if (testTime >= 12000) {
                 levelCount = 4;
-              } else if (Number(totalMinutes) >= 9000) {
+              } else if (testTime >= 9000) {
                 levelCount = 3;
-              } else if (Number(totalMinutes) >= 6000) {
+              } else if (testTime >= 6000) {
                 levelCount = 2;
               } else {
                 levelCount = 1;
               }
 
-              // 4. 반복 문자열 생성
-              // repeat이 가끔 문제를 일으키면 수동으로 생성하는 것이 가장 안전합니다.
+              // 4️⃣ 파일명 생성 (repeat 대신 더 직관적인 방식)
               let repeatPart = eggNum;
               if (levelCount === 4) repeatPart = `${eggNum}${eggNum}${eggNum}${eggNum}`;
               else if (levelCount === 3) repeatPart = `${eggNum}${eggNum}${eggNum}`;
               else if (levelCount === 2) repeatPart = `${eggNum}${eggNum}`;
 
-              // 5. 최종 주소 (캐시 방지 파라미터 포함)
-              const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${repeatPart}.webp?v=${levelCount}`;
+              const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${repeatPart}.webp?v=${new Date().getTime()}`;
+
+              // 🕵️ 범인 검거용 로그 (콘솔에서 이 값을 확인하세요!)
+              console.log("--- 드래곤 로직 검증 ---");
+              console.log("입력시간:", testTime);
+              console.log("확정레벨:", levelCount);
+              console.log("최종주소:", finalUrl);
 
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
                   <div className="relative flex flex-col items-center translate-y-16 md:translate-y-24">
                     <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
                     <img 
-                      key={`dragon-lv-${levelCount}`} // 레벨이 바뀔 때만 이미지를 새로 그림
+                      key={finalUrl} 
                       src={finalUrl} 
-                      alt={`Dragon Level ${levelCount}`}
+                      alt="Dragon Evolution"
                       className="relative w-10 h-10 md:w-14 md:h-14 object-contain drop-shadow-xl animate-bounce-slow mb-1"
-                      onError={(e) => { e.currentTarget.src = currentEgg; }} 
+                      onError={(e) => { 
+                        e.currentTarget.src = currentEgg; 
+                      }} 
                     />
                   </div>
                 </div>
