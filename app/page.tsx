@@ -1084,7 +1084,7 @@ export default function HogwartsApp() {
               }}
             />
 
-         {/* 드래곤 성장 표시 로직 (무한루프 방지 버전) */}
+         {/* 드래곤 성장 표시 로직 (이미지 교체 강제 유도) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
               const testEgg = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1.webp";
               const currentEgg = selectedEgg || testEgg;
@@ -1093,25 +1093,30 @@ export default function HogwartsApp() {
               const prefix = fileName.substring(0, 2); 
               const eggNum = (fileName.match(/\d/) || ["1"])[0];
 
+              // 테스트를 위해 13000으로 고정
+              const totalMinutes = 13000; 
+
               let levelCount = 1;
-              if (13000 >= 12000) levelCount = 4;
-              else if (13000 >= 9000) levelCount = 3;
-              else if (13000 >= 6000) levelCount = 2;
+              if (totalMinutes >= 12000) levelCount = 4;
+              else if (totalMinutes >= 9000) levelCount = 3;
+              else if (totalMinutes >= 6000) levelCount = 2;
 
               let repeatPart = eggNum;
               if (levelCount === 4) repeatPart = `${eggNum}${eggNum}${eggNum}${eggNum}`;
               else if (levelCount === 3) repeatPart = `${eggNum}${eggNum}${eggNum}`;
               else if (levelCount === 2) repeatPart = `${eggNum}${eggNum}`;
 
-              // 💡 캐시 방지를 위해 고정된 쿼리 스트링(?v=101) 사용 (무한루프 방지)
-              const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${repeatPart}.webp?v=101`;
+              // 🚀 주소 뒤에 고정 버전을 붙여서 브라우저 캐시를 무력화합니다.
+              const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${repeatPart}.webp?v=999`;
 
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
                   <div className="relative flex flex-col items-center translate-y-16 md:translate-y-24">
                     <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
+                    
+                    {/* 🔑 key={finalUrl} 이 부분이 이미지를 강제로 새로고침하게 만듭니다. */}
                     <img 
-                      key="dragon-image" // 고정된 키를 사용하여 리렌더링 최적화
+                      key={finalUrl} 
                       src={finalUrl} 
                       alt="Dragon"
                       className="relative w-10 h-10 md:w-14 md:h-14 object-contain drop-shadow-xl animate-bounce-slow mb-1"
@@ -1122,6 +1127,7 @@ export default function HogwartsApp() {
               );
             })()}
 
+          
             {/* 지역별 알 선택 레이어 */}
             {!isFading && !['main.webp', 'x.jpg'].includes(currentImageFile) && (
               <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-8 px-4 z-20">
