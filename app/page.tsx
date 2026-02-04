@@ -1051,21 +1051,22 @@ const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
         }}
       />
 
-      {/* ✨ 1. 최종 선택된 알 표시 (바닥 배치 버전) */}
-{selectedEgg && (currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (
-  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-    <div className="relative flex flex-col items-center translate-y-20 md:translate-y-28">
-      <div className="absolute -bottom-1 w-8 h-2 md:w-10 md:h-3 bg-black/40 rounded-[100%] blur-[4px]" />
-      
-      {/* 선택된 알 이미지: 아래쪽이 그림자에 닿는 느낌으로 배치 */}
-      <img 
-        src={selectedEgg} 
-        alt="Selected Egg" 
-        className="relative w-12 h-12 md:w-16 md:h-16 object-contain drop-shadow-[0_4px_6px_rgba(0,0,0,0.2)]"
-      />
-    </div>
-  </div>
-)}
+     {/* ✨ 1. 최종 선택된 알 표시 (바닥 배치 버전) */}
+      {selectedEgg && (currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
+          {/* x.jpg에서 잘리지 않도록 translate-y 값을 줄여 위로 올렸습니다 (기존 20/28 -> 12/16) */}
+          <div className="relative flex flex-col items-center translate-y-12 md:translate-y-16">
+            <div className="absolute -bottom-1 w-6 h-1.5 md:w-8 md:h-2 bg-black/40 rounded-[100%] blur-[4px]" />
+            
+            {/* 알 사이즈 축소 (기존 12/16 -> 10/12) */}
+            <img 
+              src={selectedEgg} 
+              alt="Selected Egg" 
+              className="relative w-10 h-10 md:w-12 md:h-12 object-contain drop-shadow-[0_4px_6px_rgba(0,0,0,0.2)]"
+            />
+          </div>
+        </div>
+      )}
 
       {/* ✨ 2. 지역별 알 선택 레이어 */}
       {!isFading && currentImageFile !== 'main.webp' && currentImageFile !== 'x.jpg' && (
@@ -1076,7 +1077,7 @@ const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
             
             return (
               <div key={num} className="relative group flex flex-col items-center">
-                <div className="absolute -bottom-1 w-8 h-2 md:w-10 md:h-3 bg-black/40 rounded-[100%] blur-[4px] group-hover:scale-125 transition-transform duration-300" />
+                <div className="absolute -bottom-1 w-6 h-1.5 md:w-8 md:h-2 bg-black/40 rounded-[100%] blur-[4px] group-hover:scale-125 transition-transform duration-300" />
                 <img
                   src={eggUrl}
                   alt={`Egg ${prefix}${num}`}
@@ -1084,7 +1085,8 @@ const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
                     setTempEgg(eggUrl);
                     setEggStep(1);
                   }}
-                  className="relative w-12 h-12 md:w-16 md:h-16 object-contain hover:-translate-y-2 transition-transform duration-300 cursor-pointer"
+                  {/* 알 사이즈 */}
+                  className="relative w-10 h-10 md:w-12 md:h-12 object-contain hover:-translate-y-2 transition-transform duration-300 cursor-pointer"
                   onError={(e) => {
                     e.currentTarget.parentElement!.style.display = 'none';
                   }}
@@ -1094,8 +1096,6 @@ const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
           })}
         </div>
       )}
-    </div>
-  </div>
 
   {/* ✨ 3. 이중 확인 팝업 (섹션 하단에 배치) */}
   {eggStep > 0 && (
