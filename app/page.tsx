@@ -1084,34 +1084,40 @@ export default function HogwartsApp() {
               }}
             />
 
-          {/* 드래곤 성장 표시 로직 (진짜 최종 해결) */}
+         {/* 드래곤 성장 표시 로직 (최종의 최종) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
               const testEgg = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1.webp";
               const currentEgg = selectedEgg || testEgg;
 
-              // 1. 파일명에서 순수 지역 코드와 알 번호만 추출
-              // 예: "vo111.webp"가 들어와도 "vo"와 "1"만 남깁니다.
               const fileName = currentEgg.split('/').pop().split('.')[0]; 
-              const prefix = fileName.substring(0, 2); // "vo"
-              
-              // 🥚 중요: 파일명에서 '첫 번째로 나오는 숫자' 하나만 가져옵니다. (1, 2, 3 중 하나)
+              const prefix = fileName.substring(0, 2); 
               const eggNum = (fileName.match(/\d/) || ["1"])[0];
 
-              const testMinutes = 13000;
-
-              // 2. 단계 결정
+              // 1. 숫자를 아예 변수에 넣지 않고 조건문에 직접 박습니다.
               let levelCount = 1;
-              if (testMinutes >= 12000) levelCount = 4;
-              else if (testMinutes >= 9000) levelCount = 3;
-              else if (testMinutes >= 6000) levelCount = 2;
+              
+              // 큰 숫자부터 독립적으로 체크 (가장 확실한 방법)
+              if (13000 >= 12000) {
+                levelCount = 4;
+              } else if (13000 >= 9000) {
+                levelCount = 3;
+              } else if (13000 >= 6000) {
+                levelCount = 2;
+              }
 
-              // 3. 파일명 조립 (이 부분이 핵심!)
-              // repeat(levelCount)를 사용하여 숫자를 개수만큼 반복
-              const repeatPart = eggNum.repeat(levelCount); 
+              // 2. repeat을 쓰지 않고 노가다 방식으로 파일명을 만듭니다. (오류 방지)
+              let repeatPart = eggNum; // 기본 1단계
+              if (levelCount === 4) repeatPart = `${eggNum}${eggNum}${eggNum}${eggNum}`;
+              if (levelCount === 3) repeatPart = `${eggNum}${eggNum}${eggNum}`;
+              if (levelCount === 2) repeatPart = `${eggNum}${eggNum}`;
+
               const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${repeatPart}.webp`;
 
-              // 확인용 콘솔 로그 (여기서 vo1111이 찍혀야 합니다)
-              console.log(`알번호: ${eggNum}, 단계: ${levelCount}, 최종파일명: ${prefix}${repeatPart}.webp`);
+              console.log("검증용 로그:", {
+                현재레벨: levelCount,
+                반복부분: repeatPart,
+                전체주소: finalUrl
+              });
 
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
@@ -1122,9 +1128,7 @@ export default function HogwartsApp() {
                       src={finalUrl} 
                       alt="Dragon"
                       className="relative w-10 h-10 md:w-14 md:h-14 object-contain drop-shadow-xl animate-bounce-slow mb-1"
-                      onError={(e) => { 
-                        e.currentTarget.src = currentEgg; 
-                      }} 
+                      onError={(e) => { e.currentTarget.src = currentEgg; }} 
                     />
                   </div>
                 </div>
