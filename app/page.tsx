@@ -1084,7 +1084,7 @@ export default function HogwartsApp() {
               }}
             />
 
-         {/* 드래곤 성장 표시 로직 (최종의 최종) */}
+         {/* 드래곤 성장 표시 로직 (무한루프 방지 버전) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
               const testEgg = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1.webp";
               const currentEgg = selectedEgg || testEgg;
@@ -1093,38 +1093,25 @@ export default function HogwartsApp() {
               const prefix = fileName.substring(0, 2); 
               const eggNum = (fileName.match(/\d/) || ["1"])[0];
 
-              // 1. 숫자를 아예 변수에 넣지 않고 조건문에 직접 박습니다.
               let levelCount = 1;
-              
-              // 큰 숫자부터 독립적으로 체크 (가장 확실한 방법)
-              if (13000 >= 12000) {
-                levelCount = 4;
-              } else if (13000 >= 9000) {
-                levelCount = 3;
-              } else if (13000 >= 6000) {
-                levelCount = 2;
-              }
+              if (13000 >= 12000) levelCount = 4;
+              else if (13000 >= 9000) levelCount = 3;
+              else if (13000 >= 6000) levelCount = 2;
 
-              // 2. repeat을 쓰지 않고 노가다 방식으로 파일명을 만듭니다. (오류 방지)
-              let repeatPart = eggNum; // 기본 1단계
+              let repeatPart = eggNum;
               if (levelCount === 4) repeatPart = `${eggNum}${eggNum}${eggNum}${eggNum}`;
-              if (levelCount === 3) repeatPart = `${eggNum}${eggNum}${eggNum}`;
-              if (levelCount === 2) repeatPart = `${eggNum}${eggNum}`;
+              else if (levelCount === 3) repeatPart = `${eggNum}${eggNum}${eggNum}`;
+              else if (levelCount === 2) repeatPart = `${eggNum}${eggNum}`;
 
-              const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${repeatPart}.webp`;
-
-              console.log("검증용 로그:", {
-                현재레벨: levelCount,
-                반복부분: repeatPart,
-                전체주소: finalUrl
-              });
+              // 💡 캐시 방지를 위해 고정된 쿼리 스트링(?v=101) 사용 (무한루프 방지)
+              const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${repeatPart}.webp?v=101`;
 
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
                   <div className="relative flex flex-col items-center translate-y-16 md:translate-y-24">
                     <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
                     <img 
-                      key={finalUrl}
+                      key="dragon-image" // 고정된 키를 사용하여 리렌더링 최적화
                       src={finalUrl} 
                       alt="Dragon"
                       className="relative w-10 h-10 md:w-14 md:h-14 object-contain drop-shadow-xl animate-bounce-slow mb-1"
