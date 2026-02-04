@@ -1096,7 +1096,7 @@ export default function HogwartsApp() {
 
               const studentName = selectedName; 
               const masterData = studentMasterData[studentName];
-              const totalMinutes = 8000;
+              const totalMinutes = 79999;
 
               let levelCount = 1;
               if (totalMinutes >= 12000) levelCount = 4;
