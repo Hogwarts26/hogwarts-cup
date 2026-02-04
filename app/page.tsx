@@ -1084,41 +1084,51 @@ export default function HogwartsApp() {
               }}
             />
 
-         {/* 드래곤 성장 표시 로직 (이미지 교체 강제 유도) */}
+         {/* 드래곤 성장 표시 로직 (시간 기준 정밀 보정) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
+              // 1. 데이터 준비
               const testEgg = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1.webp";
               const currentEgg = selectedEgg || testEgg;
-
+              
+              // 파일명에서 지역(vo)과 알번호(1) 추출
               const fileName = currentEgg.split('/').pop().split('.')[0]; 
               const prefix = fileName.substring(0, 2); 
               const eggNum = (fileName.match(/\d/) || ["1"])[0];
 
-              // 테스트를 위해 13000으로 고정
-              const totalMinutes = 15000; 
+              // 2. 시간 설정 (공부 시간 데이터)
+              // 숫자가 아닌 문자열로 들어올 경우를 대비해 Number()로 확실히 변환합니다.
+              const totalMinutes = 13000; 
 
+              // 3. 단계 계산 (범위를 더 명확하게 구분)
               let levelCount = 1;
-              if (totalMinutes >= 12000) levelCount = 4;
-              else if (totalMinutes >= 9000) levelCount = 3;
-              else if (totalMinutes >= 6000) levelCount = 2;
+              if (Number(totalMinutes) >= 12000) {
+                levelCount = 4;
+              } else if (Number(totalMinutes) >= 9000) {
+                levelCount = 3;
+              } else if (Number(totalMinutes) >= 6000) {
+                levelCount = 2;
+              } else {
+                levelCount = 1;
+              }
 
+              // 4. 반복 문자열 생성
+              // repeat이 가끔 문제를 일으키면 수동으로 생성하는 것이 가장 안전합니다.
               let repeatPart = eggNum;
               if (levelCount === 4) repeatPart = `${eggNum}${eggNum}${eggNum}${eggNum}`;
               else if (levelCount === 3) repeatPart = `${eggNum}${eggNum}${eggNum}`;
               else if (levelCount === 2) repeatPart = `${eggNum}${eggNum}`;
 
-              // 🚀 주소 뒤에 고정 버전을 붙여서 브라우저 캐시를 무력화합니다.
-              const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${repeatPart}.webp?v=999`;
+              // 5. 최종 주소 (캐시 방지 파라미터 포함)
+              const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${repeatPart}.webp?v=${levelCount}`;
 
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
                   <div className="relative flex flex-col items-center translate-y-16 md:translate-y-24">
                     <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
-                    
-                    {/* 🔑 key={finalUrl} 이 부분이 이미지를 강제로 새로고침하게 만듭니다. */}
                     <img 
-                      key={finalUrl} 
+                      key={`dragon-lv-${levelCount}`} // 레벨이 바뀔 때만 이미지를 새로 그림
                       src={finalUrl} 
-                      alt="Dragon"
+                      alt={`Dragon Level ${levelCount}`}
                       className="relative w-10 h-10 md:w-14 md:h-14 object-contain drop-shadow-xl animate-bounce-slow mb-1"
                       onError={(e) => { e.currentTarget.src = currentEgg; }} 
                     />
@@ -1126,7 +1136,6 @@ export default function HogwartsApp() {
                 </div>
               );
             })()}
-
           
             {/* 지역별 알 선택 레이어 */}
             {!isFading && !['main.webp', 'x.jpg'].includes(currentImageFile) && (
