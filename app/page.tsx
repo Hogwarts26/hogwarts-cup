@@ -1084,46 +1084,46 @@ export default function HogwartsApp() {
               }}
             />
 
-          {/* 드래곤 성장 표시 로직 (테스트 모드) */}
+          {/* 드래곤 성장 표시 로직 (확정형 테스트) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
-              // 1️⃣ [가짜 데이터 설정]: 원하는 알(co3, ju2 등)과 시간을 여기서 테스트하세요.
+              // 1. 설정값 (테스트를 위해 13000으로 고정)
               const testEgg = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1.webp";
-              const currentEgg = selectedEgg || testEgg; 
+              const currentEgg = selectedEgg || testEgg;
+              const testMinutes = 13000; // 👈 여기 숫자가 12000 이상인지 확인!
 
-              const eggFileName = currentEgg.split('/').pop() || "";
-              const prefix = eggFileName.substring(0, 2); 
-              
-              // 🥚 알 번호 추출: co3.webp라면 '3'을 정확히 뽑아냅니다.
-              const eggNum = (eggFileName.match(/\d/) || ["1"])[0];
+              // 2. 파일명 분석
+              const fileName = currentEgg.split('/').pop().split('.')[0]; // "vo1"
+              const prefix = fileName.substring(0, 2); // "vo"
+              const eggNum = fileName.slice(-1);       // "1"
 
-              // ⏱️ 테스트 시간 설정 (13000 입력 시 4단계 확인 가능)
-              const totalMinutes = 13000; 
-
-              // 📈 성장 단계 계산
+              // 3. 단계 결정 (가장 확실한 비교 방식)
               let levelCount = 1;
-              if (totalMinutes >= 12000) levelCount = 4;
-              else if (totalMinutes >= 9000) levelCount = 3;
-              else if (totalMinutes >= 6000) levelCount = 2;
+              if (testMinutes >= 12000) {
+                levelCount = 4;
+              } else if (testMinutes >= 9000) {
+                levelCount = 3;
+              } else if (testMinutes >= 6000) {
+                levelCount = 2;
+              } else {
+                levelCount = 1;
+              }
 
-              const baseUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/";
-              
-              // 🐲 번호 반복: eggNum이 '3'이고 levelCount가 4면 "3333" 생성
-              const repeatNum = eggNum.repeat(levelCount); 
-              const evolutionImage = `${baseUrl}${prefix}${repeatNum}.webp`;
+              // 4. 경로 조립
+              const repeatNum = eggNum.repeat(levelCount); // 4단계면 "1111"
+              const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${repeatNum}.webp`;
+
+              console.log("현재 단계:", levelCount, "파일명:", `${prefix}${repeatNum}.webp`);
 
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
                   <div className="relative flex flex-col items-center translate-y-16 md:translate-y-24">
-                    
-                    {/* 🌑 그림자 */}
                     <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
-                    
                     <img 
-                      src={evolutionImage} 
+                      src={finalUrl} 
                       alt="Dragon"
                       className="relative w-10 h-10 md:w-14 md:h-14 object-contain drop-shadow-xl animate-bounce-slow mb-1"
                       onError={(e) => { 
-                        // 로드 실패 시 테스트용 알 이미지로 대체
+                        console.error("이미지 로드 실패 주소:", finalUrl);
                         e.currentTarget.src = currentEgg; 
                       }} 
                     />
