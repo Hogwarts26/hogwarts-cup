@@ -1104,7 +1104,7 @@ export default function HogwartsApp() {
               else if (totalMinutes >= 6000) levelCount = 2;
 
               const baseUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/";
-              const repeatNum = eggNum.repeat(levelCount); 
+             const repeatNum = "1111";
               const evolutionImage = `${baseUrl}${prefix}${repeatNum}.webp`;
 
               return (
