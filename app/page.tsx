@@ -1084,37 +1084,45 @@ export default function HogwartsApp() {
               }}
             />
 
-       {/* 드래곤 성장 표시 로직 (캐시 강제 돌파) */}
+       {/* 드래곤 성장 표시 로직 (Hydration 에러 해결 버전) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
+              // 1. Hydration 에러 방지를 위한 상태 체크
+              const [isClient, setIsClient] = React.useState(false);
+              React.useEffect(() => {
+                setIsClient(true);
+              }, []);
+
+              // 클라이언트 사이드가 아니면 아무것도 렌더링하지 않음 (에러 방지 핵심)
+              if (!isClient) return null;
+
               const testEgg = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1.webp";
               const currentEgg = selectedEgg || testEgg;
               const fileName = currentEgg.split('/').pop().split('.')[0].trim(); 
               const prefix = fileName.substring(0, 2); 
               const eggNum = (fileName.match(/\d/) || ["1"])[0];
 
-              const testTime = 13000; 
+              const totalMinutes = 13000; 
               let levelCount = 1;
-              if (testTime >= 12000) levelCount = 4;
-              else if (testTime >= 9000) levelCount = 3;
-              else if (testTime >= 6000) levelCount = 2;
+              if (totalMinutes >= 12000) levelCount = 4;
+              else if (totalMinutes >= 9000) levelCount = 3;
+              else if (totalMinutes >= 6000) levelCount = 2;
 
               let repeatPart = eggNum;
               if (levelCount === 4) repeatPart = `${eggNum}${eggNum}${eggNum}${eggNum}`;
               else if (levelCount === 3) repeatPart = `${eggNum}${eggNum}${eggNum}`;
               else if (levelCount === 2) repeatPart = `${eggNum}${eggNum}`;
 
-              // 🚀 v= 부분을 아예 새로운 문자열 'force-update-1'로 바꿔서 저장해 보세요.
-              // 만약 여전히 3단계라면 이 숫자를 2, 3으로 올려보시면 됩니다.
-              const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${repeatPart}.webp?v=force-update-1`;
+              // 주소를 고정하여 무한 루프 방지
+              const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${repeatPart}.webp?v=force-update-final`;
 
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
                   <div className="relative flex flex-col items-center translate-y-16 md:translate-y-24">
                     <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
                     <img 
-                      key={finalUrl} // 주소 전체를 키로 사용해 강제 교체
+                      key={finalUrl} 
                       src={finalUrl} 
-                      alt="Dragon"
+                      alt="Dragon Evolution"
                       className="relative w-10 h-10 md:w-14 md:h-14 object-contain drop-shadow-xl animate-bounce-slow mb-1"
                       onError={(e) => { e.currentTarget.src = currentEgg; }} 
                     />
