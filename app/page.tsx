@@ -1084,15 +1084,19 @@ export default function HogwartsApp() {
               }}
             />
 
-            {/* 드래곤 성장 표시 로직 */}
-            {selectedEgg && (currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
-              const eggFileName = selectedEgg.split('/').pop() || "";
+{/* 드래곤 성장 표시 로직 (테스트 모드) */}
+            {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
+              // 1️⃣ [가짜 알 설정]: DB 연동 없이도 volcano 1번 알을 가졌다고 가정
+              const testEgg = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1.webp";
+              const currentEgg = selectedEgg || testEgg; 
+
+              const eggFileName = currentEgg.split('/').pop() || "";
               const prefix = eggFileName.substring(0, 2); 
               const eggNum = eggFileName.replace(/[^0-9]/g, '').charAt(0);
 
               const studentName = selectedName; 
               const masterData = studentMasterData[studentName];
-              const totalMinutes = Number(masterData?.total_study_time || 0);
+              const totalMinutes = 13000;
 
               let levelCount = 1;
               if (totalMinutes >= 12000) levelCount = 4;
