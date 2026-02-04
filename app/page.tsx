@@ -1051,7 +1051,7 @@ const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
         }}
       />
 
-    {/* ✨ 1. 최종 선택된 알 표시 (바닥 배치 버전) */}
+   {/* ✨ 1. 최종 선택된 알 표시 (바닥 배치 버전) */}
       {selectedEgg && (currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
           <div className="relative flex flex-col items-center translate-y-12 md:translate-y-16">
@@ -1084,7 +1084,8 @@ const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
                   }}
                   className="relative w-10 h-10 md:w-12 md:h-12 object-contain hover:-translate-y-2 transition-transform duration-300 cursor-pointer"
                   onError={(e) => {
-                    e.currentTarget.parentElement!.style.display = 'none';
+                    const parent = e.currentTarget.parentElement;
+                    if (parent) parent.style.display = 'none';
                   }}
                 />
               </div>
@@ -1093,7 +1094,7 @@ const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
         </div>
       )}
 
-  {/* ✨ 3. 이중 확인 팝업 (섹션 하단에 배치) */}
+      {/* ✨ 3. 이중 확인 팝업 */}
   {eggStep > 0 && (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full mx-4 text-center border-4 border-slate-100">
