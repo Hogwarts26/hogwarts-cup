@@ -1094,7 +1094,7 @@ export default function HogwartsApp() {
               const eggNum = (fileName.match(/\d/) || ["1"])[0];
 
               // 테스트를 위해 13000으로 고정
-              const totalMinutes = 13000; 
+              const totalMinutes = 15000; 
 
               let levelCount = 1;
               if (totalMinutes >= 12000) levelCount = 4;
