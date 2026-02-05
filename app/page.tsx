@@ -1084,21 +1084,24 @@ export default function HogwartsApp() {
               }}
             />
 
-           {/* 드래곤 성장 표시 로직 (가장 원시적이고 확실한 방법) */}
+           {/* 드래곤 성장 표시 로직 (하이드레이션 완전 방어 버전) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
-              // 1. 점수 설정 (13000점)
-              const testTime = 13000; 
+              // 1. 브라우저에 완전히 로드될 때까지 기다림 (에러 방지 핵심)
+              const [isClient, setIsClient] = React.useState(false);
+              React.useEffect(() => { setIsClient(true); }, []);
+              
+              if (!isClient) return null; // 서버에서는 아무것도 안 그림
 
-              // 2. 주소 결정 (변수 조합 없이 통째로 입력)
+              // 2. 점수 설정
+              const testTime = 13000; 
+              
+              // 3. 주소 강제 할당 (연산 없이 통째로 적음)
               let dragonUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo111.webp";
               
               if (testTime >= 12000) {
-                // 이 줄에 4단계 주소를 통째로 박았습니다. 오타가 날 틈이 없습니다.
-                dragonUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1111.webp?v=real_final_999";
+                // vo1111 주소를 통째로 한 줄로 적었습니다. 리액트가 간섭할 틈이 없습니다.
+                dragonUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1111.webp?v=fix_0205_1";
               }
-
-              // 🕵️ 확인용 로그 (이제 진짜 vo1111이 찍히는지 보세요!)
-              console.log("🔥 이번엔 진짜 이거 호출함:", dragonUrl);
 
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
@@ -1107,8 +1110,9 @@ export default function HogwartsApp() {
                     <img 
                       key={dragonUrl} 
                       src={dragonUrl} 
-                      alt="Dragon Adult"
+                      alt="Dragon"
                       className="relative w-10 h-10 md:w-14 md:h-14 object-contain drop-shadow-xl animate-bounce-slow mb-1"
+                      onError={(e) => { e.currentTarget.src = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1.webp"; }}
                     />
                   </div>
                 </div>
