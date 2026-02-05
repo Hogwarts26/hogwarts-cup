@@ -1045,19 +1045,33 @@ export default function HogwartsApp() {
 
         {/* 지역명 버튼 영역 */}
         <div className="grid grid-cols-3 gap-2 mb-8 max-w-sm">
-          {['volcano', 'jungle', 'forest', 'desert', 'coast', 'alpine'].map((region) => (
-            <button
-              key={region}
-              onClick={() => handleRegionClick(region)}
-              className={`py-2 text-[11px] font-black tracking-tighter transition-all rounded-md border uppercase
-                ${currentImageFile === `${region}.webp` 
-                  ? 'bg-slate-900 text-white border-slate-900 shadow-sm' 
-                  : 'bg-white text-slate-400 border-slate-100 hover:text-slate-600 hover:bg-slate-50' 
-                }`}
-            >
-              {region}
-            </button>
-          ))}
+          {['volcano', 'jungle', 'forest', 'desert', 'coast', 'alpine'].map((region) => {
+            // ✅ 알 보유 여부 확인 (현재 선택했거나, DB에 기록이 있거나)
+            const hasEgg = !!(selectedEgg || studentMasterData[selectedName]?.selected_egg);
+
+            return (
+              <button
+                key={region}
+                onClick={() => {
+                  // ✅ 알이 있다면 다른 지역으로 이동 차단
+                  if (hasEgg) {
+                    alert("이미 데려온 알이 있습니다. 한 명당 하나의 알만 보살필 수 있어요!");
+                    return;
+                  }
+                  handleRegionClick(region);
+                }}
+                className={`py-2 text-[11px] font-black tracking-tighter transition-all rounded-md border uppercase
+                  ${currentImageFile === `${region}.webp` 
+                    ? 'bg-slate-900 text-white border-slate-900 shadow-sm' 
+                    : hasEgg
+                      ? 'bg-slate-50 text-slate-200 border-slate-50 cursor-not-allowed' // 알이 있을 때 스타일
+                      : 'bg-white text-slate-400 border-slate-100 hover:text-slate-600 hover:bg-slate-50' 
+                  }`}
+              >
+                {region}
+              </button>
+            );
+          })}
         </div>
 
         {/* 리셋 버튼 & 이미지 영역 */}
@@ -1073,11 +1087,12 @@ export default function HogwartsApp() {
 
           <div className="w-full rounded-[1.5rem] md:rounded-[2rem] overflow-hidden shadow-2xl border border-slate-200 bg-slate-50 relative aspect-video">
           
-            {/* 배경 이미지 */}
+            {/* 배경 이미지 (투명도 60% 적용) */}
             <img 
               src={`https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${currentImageFile}`}
               alt="Dragon Habitat"
-              className={`w-full h-full object-cover transition-opacity duration-300 ease-in-out ${isFading ? 'opacity-0' : 'opacity-100'}`}
+              // ✅ opacity-60을 기본으로 하고, 페이드 아웃 시에만 0이 되도록 설정했습니다.
+              className={`w-full h-full object-cover transition-opacity duration-300 ease-in-out ${isFading ? 'opacity-0' : 'opacity-60'}`}
               onError={(e) => {
                 const target = e.currentTarget as HTMLImageElement;
                 target.src = "https://via.placeholder.com/1200x675?text=Habitat+Image+Not+Found";
@@ -1088,7 +1103,7 @@ export default function HogwartsApp() {
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
               const userData = studentMasterData[selectedName];
               let eggStr = selectedEgg || userData?.selected_egg; 
-              const score = 12000;
+              const score = 13000;
               
               if (!eggStr) return null;
 
@@ -1139,7 +1154,10 @@ export default function HogwartsApp() {
             })()}
 
             {/* 지역별 알 선택 레이어 */}
-            {!isFading && !['main.webp', 'x.jpg'].includes(currentImageFile) && (
+            {!isFading && 
+             !['main.webp', 'x.jpg'].includes(currentImageFile) && 
+             // ✅ [핵심 추가] 알을 아직 선택하지 않았을 때만(hasEgg가 아닐 때만) 이 레이어를 보여줌
+             !(selectedEgg || studentMasterData[selectedName]?.selected_egg) && (
               <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-8 px-4 z-20">
                 {[1, 2, 3].map((num) => {
                   const prefix = currentImageFile.split('.')[0].substring(0, 2).toLowerCase();
@@ -1154,7 +1172,7 @@ export default function HogwartsApp() {
                         onClick={() => { 
                           // 1. 임시 주소 저장 (확인 팝업용)
                           setTempEgg(eggUrl); 
-                          // 2. [추가] 실제 알 이름 저장 (x.jpg 표시용)
+                          // 2. 실제 알 이름 저장 (x.jpg 표시용)
                           setSelectedEgg(`${prefix}${num}`); 
                           // 3. 팝업 열기
                           setEggStep(1); 
@@ -1169,8 +1187,8 @@ export default function HogwartsApp() {
                 })}
               </div>
             )}
-          </div> 
-        </div> 
+          </div>
+        </div>
 
         {/* 이중 확인 팝업 (에러 방지 안전 코드 적용) */}
         {eggStep > 0 && (
