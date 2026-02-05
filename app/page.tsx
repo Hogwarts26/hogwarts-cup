@@ -1088,7 +1088,7 @@ export default function HogwartsApp() {
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
               const userData = studentMasterData[selectedName];
               let eggStr = selectedEgg || userData?.selected_egg; 
-              const score = 11999;
+              const score = userData?.total_study_time || 0;
               
               if (!eggStr) return null;
 
@@ -1168,7 +1168,7 @@ export default function HogwartsApp() {
           </div> 
         </div> 
 
-        {/* 이중 확인 팝업 (여기서부터 이어서 작성하시면 됩니다) */}
+        {/* 이중 확인 팝업 (에러 방지 안전 코드 적용) */}
         {eggStep > 0 && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
             <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full mx-4 text-center border-4 border-slate-100">
@@ -1182,22 +1182,41 @@ export default function HogwartsApp() {
               <div className="flex flex-col gap-3">
                 <button
                   onClick={async () => {
-                    if (eggStep === 1) setEggStep(2);
-                    else {
-                      // ✅ DB 업데이트 (컬럼명 student_name으로 수정 완료)
+                    if (eggStep === 1) {
+                      setEggStep(2);
+                    } else {
+                      // ✅ 1. tempEgg와 selectedName이 모두 있을 때만 실행
                       if (selectedName && tempEgg) {
                         try {
-                          await supabase
-                            .from('student_master')
-                            .update({ selected_egg: tempEgg })
-                            .eq('student_name', selectedName);
+                          // ✅ 2. 에러 방지 추출 로직: tempEgg가 문자열인지 확인 후 분리
+                          // 어떤 URL이 들어와도 마지막 파일명(fo3, ju1 등)만 안전하게 추출합니다.
+                          const fileNameWithExt = typeof tempEgg === 'string' ? tempEgg.split('/').pop() : "";
+                          const eggName = fileNameWithExt ? fileNameWithExt.split('.')[0] : "";
+
+                          // 3. 만약 파일명이 정상적으로 추출되었다면 DB 업데이트
+                          if (eggName) {
+                            const { error } = await supabase
+                              .from('student_master')
+                              .update({ selected_egg: eggName })
+                              .eq('student_name', selectedName);
+
+                            if (error) throw error;
+
+                            // 성공 시 로컬 상태도 업데이트하여 x.jpg에서 즉시 보이게 함
+                            setSelectedEgg(eggName);
+                          }
+                          
                         } catch (error) {
                           console.error("Egg Save Error:", error);
                         }
                       }
-                      setSelectedEgg(tempEgg);
+                      
+                      // 4. 상태 초기화 및 화면 이동
                       setEggStep(0);
-                      handleResetImage();
+                      setTempEgg(null); // 사용 완료 후 비워줌
+                      if (typeof handleResetImage === 'function') {
+                        handleResetImage();
+                      }
                     }
                   }}
                   className="w-full py-3 bg-slate-900 text-white font-black rounded-xl hover:bg-slate-700 transition-colors uppercase tracking-widest text-xs"
@@ -1205,7 +1224,10 @@ export default function HogwartsApp() {
                   네
                 </button>
                 <button
-                  onClick={() => { setEggStep(0); setTempEgg(null); }}
+                  onClick={() => { 
+                    setEggStep(0); 
+                    setTempEgg(null); 
+                  }}
                   className="w-full py-3 bg-slate-100 text-slate-400 font-bold rounded-xl hover:bg-slate-200 transition-colors uppercase tracking-widest text-[10px]"
                 >
                   고민해볼게요
