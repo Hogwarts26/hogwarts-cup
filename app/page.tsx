@@ -1084,47 +1084,44 @@ export default function HogwartsApp() {
               }}
             />
 
-            {/* 드래곤 성장 표시 로직 (최종 안정화 버전) */}
+            {/* 드래곤 성장 표시 로직 (문자열 강제 결합 버전) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
-              // 1. 기준 데이터 설정
               const baseEgg = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1.webp";
               const currentEgg = selectedEgg || baseEgg;
               
-              // 2. 파일명 분석 (예: "vo1"에서 "vo"와 "1" 추출)
+              // 1. 접두어와 숫자 추출
               const fileName = currentEgg.split('/').pop().split('.')[0]; 
               const prefix = fileName.substring(0, 2); 
               const eggNum = (fileName.match(/\d/) || ["1"])[0];
 
-              // 3. 점수 기반 단계 계산 (13000점 테스트)
-              const totalMinutes = 13000; 
-              let level = 1;
-              if (totalMinutes >= 12000) level = 4;
-              else if (totalMinutes >= 9000) level = 3;
-              else if (totalMinutes >= 6000) level = 2;
+              // 2. 점수 계산 (13000점)
+              const testTime = 13000; 
+              
+              // 3. 파일명 직접 조립 (가장 확실한 방법)
+              let finalFileName = "";
+              if (testTime >= 12000) {
+                finalFileName = prefix + eggNum + eggNum + eggNum + eggNum; // "vo1111"
+              } else if (testTime >= 9000) {
+                finalFileName = prefix + eggNum + eggNum + eggNum; // "vo111"
+              } else if (testTime >= 6000) {
+                finalFileName = prefix + eggNum + eggNum; // "vo11"
+              } else {
+                finalFileName = prefix + eggNum; // "vo1"
+              }
 
-              // 4. 주소 수동 조립 (오류 가능성 차단)
-              let namePart = eggNum;
-              if (level === 4) namePart = eggNum + eggNum + eggNum + eggNum; // "1111"
-              else if (level === 3) namePart = eggNum + eggNum + eggNum;     // "111"
-              else if (level === 2) namePart = eggNum + eggNum;             // "11"
-
-              // 5. 최종 URL 생성 (캐시 방지 v=200 적용)
-              const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${namePart}.webp?v=200`;
+              // 4. 주소 확정 (캐시 방지를 위해 v 값을 업데이트)
+              const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${finalFileName}.webp?v=final_check_7`;
 
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
                   <div className="relative flex flex-col items-center translate-y-16 md:translate-y-24">
                     <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
                     <img 
-                      key={`dragon-stage-${level}`} 
+                      key={finalUrl} // 주소가 바뀌면 무조건 새로 그림
                       src={finalUrl} 
-                      alt="Dragon Evolution"
+                      alt="Dragon Adult"
                       className="relative w-10 h-10 md:w-14 md:h-14 object-contain drop-shadow-xl animate-bounce-slow mb-1"
-                      onError={(e) => { 
-                        // 로드 실패 시 콘솔에 찍어 확인
-                        console.log("실패한 주소:", finalUrl);
-                        e.currentTarget.src = currentEgg; 
-                      }}
+                      onError={(e) => { e.currentTarget.src = currentEgg; }}
                     />
                   </div>
                 </div>
