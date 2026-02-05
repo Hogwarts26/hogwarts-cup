@@ -1084,37 +1084,33 @@ export default function HogwartsApp() {
               }}
             />
 
-           {/* 드래곤 성장 표시 로직 (최종 하이드레이션 에러 돌파 버전) */}
+           {/* 드래곤 성장 표시 로직 (가장 원시적이고 확실한 방법) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
               // 1. 점수 설정 (13000점)
               const testTime = 13000; 
 
-              // 2. 주소 결정 (로그에서 확인된 vo1111 주소 고정)
-              let finalUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo111.webp"; // 기본값
+              // 2. 주소 결정 (변수 조합 없이 통째로 입력)
+              let dragonUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo111.webp";
               
               if (testTime >= 12000) {
-                finalUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1111.webp?v=force_final_777";
-              } else if (testTime >= 9000) {
-                finalUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo111.webp?v=force_final_777";
+                // 이 줄에 4단계 주소를 통째로 박았습니다. 오타가 날 틈이 없습니다.
+                dragonUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1111.webp?v=real_final_999";
               }
 
-              // 🕵️ 핵심: dangerouslySetInnerHTML를 사용하여 리액트가 검사하지 못하게 
-              // 브라우저에 직접 HTML 코드를 박아넣습니다.
+              // 🕵️ 확인용 로그 (이제 진짜 vo1111이 찍히는지 보세요!)
+              console.log("🔥 이번엔 진짜 이거 호출함:", dragonUrl);
+
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-                  <div 
-                    className="relative flex flex-col items-center translate-y-16 md:translate-y-24"
-                    dangerouslySetInnerHTML={{
-                      __html: `
-                        <div class="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]"></div>
-                        <img 
-                          src="${finalUrl}" 
-                          class="relative w-10 h-10 md:w-14 md:h-14 object-contain drop-shadow-xl animate-bounce-slow mb-1"
-                          style="display: block;"
-                        />
-                      `
-                    }}
-                  />
+                  <div className="relative flex flex-col items-center translate-y-16 md:translate-y-24">
+                    <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
+                    <img 
+                      key={dragonUrl} 
+                      src={dragonUrl} 
+                      alt="Dragon Adult"
+                      className="relative w-10 h-10 md:w-14 md:h-14 object-contain drop-shadow-xl animate-bounce-slow mb-1"
+                    />
+                  </div>
                 </div>
               );
             })()}
