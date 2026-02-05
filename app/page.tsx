@@ -1084,32 +1084,25 @@ export default function HogwartsApp() {
               }}
             />
 
-           {/* 드래곤 성장 표시 로직 (리액트의 업데이트 거부를 뚫는 최종본) */}
+           {/* 드래곤 성장 표시 로직 (리액트 엔진 우회 버전) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
-              // 1. 점수 설정 (13000점)
-              const testTime = 13000; 
-              
-              // 2. 주소 결정 (변수 조합 없이 통째로 입력)
-              let dragonUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo111.webp";
-              
-              if (testTime >= 12000) {
-                // vo1111 주소를 통째로 한 줄로 적어 리액트가 글자를 빼먹지 못하게 합니다.
-                dragonUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1111.webp?v=force_render_0205";
-              }
+              const testTime = 13000;
+              const finalUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1111.webp?v=absolute_final";
 
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
                   <div className="relative flex flex-col items-center translate-y-16 md:translate-y-24">
                     <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
-                    {/* 핵심: suppressHydrationWarning을 넣어 리액트가 에러를 내며 업데이트를 멈추는 것을 방지합니다. */}
                     <img 
-                      key={dragonUrl} 
-                      src={dragonUrl} 
+                      src="https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo111.webp" // 일단 3단계를 보여주는 척 하다가
                       alt="Dragon Adult"
-                      suppressHydrationWarning={true}
                       className="relative w-10 h-10 md:w-14 md:h-14 object-contain drop-shadow-xl animate-bounce-slow mb-1"
-                      onError={(e) => { 
-                        e.currentTarget.src = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1.webp"; 
+                      // 🕵️ 핵심: 리액트가 뭐라 하든 브라우저가 직접 주소를 갈아 끼웁니다.
+                      onLoad={(e) => {
+                        if (testTime >= 12000) {
+                          e.currentTarget.src = "${finalUrl}";
+                          console.log("🚀 리액트를 무시하고 4단계 강제 주입 완료!");
+                        }
                       }}
                     />
                   </div>
