@@ -1084,40 +1084,41 @@ export default function HogwartsApp() {
               }}
             />
 
-           {/* 드래곤 성장 표시 로직 (최종 안정화 버전) */}
+           {/* 드래곤 성장 표시 로직 (에러 방어 및 4단계 고정) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
+              // 1. 안전한 값 추출 (빨간 밑줄 해결)
               const baseEgg = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1.webp";
               const currentEgg = selectedEgg || baseEgg;
               
-              // 1. 파일명 분석
-              const fileName = currentEgg.split('/').pop().split('.')[0]; 
-              const prefix = fileName.substring(0, 2); 
+              // 2. 파일명 분석 (?. 사용으로 안전하게 추출)
+              const fileNameWithExt = currentEgg?.split?.('/').pop() || "vo1.webp";
+              const fileName = fileNameWithExt.split('.')[0] || "vo1";
+              const prefix = fileName.substring(0, 2) || "vo"; 
               const eggNum = (fileName.match(/\d/) || ["1"])[0];
 
-              // 2. 점수 계산 (13000점)
-              const totalMinutes = 13000; 
+              // 3. 점수 계산 (13000점)
+              const testTime = 13000; 
               
-              // 3. 파일명 강제 할당 (에러가 나도 주소는 무조건 완성되도록)
-              let finalName = prefix + eggNum; // 기본 vo1
-              if (totalMinutes >= 12000) {
-                finalName = prefix + eggNum + eggNum + eggNum + eggNum; // vo1111
-              } else if (totalMinutes >= 9000) {
-                finalName = prefix + eggNum + eggNum + eggNum; // vo111
-              } else if (totalMinutes >= 6000) {
-                finalName = prefix + eggNum + eggNum; // vo11
-              }
+              // 4. 파일명 직접 조립 (가장 확실한 방식)
+              let finalName = prefix + eggNum;
+              if (testTime >= 12000) finalName = prefix + eggNum + eggNum + eggNum + eggNum;
+              else if (testTime >= 9000) finalName = prefix + eggNum + eggNum + eggNum;
+              else if (testTime >= 6000) finalName = prefix + eggNum + eggNum;
 
-              // 4. 최종 URL (캐시 방지 파라미터 업데이트)
-              const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${finalName}.webp?v=final_victory_7`;
+              const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${finalName}.webp?v=fix_red_line_1`;
+
+              // 확인용 로그
+              console.log("--- 에러 방어 로직 가동 ---");
+              console.log("최종 파일명:", finalName);
 
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
                   <div className="relative flex flex-col items-center translate-y-16 md:translate-y-24">
                     <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
                     <img 
-                      key={finalUrl} // 주소 자체가 바뀌면 리액트가 강제로 다시 그리게 함
+                      key={finalUrl} 
                       src={finalUrl} 
-                      alt="Dragon Growth"
+                      alt="Dragon"
                       className="relative w-10 h-10 md:w-14 md:h-14 object-contain drop-shadow-xl animate-bounce-slow mb-1"
                       onError={(e) => { e.currentTarget.src = currentEgg; }}
                     />
