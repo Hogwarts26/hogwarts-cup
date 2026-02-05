@@ -1084,7 +1084,7 @@ export default function HogwartsApp() {
               }}
             />
 
-            {/* 드래곤 성장 표시 로직 (크기 및 위치 최적화) */}
+            {/* 드래곤 성장 표시 로직 (단계별 위치 및 크기 동기화) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
               const userData = studentMasterData[selectedName];
               let eggStr = selectedEgg || userData?.selected_egg; 
@@ -1108,20 +1108,23 @@ export default function HogwartsApp() {
               const baseUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public";
               const finalUrl = `${baseUrl}/${fileName}.webp`;
 
-              // ✅ 위치 수정: 다른 지역의 알 선택 레이어와 비슷한 하단 위치로 조정 (y축 아래로 더 내림)
-              const positionClass = "translate-y-12 md:translate-y-20";
+              // ✅ [핵심 수정] 단계별 위치 분기 처리
+              // 4단계(용)일 때는 이미지가 크므로 조금 더 위로(10, 16) 올리고, 
+              // 1~3단계(알)일 때는 요청하신 대로 (20, 28) 위치를 유지합니다.
+              const positionClass = stage === 4 
+                ? "translate-y-10 md:translate-y-16" 
+                : "translate-y-20 md:translate-y-28";
 
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
                   <div className={`relative flex flex-col items-center ${positionClass}`}>
+                    {/* 그림자 위치도 부모 div를 따라 자동으로 조절됩니다 */}
                     <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
                     <img 
                       key={fileName} 
                       src={finalUrl}
                       alt="Dragon"
                       className={`relative object-contain drop-shadow-xl animate-bounce-slow mb-1 transition-all duration-500 ${
-                        // ✅ 크기 수정: 1~3단계(알 형태)일 때는 하단 선택 레이어의 알 크기와 동일하게 (w-12, md:w-16)
-                        // 4단계(최종 진화)일 때만 존재감을 위해 살짝 키움
                         stage === 4 
                           ? 'w-24 h-24 md:w-32 md:h-32' 
                           : 'w-12 h-12 md:w-16 md:h-16'
