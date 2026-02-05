@@ -1084,38 +1084,39 @@ export default function HogwartsApp() {
               }}
             />
 
-           {/* 드래곤 성장 표시 로직 (연산 과정 없이 주소 통째로 교체) */}
+           {/* 드래곤 성장 표시 로직 (리액트의 업데이트 거부를 뚫는 최종본) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
               // 1. 점수 설정 (13000점)
               const testTime = 13000; 
               
-              // 2. 주소 결정 (글자 합치기 대신 통째로 박기)
+              // 2. 주소 결정 (변수 조합 없이 통째로 입력)
               let dragonUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo111.webp";
               
               if (testTime >= 12000) {
-                // vo1111 주소를 문자열 통째로 입력했습니다.
-                dragonUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1111.webp?v=fix_final_step";
+                // vo1111 주소를 통째로 한 줄로 적어 리액트가 글자를 빼먹지 못하게 합니다.
+                dragonUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1111.webp?v=force_render_0205";
               }
-
-              // 🕵️ 확인용 로그: 이제 진짜 vo1111이 찍히는지 확인해주세요!
-              console.log("🔥 현재 호출 주소:", dragonUrl);
 
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
                   <div className="relative flex flex-col items-center translate-y-16 md:translate-y-24">
                     <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
+                    {/* 핵심: suppressHydrationWarning을 넣어 리액트가 에러를 내며 업데이트를 멈추는 것을 방지합니다. */}
                     <img 
                       key={dragonUrl} 
                       src={dragonUrl} 
-                      alt="Dragon Stage 4"
+                      alt="Dragon Adult"
+                      suppressHydrationWarning={true}
                       className="relative w-10 h-10 md:w-14 md:h-14 object-contain drop-shadow-xl animate-bounce-slow mb-1"
-                      onError={(e) => { e.currentTarget.src = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1.webp"; }}
+                      onError={(e) => { 
+                        e.currentTarget.src = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1.webp"; 
+                      }}
                     />
                   </div>
                 </div>
               );
             })()}
-            
+
             {/* 지역별 알 선택 레이어 */}
             {!isFading && !['main.webp', 'x.jpg'].includes(currentImageFile) && (
               <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-8 px-4 z-20">
