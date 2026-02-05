@@ -1084,24 +1084,18 @@ export default function HogwartsApp() {
               }}
             />
 
-            {/* 드래곤 성장 표시 로직 (x.jpg 전용 고정 출력) */}
+            {/* 드래곤 성장 표시 로직 (깜빡거림 방지 최적화 버전) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
-              // 1. 현재 사용자 데이터 확보
               const userData = studentMasterData[selectedName];
-              
-              // 2. 알 정보 결정 (상태값 우선, 없으면 DB값)
               let eggStr = selectedEgg || userData?.selected_egg; 
               const score = userData?.total_study_time || 0;
               
               if (!eggStr) return null;
 
-              // [중요] 만약 eggStr이 'https://.../fo3.webp' 같은 전체 경로라면 'fo3'만 추출합니다.
-              // 다른 지역 버튼에서 setTempEgg(eggUrl)을 사용하기 때문에 이 처리가 필수입니다.
-              if (eggStr.includes('http')) {
+              if (eggStr.includes('/')) {
                 eggStr = eggStr.split('/').pop().split('.')[0];
               }
 
-              // 3. 파일명 분석 및 성장 단계 계산
               const prefix = String(eggStr).substring(0, 2); 
               const eggNumOnly = String(eggStr).substring(2);
 
@@ -1110,12 +1104,13 @@ export default function HogwartsApp() {
               else if (score >= 9000) stage = 3;
               else if (score >= 6000) stage = 2;
 
-              // 4. 성장형 파일명 조합 (fo3, fo33, fo333...)
               const fileName = `${prefix}${String(eggNumOnly).repeat(stage)}`;
               const baseUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public";
-              const finalUrl = `${baseUrl}/${fileName}.webp?v=${Date.now()}`;
+              
+              // ✅ [수정] Date.now()를 제거하여 브라우저 캐시를 활용하게 합니다.
+              // 이렇게 하면 리렌더링 시에도 이미지를 다시 다운로드하지 않아 깜빡이지 않습니다.
+              const finalUrl = `${baseUrl}/${fileName}.webp`;
 
-              // 5. x.jpg 지역 높이 보정 (잘림 방지)
               const positionClass = currentImageFile === 'x.jpg' 
                 ? "translate-y-4 md:translate-y-10" 
                 : "translate-y-16 md:translate-y-24";
@@ -1125,15 +1120,14 @@ export default function HogwartsApp() {
                   <div className={`relative flex flex-col items-center ${positionClass}`}>
                     <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
                     <img 
-                      key={finalUrl} 
+                      // ✅ key값에서 타임스탬프를 빼고 fileName만 넣어서 파일이 바뀔 때만 새로 그리게 합니다.
+                      key={fileName} 
                       src={finalUrl}
                       alt="Dragon"
-                      className={`relative object-contain drop-shadow-xl animate-bounce-slow mb-1 ${
+                      className={`relative object-contain drop-shadow-xl animate-bounce-slow mb-1 transition-all duration-500 ${
                         stage === 4 ? 'w-24 h-24 md:w-32 md:h-32' : 'w-16 h-16 md:w-20 md:h-20'
                       }`}
                       onError={(e) => {
-                        // 성장형 파일이 없으면 1단계 알 이미지로 자동 복구
-                        console.log(`⚠️ ${fileName} 로드 실패, 원본 ${eggStr} 시도`);
                         e.currentTarget.src = `${baseUrl}/${eggStr}.webp`;
                       }}
                     />
