@@ -1084,7 +1084,7 @@ export default function HogwartsApp() {
               }}
             />
 
-            {/* 드래곤 성장 표시 로직 (깜빡거림 방지 최적화 버전) */}
+            {/* 드래곤 성장 표시 로직 (크기 및 위치 최적화) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
               const userData = studentMasterData[selectedName];
               let eggStr = selectedEgg || userData?.selected_egg; 
@@ -1106,24 +1106,25 @@ export default function HogwartsApp() {
 
               const fileName = `${prefix}${String(eggNumOnly).repeat(stage)}`;
               const baseUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public";
-              
               const finalUrl = `${baseUrl}/${fileName}.webp`;
 
-              const positionClass = currentImageFile === 'x.jpg' 
-                ? "translate-y-4 md:translate-y-10" 
-                : "translate-y-16 md:translate-y-24";
+              // ✅ 위치 수정: 다른 지역의 알 선택 레이어와 비슷한 하단 위치로 조정 (y축 아래로 더 내림)
+              const positionClass = "translate-y-24 md:translate-y-32";
 
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
                   <div className={`relative flex flex-col items-center ${positionClass}`}>
                     <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
                     <img 
-                      // ✅ key값에서 타임스탬프를 빼고 fileName만 넣어서 파일이 바뀔 때만 새로 그리게 합니다.
                       key={fileName} 
                       src={finalUrl}
                       alt="Dragon"
                       className={`relative object-contain drop-shadow-xl animate-bounce-slow mb-1 transition-all duration-500 ${
-                        stage === 4 ? 'w-24 h-24 md:w-32 md:h-32' : 'w-16 h-16 md:w-20 md:h-20'
+                        // ✅ 크기 수정: 1~3단계(알 형태)일 때는 하단 선택 레이어의 알 크기와 동일하게 (w-12, md:w-16)
+                        // 4단계(최종 진화)일 때만 존재감을 위해 살짝 키움
+                        stage === 4 
+                          ? 'w-24 h-24 md:w-32 md:h-32' 
+                          : 'w-12 h-12 md:w-16 md:h-16'
                       }`}
                       onError={(e) => {
                         e.currentTarget.src = `${baseUrl}/${eggStr}.webp`;
