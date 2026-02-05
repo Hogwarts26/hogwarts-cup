@@ -1084,20 +1084,20 @@ export default function HogwartsApp() {
               }}
             />
 
-            {/* 드래곤 성장 표시 로직 (알 미선택 시 숨김 처리 및 위치 보정) */}
+            {/* 드래곤 성장 표시 로직 (알 이름 자동 분석 버전) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
-              // 1. 데이터 가져오기 (기본값을 제거하고 실제 값만 가져옵니다)
               const userData = studentMasterData[selectedName];
-              const eggType = userData?.selected_egg; // 알을 선택 안 했으면 undefined
+              // 1. eggType에 'ju3', 'co2' 같은 값이 들어온다고 가정합니다.
+              const eggType = userData?.selected_egg; 
               const score = userData?.total_study_time || 0;
               
-              // 🛑 [중요] 알을 선택하지 않은 유저라면 여기서 바로 null을 반환하여 렌더링 중단
               if (!eggType) return null;
 
-              // 2. 하우스 접두어 결정
-              const currentAreaPrefix = currentImageFile.includes('.') 
-                ? currentImageFile.split('.')[0].substring(0, 2) 
-                : 'vo';
+              // 2. [핵심] 알 이름에서 앞 2글자(prefix)와 뒤 숫자(eggNum) 분리
+              // 예: 'ju3' -> prefix: 'ju', eggNumOnly: '3'
+              const eggStr = String(eggType);
+              const prefix = eggStr.substring(0, 2); 
+              const eggNumOnly = eggStr.substring(2);
 
               // 3. 성장 단계 계산
               let stage = 1;
@@ -1105,10 +1105,11 @@ export default function HogwartsApp() {
               else if (score >= 9000) stage = 3;
               else if (score >= 6000) stage = 2;
 
-              const fileName = `${currentAreaPrefix}${String(eggType).repeat(stage)}`;
+              // 4. 파일명 조합 (예: ju + 3333)
+              const fileName = `${prefix}${String(eggNumOnly).repeat(stage)}`;
               const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${fileName}.webp?v=` + Date.now();
 
-              // 4. x.jpg 하단 잘림 해결을 위한 위치값
+              // x.jpg 지역에서 위치 최적화
               const positionClass = currentImageFile === 'x.jpg' 
                 ? "translate-y-4 md:translate-y-10" 
                 : "translate-y-16 md:translate-y-24";
@@ -1119,13 +1120,14 @@ export default function HogwartsApp() {
                     <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
                     <img 
                       key={finalUrl}
-                      src={score >= 12000 ? finalUrl : `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${fileName}.webp`}
+                      src={stage === 4 ? finalUrl : `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${fileName}.webp`}
                       alt="Dragon"
                       className={`relative object-contain drop-shadow-xl animate-bounce-slow mb-1 ${
                         stage === 4 ? 'w-24 h-24 md:w-32 md:h-32' : 'w-16 h-16 md:w-20 md:h-20'
                       }`}
                       onError={(e) => {
-                        e.currentTarget.src = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${currentAreaPrefix}${eggType}.webp`;
+                        // 이미지 로드 실패 시 원본 알 이미지(예: ju3.webp)로 복구
+                        e.currentTarget.src = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${eggStr}.webp`;
                       }}
                     />
                   </div>
