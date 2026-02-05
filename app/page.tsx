@@ -1088,7 +1088,7 @@ export default function HogwartsApp() {
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
               const userData = studentMasterData[selectedName];
               let eggStr = selectedEgg || userData?.selected_egg; 
-              const score = 12999;
+              const score = 11999;
               
               if (!eggStr) return null;
 
