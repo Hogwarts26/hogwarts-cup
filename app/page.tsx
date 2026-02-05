@@ -1086,24 +1086,36 @@ export default function HogwartsApp() {
 
            {/* 드래곤 성장 표시 로직 (이미지 엑박 해결 및 주소 재검증) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
-              const testTime = 13000;
-              // 1. 주소에서 오타가 날 확률을 줄이기 위해 변수를 조합하지 않고 정확한 경로를 넣습니다.
-              // v= 뒤의 숫자를 바꿔서 브라우저가 강제로 새로 받게 만듭니다.
-              const finalUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1111.webp?v=" + Date.now();
+              // 1. 슈퍼베이스 컬럼값과 매칭 (변수명은 실제 코드에 맞게 수정)
+              const score = userData?.total_study_time || 0; // total_study_time 컬럼 [cite: 2026-02-01]
+              const eggType = userData?.selected_egg || 1;    // selected_egg 컬럼 [cite: 2026-02-01]
+              
+              // 2. 하우스/구역 접두어 (사용자님이 지정한 1~15번 구역 로직 반영)
+              const prefix = currentAreaPrefix; // 예: 'co', 'fo', 'vo' 등 [cite: 2026-01-31]
+
+              // 3. 성장 단계 계산
+              let stage = 1;
+              if (score >= 12000) stage = 4;
+              else if (score >= 9000) stage = 3;
+              else if (score >= 6000) stage = 2;
+
+              // 4. 최종 파일명 (예: co + 3을 stage만큼 반복)
+              const fileName = `${prefix}${String(eggType).repeat(stage)}`; 
+              const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${fileName}.webp?v=${Date.now()}`;
 
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
                   <div className="relative flex flex-col items-center translate-y-16 md:translate-y-24">
                     <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
                     <img 
-                      // 2. 처음부터 4단계 주소를 시도합니다. 
-                      src={testTime >= 12000 ? finalUrl : "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo111.webp"}
-                      alt="Dragon"
-                      className="relative w-24 h-24 md:w-32 md:h-32 object-contain drop-shadow-xl animate-bounce-slow mb-1"
-                      // 3. 만약 4단계(vo1111)가 없어서 엑박이 뜨면, 3단계(vo111)라도 보여주게 방어막을 칩니다.
+                      key={finalUrl}
+                      src={finalUrl}
+                      alt={fileName}
+                      className={`relative object-contain drop-shadow-xl animate-bounce-slow mb-1 ${
+                        stage === 4 ? 'w-24 h-24 md:w-36 md:h-36' : 'w-16 h-16 md:w-20 md:h-20'
+                      }`}
                       onError={(e) => {
-                        console.log("❌ 4단계 이미지 로드 실패, 3단계로 대체합니다.");
-                        e.currentTarget.src = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo111.webp";
+                        e.currentTarget.src = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${eggType}.webp`;
                       }}
                     />
                   </div>
