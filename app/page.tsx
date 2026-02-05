@@ -1084,34 +1084,34 @@ export default function HogwartsApp() {
               }}
             />
 
-            {/* 드래곤 성장 표시 로직 (student_master 테이블 구조 반영) */}
+            {/* 드래곤 성장 표시 로직 (테스터 코드 구조 + 실제 데이터 연동) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
-              // 1. [데이터 매칭] studentMasterData에서 현재 로그인한 학생의 정보를 가져옵니다.
-              // 사용자님 코드 상단의 studentMasterData[selectedName] 구조를 활용합니다.
+              // 1. 실제 데이터 매칭
               const userData = studentMasterData[selectedName];
-              
-              // 2. [컬럼명 일치] 테이블 구조에 따른 정확한 데이터 참조
               const eggStr = selectedEgg || userData?.selected_egg; 
               const score = userData?.total_study_time || 0;
               
-              // 알 정보(예: 'ju3')가 없으면 렌더링하지 않음
+              // 알 정보가 없으면 출력 안 함
               if (!eggStr) return null;
 
-              // 3. [로직] 알 이름(ju3)에서 접두어(ju)와 번호(3) 분리
+              // 2. 알 이름(ju3)에서 접두어(ju)와 번호(3) 분리
               const prefix = String(eggStr).substring(0, 2); 
               const eggNumOnly = String(eggStr).substring(2);
 
-              // 4. [성장 단계] score(total_study_time) 기준 계산
+              // 3. 현재 단계 계산
               let stage = 1;
               if (score >= 12000) stage = 4;
               else if (score >= 9000) stage = 3;
               else if (score >= 6000) stage = 2;
 
-              // 5. [파일명] 예: ju + 333 (3단계 시)
+              // 4. 테스터 코드처럼 각 단계별 주소 미리 생성
               const fileName = `${prefix}${String(eggNumOnly).repeat(stage)}`;
               const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${fileName}.webp?v=` + Date.now();
+              // 이전 단계 주소 (실패 시 방어용)
+              const prevFileName = stage > 1 ? `${prefix}${String(eggNumOnly).repeat(stage - 1)}` : eggStr;
+              const prevUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prevFileName}.webp`;
 
-              // 6. [위치 보정] x.jpg 지역에서 하단이 잘리지 않도록 위로 이동
+              // 5. x.jpg 높이 보정
               const positionClass = currentImageFile === 'x.jpg' 
                 ? "translate-y-4 md:translate-y-10" 
                 : "translate-y-16 md:translate-y-24";
@@ -1122,15 +1122,16 @@ export default function HogwartsApp() {
                     <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
                     <img 
                       key={finalUrl}
-                      // 4단계는 즉시 반영을 위해 캐시 무력화(v=now) 주소 사용
-                      src={stage === 4 ? finalUrl : `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${fileName}.webp`}
+                      // 테스터 코드의 src 로직 반영: 조건에 따라 주소 결정
+                      src={score >= 12000 ? finalUrl : `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${fileName}.webp`}
                       alt="Dragon"
                       className={`relative object-contain drop-shadow-xl animate-bounce-slow mb-1 ${
                         stage === 4 ? 'w-24 h-24 md:w-32 md:h-32' : 'w-16 h-16 md:w-20 md:h-20'
                       }`}
+                      // 테스터 코드의 onError 방어 로직 반영
                       onError={(e) => {
-                        // 이미지 로드 실패 시 기본 알 이미지(ju3.webp) 시도
-                        e.currentTarget.src = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${eggStr}.webp`;
+                        console.log(`❌ ${fileName} 로드 실패, 이전 단계로 대체합니다.`);
+                        e.currentTarget.src = prevUrl;
                       }}
                     />
                   </div>
