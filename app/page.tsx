@@ -1088,7 +1088,7 @@ export default function HogwartsApp() {
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
               const userData = studentMasterData[selectedName];
               let eggStr = selectedEgg || userData?.selected_egg; 
-              const score = userData?.total_study_time || 0;
+              const score = 6000;
               
               if (!eggStr) return null;
 
@@ -1109,7 +1109,7 @@ export default function HogwartsApp() {
               const finalUrl = `${baseUrl}/${fileName}.webp`;
 
               // ✅ 위치 수정: 다른 지역의 알 선택 레이어와 비슷한 하단 위치로 조정 (y축 아래로 더 내림)
-              const positionClass = "translate-y-20 md:translate-y-28";
+              const positionClass = "translate-y-16 md:translate-y-24";
 
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
