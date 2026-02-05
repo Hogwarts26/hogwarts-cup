@@ -1084,34 +1084,38 @@ export default function HogwartsApp() {
               }}
             />
 
-            {/* 드래곤 성장 표시 로직 (테스터 코드 구조 + 실제 데이터 연동) */}
+            {/* 드래곤 성장 표시 로직 (지역 이동 및 x.jpg 매칭 완벽 해결) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
-              // 1. 실제 데이터 매칭
+              // 1. [데이터 확보] DB 마스터 데이터에서 현재 사용자의 정보를 가져옵니다.
               const userData = studentMasterData[selectedName];
+              
+              // 2. [알 정보 확정] 
+              // 버튼 클릭으로 바뀐 selectedEgg 상태가 있으면 그것을 쓰고, 
+              // 새로고침 등으로 상태가 비어있다면 DB(userData)에 저장된 값을 씁니다.
               const eggStr = selectedEgg || userData?.selected_egg; 
               const score = userData?.total_study_time || 0;
               
-              // 알 정보가 없으면 출력 안 함
+              // 알 정보가 아예 없으면 아무것도 띄우지 않습니다.
               if (!eggStr) return null;
 
-              // 2. 알 이름(ju3)에서 접두어(ju)와 번호(3) 분리
+              // 3. [문자열 분리] 'fo3' -> prefix: 'fo', eggNumOnly: '3'
               const prefix = String(eggStr).substring(0, 2); 
               const eggNumOnly = String(eggStr).substring(2);
 
-              // 3. 현재 단계 계산
+              // 4. [성장 단계 계산]
               let stage = 1;
               if (score >= 12000) stage = 4;
               else if (score >= 9000) stage = 3;
               else if (score >= 6000) stage = 2;
 
-              // 4. 테스터 코드처럼 각 단계별 주소 미리 생성
+              // 5. [파일명 조합] 며칠 전 성공했던 방식 그대로 'fo' + '3'을 stage만큼 반복
               const fileName = `${prefix}${String(eggNumOnly).repeat(stage)}`;
-              const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${fileName}.webp?v=` + Date.now();
-              // 이전 단계 주소 (실패 시 방어용)
-              const prevFileName = stage > 1 ? `${prefix}${String(eggNumOnly).repeat(stage - 1)}` : eggStr;
-              const prevUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prevFileName}.webp`;
+              const baseUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public";
+              
+              // 6. https://www.lingq.com/en/learn-korean-online/translate/ko/%EC%83%9D%EC%84%B1/ x.jpg 배경에서도 이 주소로 고정됩니다.
+              const finalUrl = `${baseUrl}/${fileName}.webp?v=${Date.now()}`;
 
-              // 5. x.jpg 높이 보정
+              // 7. [위치 최적화] x.jpg 지역에서 알이 가려지지 않게 높이 조절
               const positionClass = currentImageFile === 'x.jpg' 
                 ? "translate-y-4 md:translate-y-10" 
                 : "translate-y-16 md:translate-y-24";
@@ -1121,17 +1125,16 @@ export default function HogwartsApp() {
                   <div className={`relative flex flex-col items-center ${positionClass}`}>
                     <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
                     <img 
-                      key={finalUrl}
-                      // 테스터 코드의 src 로직 반영: 조건에 따라 주소 결정
-                      src={score >= 12000 ? finalUrl : `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${fileName}.webp`}
+                      key={finalUrl} 
+                      src={finalUrl}
                       alt="Dragon"
                       className={`relative object-contain drop-shadow-xl animate-bounce-slow mb-1 ${
                         stage === 4 ? 'w-24 h-24 md:w-32 md:h-32' : 'w-16 h-16 md:w-20 md:h-20'
                       }`}
-                      // 테스터 코드의 onError 방어 로직 반영
                       onError={(e) => {
-                        console.log(`❌ ${fileName} 로드 실패, 이전 단계로 대체합니다.`);
-                        e.currentTarget.src = prevUrl;
+                        // 만약 성장형(fo33) 로드 실패 시, 원본 알(fo3)로 즉시 복구
+                        console.log(`⚠️ ${fileName} 호출 실패 -> 원본 ${eggStr}로 대체`);
+                        e.currentTarget.src = `${baseUrl}/${eggStr}.webp`;
                       }}
                     />
                   </div>
