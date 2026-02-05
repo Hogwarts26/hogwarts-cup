@@ -1084,38 +1084,38 @@ export default function HogwartsApp() {
               }}
             />
 
-            {/* 드래곤 성장 표시 로직 (지역 이동 및 x.jpg 매칭 완벽 해결) */}
+            {/* 드래곤 성장 표시 로직 (x.jpg 전용 고정 출력) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
-              // 1. [데이터 확보] DB 마스터 데이터에서 현재 사용자의 정보를 가져옵니다.
+              // 1. 현재 사용자 데이터 확보
               const userData = studentMasterData[selectedName];
               
-              // 2. [알 정보 확정] 
-              // 버튼 클릭으로 바뀐 selectedEgg 상태가 있으면 그것을 쓰고, 
-              // 새로고침 등으로 상태가 비어있다면 DB(userData)에 저장된 값을 씁니다.
-              const eggStr = selectedEgg || userData?.selected_egg; 
+              // 2. 알 정보 결정 (상태값 우선, 없으면 DB값)
+              let eggStr = selectedEgg || userData?.selected_egg; 
               const score = userData?.total_study_time || 0;
               
-              // 알 정보가 아예 없으면 아무것도 띄우지 않습니다.
               if (!eggStr) return null;
 
-              // 3. [문자열 분리] 'fo3' -> prefix: 'fo', eggNumOnly: '3'
+              // [중요] 만약 eggStr이 'https://.../fo3.webp' 같은 전체 경로라면 'fo3'만 추출합니다.
+              // 다른 지역 버튼에서 setTempEgg(eggUrl)을 사용하기 때문에 이 처리가 필수입니다.
+              if (eggStr.includes('http')) {
+                eggStr = eggStr.split('/').pop().split('.')[0];
+              }
+
+              // 3. 파일명 분석 및 성장 단계 계산
               const prefix = String(eggStr).substring(0, 2); 
               const eggNumOnly = String(eggStr).substring(2);
 
-              // 4. [성장 단계 계산]
               let stage = 1;
               if (score >= 12000) stage = 4;
               else if (score >= 9000) stage = 3;
               else if (score >= 6000) stage = 2;
 
-              // 5. [파일명 조합] 며칠 전 성공했던 방식 그대로 'fo' + '3'을 stage만큼 반복
+              // 4. 성장형 파일명 조합 (fo3, fo33, fo333...)
               const fileName = `${prefix}${String(eggNumOnly).repeat(stage)}`;
               const baseUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public";
-              
-              // 6. https://www.lingq.com/en/learn-korean-online/translate/ko/%EC%83%9D%EC%84%B1/ x.jpg 배경에서도 이 주소로 고정됩니다.
               const finalUrl = `${baseUrl}/${fileName}.webp?v=${Date.now()}`;
 
-              // 7. [위치 최적화] x.jpg 지역에서 알이 가려지지 않게 높이 조절
+              // 5. x.jpg 지역 높이 보정 (잘림 방지)
               const positionClass = currentImageFile === 'x.jpg' 
                 ? "translate-y-4 md:translate-y-10" 
                 : "translate-y-16 md:translate-y-24";
@@ -1132,8 +1132,8 @@ export default function HogwartsApp() {
                         stage === 4 ? 'w-24 h-24 md:w-32 md:h-32' : 'w-16 h-16 md:w-20 md:h-20'
                       }`}
                       onError={(e) => {
-                        // 만약 성장형(fo33) 로드 실패 시, 원본 알(fo3)로 즉시 복구
-                        console.log(`⚠️ ${fileName} 호출 실패 -> 원본 ${eggStr}로 대체`);
+                        // 성장형 파일이 없으면 1단계 알 이미지로 자동 복구
+                        console.log(`⚠️ ${fileName} 로드 실패, 원본 ${eggStr} 시도`);
                         e.currentTarget.src = `${baseUrl}/${eggStr}.webp`;
                       }}
                     />
@@ -1155,19 +1155,28 @@ export default function HogwartsApp() {
                       <img
                         src={eggUrl}
                         alt="Dragon Egg"
-                        onClick={() => { setTempEgg(eggUrl); setEggStep(1); }}
+                        onClick={() => { 
+                          // 1. 임시 주소 저장 (확인 팝업용)
+                          setTempEgg(eggUrl); 
+                          // 2. [추가] 실제 알 이름 저장 (x.jpg 표시용)
+                          setSelectedEgg(`${prefix}${num}`); 
+                          // 3. 팝업 열기
+                          setEggStep(1); 
+                        }}
                         className="relative w-12 h-12 md:w-16 md:h-16 object-contain hover:-translate-y-2 transition-transform duration-300 cursor-pointer"
-                        onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none'; }}
+                        onError={(e) => { 
+                          (e.currentTarget.parentElement as HTMLElement).style.display = 'none'; 
+                        }}
                       />
                     </div>
                   );
                 })}
               </div>
             )}
-          </div>
-        </div>
+          </div> 
+        </div> 
 
-        {/* 이중 확인 팝업 */}
+        {/* 이중 확인 팝업 (여기서부터 이어서 작성하시면 됩니다) */}
         {eggStep > 0 && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
             <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full mx-4 text-center border-4 border-slate-100">
