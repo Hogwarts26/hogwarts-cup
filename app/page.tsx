@@ -1084,14 +1084,20 @@ export default function HogwartsApp() {
               }}
             />
 
-           {/* 드래곤 성장 표시 로직 (이미지 엑박 해결 및 주소 재검증) */}
+            {/* 드래곤 성장 표시 로직 (알 미선택 시 숨김 처리 및 위치 보정) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
-              // 1. 슈퍼베이스 컬럼값과 매칭 (변수명은 실제 코드에 맞게 수정)
-              const score = userData?.total_study_time || 0; // total_study_time 컬럼 [cite: 2026-02-01]
-              const eggType = userData?.selected_egg || 1;    // selected_egg 컬럼 [cite: 2026-02-01]
+              // 1. 데이터 가져오기 (기본값을 제거하고 실제 값만 가져옵니다)
+              const userData = studentMasterData[selectedName];
+              const eggType = userData?.selected_egg; // 알을 선택 안 했으면 undefined
+              const score = userData?.total_study_time || 0;
               
-              // 2. 하우스/구역 접두어 (사용자님이 지정한 1~15번 구역 로직 반영)
-              const prefix = currentAreaPrefix; // 예: 'co', 'fo', 'vo' 등 [cite: 2026-01-31]
+              // 🛑 [중요] 알을 선택하지 않은 유저라면 여기서 바로 null을 반환하여 렌더링 중단
+              if (!eggType) return null;
+
+              // 2. 하우스 접두어 결정
+              const currentAreaPrefix = currentImageFile.includes('.') 
+                ? currentImageFile.split('.')[0].substring(0, 2) 
+                : 'vo';
 
               // 3. 성장 단계 계산
               let stage = 1;
@@ -1099,23 +1105,27 @@ export default function HogwartsApp() {
               else if (score >= 9000) stage = 3;
               else if (score >= 6000) stage = 2;
 
-              // 4. 최종 파일명 (예: co + 3을 stage만큼 반복)
-              const fileName = `${prefix}${String(eggType).repeat(stage)}`; 
-              const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${fileName}.webp?v=${Date.now()}`;
+              const fileName = `${currentAreaPrefix}${String(eggType).repeat(stage)}`;
+              const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${fileName}.webp?v=` + Date.now();
+
+              // 4. x.jpg 하단 잘림 해결을 위한 위치값
+              const positionClass = currentImageFile === 'x.jpg' 
+                ? "translate-y-4 md:translate-y-10" 
+                : "translate-y-16 md:translate-y-24";
 
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-                  <div className="relative flex flex-col items-center translate-y-16 md:translate-y-24">
+                  <div className={`relative flex flex-col items-center ${positionClass}`}>
                     <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
                     <img 
                       key={finalUrl}
-                      src={finalUrl}
-                      alt={fileName}
+                      src={score >= 12000 ? finalUrl : `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${fileName}.webp`}
+                      alt="Dragon"
                       className={`relative object-contain drop-shadow-xl animate-bounce-slow mb-1 ${
-                        stage === 4 ? 'w-24 h-24 md:w-36 md:h-36' : 'w-16 h-16 md:w-20 md:h-20'
+                        stage === 4 ? 'w-24 h-24 md:w-32 md:h-32' : 'w-16 h-16 md:w-20 md:h-20'
                       }`}
                       onError={(e) => {
-                        e.currentTarget.src = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${eggType}.webp`;
+                        e.currentTarget.src = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${currentAreaPrefix}${eggType}.webp`;
                       }}
                     />
                   </div>
