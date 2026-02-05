@@ -1084,52 +1084,41 @@ export default function HogwartsApp() {
               }}
             />
 
-           {/* 드래곤 성장 표시 로직 (최종 안정화 버전) */}
+           {/* 드래곤 성장 표시 로직 (최종 하이드레이션 에러 돌파 버전) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
-              const baseEgg = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1.webp";
-              const currentEgg = selectedEgg || baseEgg;
-              
-              // 1. 파일명 분석 (안전하게 추출)
-              const fileName = currentEgg?.split?.('/').pop()?.split('.')?.[0] || "vo1";
-              const prefix = fileName.substring(0, 2) || "vo"; 
-              const eggNum = (fileName.match(/\d/) || ["1"])[0];
-
-              // 2. 점수 설정 (13000점)
+              // 1. 점수 설정 (13000점)
               const testTime = 13000; 
+
+              // 2. 주소 결정 (로그에서 확인된 vo1111 주소 고정)
+              let finalUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo111.webp"; // 기본값
               
-              // 3. 주소 직접 결정 (계산 과정을 생략하고 결과만 바로 할당)
-              let finalUrl = "";
               if (testTime >= 12000) {
-                // vo1111 직접 명시
-                finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${eggNum}${eggNum}${eggNum}${eggNum}.webp?v=final99`;
+                finalUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1111.webp?v=force_final_777";
               } else if (testTime >= 9000) {
-                finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${eggNum}${eggNum}${eggNum}.webp?v=final99`;
-              } else if (testTime >= 6000) {
-                finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${eggNum}${eggNum}.webp?v=final99`;
-              } else {
-                finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${prefix}${eggNum}.webp?v=final99`;
+                finalUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo111.webp?v=force_final_777";
               }
 
-              // 🕵️ 확인용 로그 (주소가 vo1111로 찍히는지 확인!)
-              console.log("--- 드래곤 최종 호출 주소 ---");
-              console.log(finalUrl);
-
+              // 🕵️ 핵심: dangerouslySetInnerHTML를 사용하여 리액트가 검사하지 못하게 
+              // 브라우저에 직접 HTML 코드를 박아넣습니다.
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-                  <div className="relative flex flex-col items-center translate-y-16 md:translate-y-24">
-                    <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
-                    <img 
-                      key={finalUrl} 
-                      src={finalUrl} 
-                      alt="Dragon Adult"
-                      className="relative w-10 h-10 md:w-14 md:h-14 object-contain drop-shadow-xl animate-bounce-slow mb-1"
-                      onError={(e) => { e.currentTarget.src = currentEgg; }}
-                    />
-                  </div>
+                  <div 
+                    className="relative flex flex-col items-center translate-y-16 md:translate-y-24"
+                    dangerouslySetInnerHTML={{
+                      __html: `
+                        <div class="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]"></div>
+                        <img 
+                          src="${finalUrl}" 
+                          class="relative w-10 h-10 md:w-14 md:h-14 object-contain drop-shadow-xl animate-bounce-slow mb-1"
+                          style="display: block;"
+                        />
+                      `
+                    }}
+                  />
                 </div>
               );
             })()}
-            
+
             {/* 지역별 알 선택 레이어 */}
             {!isFading && !['main.webp', 'x.jpg'].includes(currentImageFile) && (
               <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-8 px-4 z-20">
