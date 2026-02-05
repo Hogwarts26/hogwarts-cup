@@ -1088,7 +1088,7 @@ export default function HogwartsApp() {
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
               const userData = studentMasterData[selectedName];
               let eggStr = selectedEgg || userData?.selected_egg; 
-              const score = userData?.total_study_time || 0;
+              const score = 12999;
               
               if (!eggStr) return null;
 
@@ -1107,8 +1107,6 @@ export default function HogwartsApp() {
               const fileName = `${prefix}${String(eggNumOnly).repeat(stage)}`;
               const baseUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public";
               
-              // ✅ [수정] Date.now()를 제거하여 브라우저 캐시를 활용하게 합니다.
-              // 이렇게 하면 리렌더링 시에도 이미지를 다시 다운로드하지 않아 깜빡이지 않습니다.
               const finalUrl = `${baseUrl}/${fileName}.webp`;
 
               const positionClass = currentImageFile === 'x.jpg' 
