@@ -1084,25 +1084,26 @@ export default function HogwartsApp() {
               }}
             />
 
-           {/* 드래곤 성장 표시 로직 (리액트 엔진 우회 버전) */}
+           {/* 드래곤 성장 표시 로직 (이미지 엑박 해결 및 주소 재검증) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
               const testTime = 13000;
-              const finalUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1111.webp?v=absolute_final";
+              // 1. 주소에서 오타가 날 확률을 줄이기 위해 변수를 조합하지 않고 정확한 경로를 넣습니다.
+              // v= 뒤의 숫자를 바꿔서 브라우저가 강제로 새로 받게 만듭니다.
+              const finalUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo1111.webp?v=" + Date.now();
 
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
                   <div className="relative flex flex-col items-center translate-y-16 md:translate-y-24">
                     <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
                     <img 
-                      src="https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo111.webp" // 일단 3단계를 보여주는 척 하다가
-                      alt="Dragon Adult"
-                      className="relative w-10 h-10 md:w-14 md:h-14 object-contain drop-shadow-xl animate-bounce-slow mb-1"
-                      // 🕵️ 핵심: 리액트가 뭐라 하든 브라우저가 직접 주소를 갈아 끼웁니다.
-                      onLoad={(e) => {
-                        if (testTime >= 12000) {
-                          e.currentTarget.src = "${finalUrl}";
-                          console.log("🚀 리액트를 무시하고 4단계 강제 주입 완료!");
-                        }
+                      // 2. 처음부터 4단계 주소를 시도합니다. 
+                      src={testTime >= 12000 ? finalUrl : "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo111.webp"}
+                      alt="Dragon"
+                      className="relative w-24 h-24 md:w-32 md:h-32 object-contain drop-shadow-xl animate-bounce-slow mb-1"
+                      // 3. 만약 4단계(vo1111)가 없어서 엑박이 뜨면, 3단계(vo111)라도 보여주게 방어막을 칩니다.
+                      onError={(e) => {
+                        console.log("❌ 4단계 이미지 로드 실패, 3단계로 대체합니다.");
+                        e.currentTarget.src = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/vo111.webp";
                       }}
                     />
                   </div>
