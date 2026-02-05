@@ -1079,7 +1079,7 @@ export default function HogwartsApp() {
                 onClick={() => {
                   // ✅ 알이 있다면 다른 지역으로 이동 차단
                   if (hasEgg) {
-                    alert("이미 데려온 알이 있습니다. 하나의 알만 보살필 수 있어요!");
+                    alert("이미 데려온 알이 있습니다.");
                     return;
                   }
                   handleRegionClick(region);
