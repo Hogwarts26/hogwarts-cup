@@ -1139,8 +1139,8 @@ export default function HogwartsApp() {
               const eggNumOnly = String(eggStr).substring(2);
 
               let stage = 1;
-              if (score >= 12000) stage = 4;
-              else if (score >= 9000) stage = 3;
+              if (score >= 18000) stage = 4;
+              else if (score >= 12000) stage = 3;
               else if (score >= 6000) stage = 2;
 
               const fileName = `${prefix}${String(eggNumOnly).repeat(stage)}`;
