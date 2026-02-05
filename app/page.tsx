@@ -1152,7 +1152,7 @@ export default function HogwartsApp() {
               // 1~3단계(알)일 때는 요청하신 대로 (20, 28) 위치를 유지합니다.
               const positionClass = stage === 4 
                 ? "translate-y-10 md:translate-y-16" 
-                : "translate-y-24 md:translate-y-32";
+                : "translate-y-16 md:translate-y-24";
 
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
