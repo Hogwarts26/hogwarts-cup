@@ -1084,32 +1084,34 @@ export default function HogwartsApp() {
               }}
             />
 
-            {/* 드래곤 성장 표시 로직 (알 이름 자동 분석 버전) */}
+            {/* 드래곤 성장 표시 로직 (student_master 테이블 구조 반영) */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
+              // 1. [데이터 매칭] studentMasterData에서 현재 로그인한 학생의 정보를 가져옵니다.
+              // 사용자님 코드 상단의 studentMasterData[selectedName] 구조를 활용합니다.
               const userData = studentMasterData[selectedName];
-              // 1. eggType에 'ju3', 'co2' 같은 값이 들어온다고 가정합니다.
-              const eggType = userData?.selected_egg; 
+              
+              // 2. [컬럼명 일치] 테이블 구조에 따른 정확한 데이터 참조
+              const eggStr = selectedEgg || userData?.selected_egg; 
               const score = userData?.total_study_time || 0;
               
-              if (!eggType) return null;
+              // 알 정보(예: 'ju3')가 없으면 렌더링하지 않음
+              if (!eggStr) return null;
 
-              // 2. [핵심] 알 이름에서 앞 2글자(prefix)와 뒤 숫자(eggNum) 분리
-              // 예: 'ju3' -> prefix: 'ju', eggNumOnly: '3'
-              const eggStr = String(eggType);
-              const prefix = eggStr.substring(0, 2); 
-              const eggNumOnly = eggStr.substring(2);
+              // 3. [로직] 알 이름(ju3)에서 접두어(ju)와 번호(3) 분리
+              const prefix = String(eggStr).substring(0, 2); 
+              const eggNumOnly = String(eggStr).substring(2);
 
-              // 3. 성장 단계 계산
+              // 4. [성장 단계] score(total_study_time) 기준 계산
               let stage = 1;
               if (score >= 12000) stage = 4;
               else if (score >= 9000) stage = 3;
               else if (score >= 6000) stage = 2;
 
-              // 4. 파일명 조합 (예: ju + 3333)
+              // 5. [파일명] 예: ju + 333 (3단계 시)
               const fileName = `${prefix}${String(eggNumOnly).repeat(stage)}`;
               const finalUrl = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${fileName}.webp?v=` + Date.now();
 
-              // x.jpg 지역에서 위치 최적화
+              // 6. [위치 보정] x.jpg 지역에서 하단이 잘리지 않도록 위로 이동
               const positionClass = currentImageFile === 'x.jpg' 
                 ? "translate-y-4 md:translate-y-10" 
                 : "translate-y-16 md:translate-y-24";
@@ -1120,13 +1122,14 @@ export default function HogwartsApp() {
                     <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
                     <img 
                       key={finalUrl}
+                      // 4단계는 즉시 반영을 위해 캐시 무력화(v=now) 주소 사용
                       src={stage === 4 ? finalUrl : `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${fileName}.webp`}
                       alt="Dragon"
                       className={`relative object-contain drop-shadow-xl animate-bounce-slow mb-1 ${
                         stage === 4 ? 'w-24 h-24 md:w-32 md:h-32' : 'w-16 h-16 md:w-20 md:h-20'
                       }`}
                       onError={(e) => {
-                        // 이미지 로드 실패 시 원본 알 이미지(예: ju3.webp)로 복구
+                        // 이미지 로드 실패 시 기본 알 이미지(ju3.webp) 시도
                         e.currentTarget.src = `https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${eggStr}.webp`;
                       }}
                     />
