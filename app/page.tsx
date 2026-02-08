@@ -1107,7 +1107,7 @@ export default function HogwartsApp() {
               }}
             />
 
-            {/* 드래곤 성장 */}
+            {/* 드래곤 성장 및 메시지 */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
               const userData = studentMasterData[selectedName];
               let eggStr = selectedEgg || userData?.selected_egg; 
@@ -1122,30 +1122,7 @@ export default function HogwartsApp() {
               const prefix = String(eggStr).substring(0, 2); 
               const eggNumOnly = String(eggStr).substring(2);
 
-              let stage = 1;
-              if (score >= 18000) stage = 4;
-              else if (score >= 12000) stage = 3;
-              else if (score >= 6000) stage = 2;
-
-              const fileName = `${prefix}${String(eggNumOnly).repeat(stage)}`;
-              const baseUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public";
-              const finalUrl = `${baseUrl}/${fileName}.webp`;
-
-              {/* 드래곤 성장 및 메시지 팝업 */}
-              {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
-              const userData = studentMasterData[selectedName];
-              let eggStr = selectedEgg || userData?.selected_egg; 
-              const score = userData?.total_study_time || 0;
-  
-              if (!eggStr) return null;
-
-              // 알/드래곤 이름 및 단계 계산
-              if (eggStr.includes('/')) {
-                eggStr = eggStr.split('/').pop().split('.')[0];
-              }
-              const prefix = String(eggStr).substring(0, 2); 
-              const eggNumOnly = String(eggStr).substring(2);
-
+              //성장 단계 계산
               let stage = 1;
               if (score >= 18000) stage = 4;
               else if (score >= 12000) stage = 3;
@@ -1233,6 +1210,7 @@ export default function HogwartsApp() {
               const stageMsgs = (messages as any)[stage] || messages[1];
               const randomMsg = stageMsgs[Math.floor(Math.random() * stageMsgs.length)];
 
+              // 성장 단계별 위치 설정 (4단계는 위로, 나머지는 아래로)
               const positionClass = stage === 4 
                 ? "translate-y-10 md:translate-y-16" 
                 : "translate-y-16 md:translate-y-24";
@@ -1242,45 +1220,20 @@ export default function HogwartsApp() {
                   <div className={`relative flex flex-col items-center ${positionClass}`}>
         
                     {/* 말풍선 메시지 UI */}
-                    <div className="absolute -top-12 md:-top-16 animate-bounce-slow flex flex-col items-center">
-                      <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-2xl shadow-lg border border-slate-200">
-                        <p className="text-[9px] md:text-xs font-bold text-slate-700 whitespace-nowrap italic">
+                    <div className="absolute -top-14 md:-top-20 animate-bounce-slow flex flex-col items-center">
+                      <div className="bg-white/95 backdrop-blur-sm px-4 py-1.5 rounded-2xl shadow-xl border border-slate-100">
+                        <p className="text-[9px] md:text-[11px] font-bold text-slate-700 whitespace-nowrap italic text-center">
                           "{randomMsg}"
                         </p>
                       </div>
                       {/* 말풍선 꼬리 */}
-                      <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-white/90 shadow-sm" />
+                      <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[7px] border-t-white/95 shadow-sm" />
                     </div>
 
+                    {/* 그림자 */}
                     <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
-                    <img 
-                      key={fileName} 
-                      src={finalUrl}
-                      alt="Dragon"
-                      className={`relative object-contain drop-shadow-xl animate-bounce-slow mb-1 transition-all duration-500 ${
-                        stage === 4 
-                          ? 'w-24 h-24 md:w-32 md:h-32' 
-                          : 'w-12 h-12 md:w-16 md:h-16'
-                      }`}
-                      onError={(e) => {
-                        e.currentTarget.src = `${baseUrl}/${eggStr}.webp`;
-                      }}
-                    />
-                  </div>
-                </div>
-              );
-            })()}
-
-              // 4단계: 10, 16 
-              // 1~3단계: 20, 28
-              const positionClass = stage === 4 
-                ? "translate-y-10 md:translate-y-16" 
-                : "translate-y-16 md:translate-y-24";
-
-              return (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-                  <div className={`relative flex flex-col items-center ${positionClass}`}>
-                    <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
+                    
+                    {/* 드래곤 이미지 */}
                     <img 
                       key={fileName} 
                       src={finalUrl}
