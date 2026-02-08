@@ -100,8 +100,10 @@ const studentData: { [key: string]: { house: string; emoji: string; color: strin
   "👑왕관": { house: "래번클로", emoji: "👑", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
   "🐬돌고래": { house: "래번클로", emoji: "🐬", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
   "🐱냥이": { house: "그리핀도르", emoji: "🐱", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
+  "🪶깃털": { house: "래번클로", emoji: "🪶", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
   "🐺늑대": { house: "그리핀도르", emoji: "🐺", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
   "🦉올뺌": { house: "그리핀도르", emoji: "🦉", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
+  "🦦수달": { house: "그리핀도르", emoji: "🦦", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
   "🦄유니콘": { house: "그리핀도르", emoji: "🦄", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
   "🦋나비": { house: "그리핀도르", emoji: "🦋", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
   "🔥불꽃": { house: "그리핀도르", emoji: "🔥", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
@@ -112,6 +114,7 @@ const studentData: { [key: string]: { house: string; emoji: string; color: strin
   "🦊여우": { house: "후플푸프", emoji: "🦊", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🦖공룡": { house: "후플푸프", emoji: "🦖", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "💚초록": { house: "후플푸프", emoji: "💚", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
+  "🐧펭귄": { house: "후플푸프", emoji: "🐧", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🐿️다람": { house: "후플푸프", emoji: "🐿️", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" }
 };
 
@@ -1104,7 +1107,7 @@ export default function HogwartsApp() {
               }}
             />
 
-            {/* 드래곤 성장 */}
+            {/* 드래곤 성장 및 메시지 */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
               const userData = studentMasterData[selectedName];
               let eggStr = selectedEgg || userData?.selected_egg; 
@@ -1119,6 +1122,7 @@ export default function HogwartsApp() {
               const prefix = String(eggStr).substring(0, 2); 
               const eggNumOnly = String(eggStr).substring(2);
 
+              //성장 단계 계산
               let stage = 1;
               if (score >= 18000) stage = 4;
               else if (score >= 12000) stage = 3;
@@ -1128,8 +1132,99 @@ export default function HogwartsApp() {
               const baseUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public";
               const finalUrl = `${baseUrl}/${fileName}.webp`;
 
-              // 4단계: 10, 16 
-              // 1~3단계: 20, 28
+              // 성장 단계별 랜덤 메시지 설정
+              const messages = {
+                1: [ // 알 상태
+                  '…….',
+                  '…….',
+                  '…….',
+                  '…….',
+                  '…….',
+                  '알이 조금 움직인 것 같다...',
+                  '알 껍데기 너머로 아주 작은 고동소리가 들린다.',
+                  '따스한 온기가 느껴지는 알이다.',
+                  '알 표면에 미세한 금이 간 것 같기도...?',
+                  '알 주변의 공기가 기분 좋게 따스하다.',
+                  '알 속에 아주 강력한 마력이 응축되어 있는 것이 느껴진다.',
+                  '알이 당신의 목소리에 반응해 미세하게 떨린다.',
+                  '알을 가만히 안아보니 마음이 평온해지는 기분이다.',
+                  '알이 꿈을 꾸고 있는것 같다.',
+                  '당신이 집중할 때마다 알의 광채가 더 선명해진다.',
+                  '이름을 불러주니 알이 조금 움직였다!'
+                ],
+                2: [ // 해치 상태
+                  '…….',
+                  '…….',
+                  '…….',
+                  '…….',
+                  '…….',
+                  '배가 고픈지 손가락을 깨문다!',
+                  '주변을 호기심 어린 눈으로 본다.',
+                  '작은 불꽃을 내뿜으려 노력 중이다.',
+                  '공부하는 당신의 옆에 찰싹 붙어 졸고 있다.',
+                  '머리를 긁어주자 고양이처럼 골골대는 것 같다...',
+                  '당신이 펜을 움직일 때마다 고개가 좌우로 바쁘게 움직인다.',
+                  '당신이 자리를 비우려 하자 옷자락을 물고 놓아주지 않는다.',
+                  '서툰 울음소리로 당신의 이름을 부르려 노력한다.',
+                  '아기용이 당신의 펜을 죄다 물어뜯어놓았다...',
+                  '공부하는 당신 곁에서 낮잠을 자고 있다.',
+                  '당신을 부모라고 생각하는 것 같다.'
+                ],
+                3: [ // 성장기
+                  '…….',
+                  '…….',
+                  '…….',
+                  '…….',
+                  '…….',
+                  '날갯짓이 제법 힘차졌다.',
+                  '처음으로 날개를 펴고 당신의 머리 위를 짧게 활공했다!',
+                  '이제는 제법 드래곤다운 울음소리를 낸다.',
+                  '공부하는 당신의 어깨 너머로 책 내용을 같이 읽는 듯하다.',
+                  '날개를 파닥거리며 주변의 먼지를 다 날려버리고는 뿌듯해한다.',
+                  '자신의 발톱을 유심히 살피고 있다.',
+                  '당신이 펜을 놓으면 얼른 다시 공부하라는 듯 코를 킁킁거린다.',
+                  '꽤 높이 날아올라 천장에 닿을뻔한 기록을 세웠다!',
+                  '이제는 간단한 명령을 알아듣는다.',
+                  '공부하는 당신을 지켜보고 있다.'
+                ],
+                4: [ // 성체
+                  '…….',
+                  '…….',
+                  '…….',
+                  '…….',
+                  '…….',
+                  '이제는 당신을 등에 태우고 구름 위를 날 수 있을 만큼 자랐다.',
+                  '비늘 사이로 뿜어져 나오는 마력이 당신을 더욱 지혜롭게 한다.',
+                  '누구도 당신을 방해하지 못하도록 문 앞을 엄숙하게 지키고 있다.',
+                  '보고 있으면 모든 잡념이 정화되는 기분이다.',
+                  '당신을 태우고 하늘을 날고 싶어한다.',
+                  '강력한 마력의 기운이 뿜어져 나오고 있다.',
+                  '영원히 당신의 곁을 지킬 것이다.',
+                  '당신의 행복을 영원히 바라고 있다.',
+                  '피곤한 당신을 위해 당신에게 마력을 불어넣어 주고 있다.',
+                  '언제나 당신을 응원하고 있다.'
+                ]
+             };
+
+              // 1. 현재 단계에 맞는 메시지 배열 가져오기
+              const stageMsgs = (messages as any)[stage] || messages[1];
+
+              // 2. 새로고침 시에만 메시지를 무작위로 바꾸는 로직
+              // 윈도우 객체(window)에 임시로 번호를 고정해서 새로고침 전까지 유지합니다.
+              const randomMsg = (() => {
+                const win = window as any;
+                const storageKey = `dragon_msg_idx`;
+  
+                // 만약 윈도우 객체에 저장된 번호가 없다면 새로 뽑음 (새로고침 시 초기화됨)
+                if (win[storageKey] === undefined) {
+                  win[storageKey] = Math.floor(Math.random() * stageMsgs.length);
+                }
+  
+                const idx = win[storageKey];
+                return stageMsgs[idx] || stageMsgs[0];
+              })();
+
+              // 3. 위치 설정
               const positionClass = stage === 4 
                 ? "translate-y-10 md:translate-y-16" 
                 : "translate-y-16 md:translate-y-24";
@@ -1137,7 +1232,22 @@ export default function HogwartsApp() {
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
                   <div className={`relative flex flex-col items-center ${positionClass}`}>
+        
+                    {/* 말풍선 메시지 UI */}
+                    <div className="absolute -top-14 md:-top-20 animate-bounce-slow flex flex-col items-center">
+                      <div className="bg-white/95 backdrop-blur-sm px-4 py-1.5 rounded-2xl shadow-xl border border-slate-100">
+                        <p className="text-[9px] md:text-[11px] font-bold text-slate-700 whitespace-nowrap italic text-center">
+                          "{randomMsg}"
+                        </p>
+                      </div>
+                      {/* 말풍선 꼬리 */}
+                      <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[7px] border-t-white/95 shadow-sm" />
+                    </div>
+
+                    {/* 그림자 */}
                     <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
+                    
+                    {/* 드래곤 이미지 */}
                     <img 
                       key={fileName} 
                       src={finalUrl}
