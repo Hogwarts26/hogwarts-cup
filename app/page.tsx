@@ -1209,20 +1209,19 @@ export default function HogwartsApp() {
               // 1. 현재 단계에 맞는 메시지 배열 가져오기
 const stageMsgs = (messages as any)[stage] || messages[1];
 
-// 2. 새로고침 시에만 메시지를 바꾸기 위한 '세션 저장소' 로직
+// 2. 새로고침 시에만 메시지를 무작위로 바꾸는 로직
+// 윈도우 객체(window)에 임시로 번호를 고정해서 새로고침 전까지 유지합니다.
 const randomMsg = (() => {
-  // 세션 키에 '단계(stage)'를 포함시켜서, 단계가 변하면 메시지도 새로 뽑게 합니다.
-  const sessionKey = `dragon_msg_${selectedName}_stage${stage}`;
-  let savedIdx = sessionStorage.getItem(sessionKey);
-
-  if (savedIdx === null) {
-    // 해당 단계의 메시지 중 하나를 랜덤으로 결정
-    const newIdx = Math.floor(Math.random() * stageMsgs.length);
-    sessionStorage.setItem(sessionKey, String(newIdx));
-    savedIdx = String(newIdx);
+  const win = window as any;
+  const storageKey = `dragon_msg_idx`;
+  
+  // 만약 윈도우 객체에 저장된 번호가 없다면 새로 뽑음 (새로고침 시 초기화됨)
+  if (win[storageKey] === undefined) {
+    win[storageKey] = Math.floor(Math.random() * stageMsgs.length);
   }
-
-  return stageMsgs[Number(savedIdx)] || stageMsgs[0];
+  
+  const idx = win[storageKey];
+  return stageMsgs[idx] || stageMsgs[0];
 })();
 
 // 3. 위치 설정
