@@ -100,10 +100,8 @@ const studentData: { [key: string]: { house: string; emoji: string; color: strin
   "👑왕관": { house: "래번클로", emoji: "👑", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
   "🐬돌고래": { house: "래번클로", emoji: "🐬", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
   "🐱냥이": { house: "그리핀도르", emoji: "🐱", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
-  "🪶깃털": { house: "래번클로", emoji: "🪶", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
   "🐺늑대": { house: "그리핀도르", emoji: "🐺", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
   "🦉올뺌": { house: "그리핀도르", emoji: "🦉", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
-  "🦦수달": { house: "그리핀도르", emoji: "🦦", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
   "🦄유니콘": { house: "그리핀도르", emoji: "🦄", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
   "🦋나비": { house: "그리핀도르", emoji: "🦋", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
   "🔥불꽃": { house: "그리핀도르", emoji: "🔥", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
@@ -114,7 +112,6 @@ const studentData: { [key: string]: { house: string; emoji: string; color: strin
   "🦊여우": { house: "후플푸프", emoji: "🦊", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🦖공룡": { house: "후플푸프", emoji: "🦖", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "💚초록": { house: "후플푸프", emoji: "💚", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
-  "🐧펭귄": { house: "후플푸프", emoji: "🐧", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🐿️다람": { house: "후플푸프", emoji: "🐿️", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" }
 };
 
@@ -295,6 +292,74 @@ export default function HogwartsApp() {
       }
     }
   }, [selectedName, currentUser, studentMasterData]);
+
+const [dragonName, setDragonName] = useState("이름 없는 용");
+const [isModalOpen, setIsModalOpen] = useState(false);
+const [tempName, setTempName] = useState("");
+
+// DB에서 저장된 알 정보 및 '이름'을 불러오는 useEffect 수정
+useEffect(() => {
+  const targetName = selectedName || currentUser?.name;
+  if (targetName && studentMasterData && studentMasterData[targetName]) {
+    const master = studentMasterData[targetName];
+    
+    // 알 정보 설정
+    if (master.selected_egg) {
+      setSelectedEgg(master.selected_egg);
+    } else {
+      setSelectedEgg(null);
+    }
+
+    // [중요] 이름 정보 설정 (DB에 dragon_name 컬럼이 있다고 가정)
+    if (master.dragon_name) {
+      setDragonName(master.dragon_name);
+    } else {
+      setDragonName("이름 없는 용");
+    }
+  }
+}, [selectedName, currentUser, studentMasterData]);
+
+const handleSaveName = async () => {
+  if (tempName.trim() === "") {
+    alert("아직 이름을 지어주지 않았습니다.");
+    return;
+  }
+
+  setDragonName(tempName);
+  const targetName = selectedName || currentUser?.name;
+  const { error } = await supabase
+    .from('student_master')
+    .update({ dragon_name: tempName }) // DB 테이블에 dragon_name 컬럼이 있어야 함
+    .eq('student_name', targetName);
+
+  if (error) {
+    console.error("이름 저장 실패:", error);
+  } else {
+    setIsModalOpen(false);
+  }
+};
+
+  // ==========================================================
+  // 실시간으로 변하는 게이지 계산
+  // ==========================================================
+  const totalStudyTime = studentMasterData[selectedName]?.total_study_time || 0;
+
+  let progress = 0;
+  let nextStageGoal = 0;
+
+  if (totalStudyTime < 6000) {
+    progress = (totalStudyTime / 6000) * 100;
+    nextStageGoal = 6000;
+  } else if (totalStudyTime < 12000) {
+    progress = ((totalStudyTime - 6000) / 6000) * 100;
+    nextStageGoal = 12000;
+  } else if (totalStudyTime < 18000) {
+    progress = ((totalStudyTime - 12000) / 6000) * 100;
+    nextStageGoal = 18000;
+  } else {
+    progress = 100;
+    nextStageGoal = 18000;
+  }
 
   // ==========================================
   // [6] 초기 실행 (인증 확인 및 시계)
@@ -1140,6 +1205,10 @@ export default function HogwartsApp() {
                   '…….',
                   '…….',
                   '…….',
+                  '…….',
+                  '…….',
+                  '…….',
+                  '…….',
                   '알이 조금 움직인 것 같다...',
                   '알 껍데기 너머로 아주 작은 고동소리가 들린다.',
                   '따스한 온기가 느껴지는 알이다.',
@@ -1153,6 +1222,11 @@ export default function HogwartsApp() {
                   '이름을 불러주니 알이 조금 움직였다!'
                 ],
                 2: [ // 해치 상태
+                  '…….',
+                  '…….',
+                  '…….',
+                  '…….',
+                  '…….',
                   '…….',
                   '…….',
                   '…….',
@@ -1176,6 +1250,10 @@ export default function HogwartsApp() {
                   '…….',
                   '…….',
                   '…….',
+                  '…….',
+                  '…….',
+                  '…….',
+                  '…….',
                   '날갯짓이 제법 힘차졌다.',
                   '처음으로 날개를 펴고 당신의 머리 위를 짧게 활공했다!',
                   '이제는 제법 드래곤다운 울음소리를 낸다.',
@@ -1188,6 +1266,10 @@ export default function HogwartsApp() {
                   '공부하는 당신을 지켜보고 있다.'
                 ],
                 4: [ // 성체
+                  '…….',
+                  '…….',
+                  '…….',
+                  '…….',
                   '…….',
                   '…….',
                   '…….',
@@ -1207,63 +1289,78 @@ export default function HogwartsApp() {
              };
 
               // 1. 현재 단계에 맞는 메시지 배열 가져오기
-const stageMsgs = (messages as any)[stage] || messages[1];
+              const stageMsgs = (messages as any)[stage] || messages[1];
 
-// 2. 새로고침 시에만 메시지를 무작위로 바꾸는 로직
-// 윈도우 객체(window)에 임시로 번호를 고정해서 새로고침 전까지 유지합니다.
-const randomMsg = (() => {
-  const win = window as any;
-  const storageKey = `dragon_msg_idx`;
+              // 2. 새로고침 시에만 메시지를 무작위로 바꾸는 로직
+              // 윈도우 객체(window)에 임시로 번호를 고정해서 새로고침 전까지 유지합니다.
+              const randomMsg = (() => {
+                const win = window as any;
+                const storageKey = `dragon_msg_idx`;
   
-  // 만약 윈도우 객체에 저장된 번호가 없다면 새로 뽑음 (새로고침 시 초기화됨)
-  if (win[storageKey] === undefined) {
-    win[storageKey] = Math.floor(Math.random() * stageMsgs.length);
-  }
+                // 만약 윈도우 객체에 저장된 번호가 없다면 새로 뽑음 (새로고침 시 초기화됨)
+                if (win[storageKey] === undefined) {
+                  win[storageKey] = Math.floor(Math.random() * stageMsgs.length);
+                }
   
-  const idx = win[storageKey];
-  return stageMsgs[idx] || stageMsgs[0];
-})();
+                const idx = win[storageKey];
+                return stageMsgs[idx] || stageMsgs[0];
+              })();
 
-// 3. 위치 설정
-const positionClass = stage === 4 
-  ? "translate-y-10 md:translate-y-16" 
-  : "translate-y-16 md:translate-y-24";
+              // 3. 위치 설정
+              const positionClass = stage === 4 
+                ? "translate-y-10 md:translate-y-16" 
+                : "translate-y-16 md:translate-y-24";
 
-              return (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-                  <div className={`relative flex flex-col items-center ${positionClass}`}>
-        
-                    {/* 말풍선 메시지 UI */}
-                    <div className="absolute -top-14 md:-top-20 animate-bounce-slow flex flex-col items-center">
-                      <div className="bg-white/95 backdrop-blur-sm px-4 py-1.5 rounded-2xl shadow-xl border border-slate-100">
-                        <p className="text-[9px] md:text-[11px] font-bold text-slate-700 whitespace-nowrap italic text-center">
-                          "{randomMsg}"
-                        </p>
-                      </div>
-                      {/* 말풍선 꼬리 */}
-                      <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[7px] border-t-white/95 shadow-sm" />
-                    </div>
+             return (
+  <div className="absolute inset-0 flex items-center justify-center z-30">
+    {/* [추가] 좌측 상단 게이지바 */}
+    <div className="absolute top-4 left-4 flex items-center gap-2 pointer-events-auto">
+      <div className="w-24 h-3 bg-white/50 backdrop-blur-sm rounded-full overflow-hidden border border-white/30 shadow-sm">
+        <div 
+          className="h-full transition-all duration-1000 ease-out" 
+          style={{ width: `${progress}%`, backgroundColor: '#65D35D' }}
+        />
+      </div>
+      <span className="text-[10px] font-black text-white drop-shadow-md">{Math.floor(progress)}%</span>
+    </div>
 
-                    {/* 그림자 */}
-                    <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
-                    
-                    {/* 드래곤 이미지 */}
-                    <img 
-                      key={fileName} 
-                      src={finalUrl}
-                      alt="Dragon"
-                      className={`relative object-contain drop-shadow-xl animate-bounce-slow mb-1 transition-all duration-500 ${
-                        stage === 4 
-                          ? 'w-24 h-24 md:w-32 md:h-32' 
-                          : 'w-12 h-12 md:w-16 md:h-16'
-                      }`}
-                      onError={(e) => {
-                        e.currentTarget.src = `${baseUrl}/${eggStr}.webp`;
-                      }}
-                    />
-                  </div>
-                </div>
-              );
+    <div className={`relative flex flex-col items-center ${positionClass}`}>
+      {/* 말풍선 메시지 UI */}
+      <div className="absolute -top-14 md:-top-20 animate-bounce-slow flex flex-col items-center">
+        <div className="bg-white/95 backdrop-blur-sm px-4 py-1.5 rounded-2xl shadow-xl border border-slate-100">
+          <p className="text-[9px] md:text-[11px] font-bold text-slate-700 whitespace-nowrap italic text-center">
+            '{randomMsg}'
+          </p>
+        </div>
+        <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[7px] border-t-white/95 shadow-sm" />
+
+        {/* [추가] 용 이름 (말풍선 바로 아래) */}
+        <div 
+          className="mt-2 cursor-pointer pointer-events-auto hover:scale-110 transition-transform"
+          onClick={() => setIsModalOpen(true)}
+        >
+          <span className="bg-black/40 text-white px-3 py-0.5 rounded-full text-[10px] md:text-xs font-medium backdrop-blur-sm border border-white/10">
+            {dragonName}
+          </span>
+        </div>
+      </div>
+
+      {/* 그림자 */}
+      <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
+      
+      {/* 드래곤 이미지 (pointer-events-auto 추가하여 클릭 가능하게 함) */}
+      <img 
+        key={fileName} 
+        src={finalUrl}
+        alt="Dragon"
+        className={`relative object-contain drop-shadow-xl animate-bounce-slow mb-1 transition-all duration-500 pointer-events-auto ${
+          stage === 4 ? 'w-24 h-24 md:w-32 md:h-32' : 'w-12 h-12 md:w-16 md:h-16'
+        }`}
+        onError={(e) => { e.currentTarget.src = `${baseUrl}/${eggStr}.webp`; }}
+      />
+    </div>
+  </div>
+);
             })()}
 
             {/* 지역별 알 선택 */}
@@ -1366,6 +1463,46 @@ const positionClass = stage === 4
           className="w-full py-3 bg-slate-100 text-slate-400 font-bold rounded-xl hover:bg-slate-200 transition-colors uppercase tracking-widest text-[10px]"
         >
           고민해볼게요
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{/* [추가] 이름 짓기 팝업 */}
+{isModalOpen && (
+  <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full mx-4 text-center border-4 border-slate-100">
+      <h3 className="text-xl font-black mb-2 text-slate-800 uppercase tracking-tighter" style={{ fontFamily: "'Cinzel', serif" }}>
+        이름을 지어줄까요?
+      </h3>
+      <p className="text-slate-500 mb-6 text-sm italic">
+        한 번 정한 이름은 나중에 변경할 수 있습니다.
+      </p>
+
+      <input 
+        type="text" 
+        value={tempName}
+        onChange={(e) => setTempName(e.target.value)}
+        placeholder="이름을 입력하세요"
+        className="w-full border-2 border-slate-100 rounded-xl p-3 mb-6 focus:border-[#65D35D] outline-none text-center font-bold text-slate-700 transition-colors"
+      />
+
+      <div className="flex flex-col gap-3">
+        <button
+          onClick={handleSaveName}
+          className="w-full py-3 bg-[#65D35D] text-white font-black rounded-xl hover:opacity-90 transition-opacity uppercase tracking-widest text-xs shadow-lg shadow-green-100"
+        >
+          이름을 지어준다
+        </button>
+        <button
+          onClick={() => { 
+            setIsModalOpen(false); 
+            setTempName(""); 
+          }}
+          className="w-full py-3 bg-slate-100 text-slate-400 font-bold rounded-xl hover:bg-slate-200 transition-colors uppercase tracking-widest text-[10px]"
+        >
+          지어주지 않는다
         </button>
       </div>
     </div>
