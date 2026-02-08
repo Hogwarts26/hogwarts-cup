@@ -82,7 +82,7 @@ const GLOVAL_STYLE = `
 `;
 
 // ==========================================
-// [2] 학생 명단 데이터 (이름, 기숙사, 이모지, 색상)
+// [2] 학생 명단
 // ==========================================
 const studentData: { [key: string]: { house: string; emoji: string; color: string; accent: string, text: string } } = {
   "🤖로봇": { house: "슬리데린", emoji: "🤖", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
@@ -100,8 +100,10 @@ const studentData: { [key: string]: { house: string; emoji: string; color: strin
   "👑왕관": { house: "래번클로", emoji: "👑", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
   "🐬돌고래": { house: "래번클로", emoji: "🐬", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
   "🐱냥이": { house: "그리핀도르", emoji: "🐱", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
+  "🪶깃털": { house: "래번클로", emoji: "🪶", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
   "🐺늑대": { house: "그리핀도르", emoji: "🐺", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
   "🦉올뺌": { house: "그리핀도르", emoji: "🦉", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
+  "🦦수달": { house: "그리핀도르", emoji: "🦦", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
   "🦄유니콘": { house: "그리핀도르", emoji: "🦄", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
   "🦋나비": { house: "그리핀도르", emoji: "🦋", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
   "🔥불꽃": { house: "그리핀도르", emoji: "🔥", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
@@ -112,6 +114,7 @@ const studentData: { [key: string]: { house: string; emoji: string; color: strin
   "🦊여우": { house: "후플푸프", emoji: "🦊", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🦖공룡": { house: "후플푸프", emoji: "🦖", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "💚초록": { house: "후플푸프", emoji: "💚", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
+  "🐧펭귄": { house: "후플푸프", emoji: "🐧", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🐿️다람": { house: "후플푸프", emoji: "🐿️", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" }
 };
 
@@ -173,7 +176,7 @@ const HOUSE_NOTICES: { [key: string]: { title: string, content: string } } = {
 const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
 const OFF_OPTIONS = ['-', '출석', '반휴', '주휴', '월휴', '월반휴', '자율', '결석', '늦반휴', '늦휴', '늦월반휴', '늦월휴'];
 
-// 깃허브 저장소(Hogwarts26/hogwarts-cup)에 올린 이미지를 직접 연결
+// 기숙사로고 이미지 (깃허브에 업로드 한 것)
 const HOUSE_LOGOS: Record<string, string> = {
   "그리핀도르": "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/gry.png",
   "슬리데린": "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/sly.png",
@@ -188,13 +191,13 @@ const sortKorean = (a: string, b: string) => {
 };
 
 // ==========================================
-// [5] 메인 App 컴포넌트 및 상태(State) 관리
+// [5] 메인 App 컴포넌트 및 상태 관리
 // ==========================================
 export default function HogwartsApp() {
-  // --- [추가] 월요일 18:00 기준 날짜 조정 함수 ---
+  // 월요일 18:00 기준 날짜 조정 함수
   const getAdjustedToday = () => {
     const now = new Date();
-    const day = now.getDay();    // 0(일), 1(월), 2(화)...
+    const day = now.getDay();
     const hours = now.getHours();
 
     if (day === 1 && hours < 18) {
@@ -212,7 +215,7 @@ export default function HogwartsApp() {
   const [records, setRecords] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   
-  // ✅ [추가] 학생들의 누적 데이터(알 정보 포함)를 저장할 상태
+  // 학생들의 누적 데이터 저장
   const [studentMasterData, setStudentMasterData] = useState<any>({});
 
   const [currentTime, setCurrentTime] = useState(getAdjustedToday());
@@ -222,10 +225,29 @@ export default function HogwartsApp() {
   const [dailyGoal, setDailyGoal] = useState("");
   const [isEditingGoal, setIsEditingGoal] = useState(false);
 
-  // ✅ [추가] 현재 로그인한 사용자를 객체 형태로 정의 (빨간 줄 방지)
   const currentUser = useMemo(() => {
     return selectedName ? { name: selectedName } : null;
   }, [selectedName]);
+
+  // [추가] Supabase에서 student_master 데이터를 가져와서 studentMasterData 상태를 채우는 로직
+  // 새로고침 시 DB에서 selected_egg 값을 가져옴
+  useEffect(() => {
+    const fetchMasterData = async () => {
+      try {
+        const { data, error } = await supabase.from('student_master').select('*');
+        if (!error && data) {
+          const dataMap = data.reduce((acc: any, cur: any) => {
+            acc[cur.student_name] = cur;
+            return acc;
+          }, {});
+          setStudentMasterData(dataMap);
+        }
+      } catch (err) {
+        console.error("Error fetching master data:", err);
+      }
+    };
+    fetchMasterData();
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -234,7 +256,7 @@ export default function HogwartsApp() {
     return () => clearInterval(timer);
   }, []);
 
-  // [상태 관리] Dragon Cave 이미지 및 애니메이션
+  // Dragon Cave 이미지 및 애니메이션
   const [currentImageFile, setCurrentImageFile] = useState('x.jpg');
   const [isFading, setIsFading] = useState(false);
 
@@ -261,27 +283,30 @@ export default function HogwartsApp() {
   const [tempEgg, setTempEgg] = useState<string | null>(null);
   const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
 
-  // ✅ [수정] DB에서 저장된 알 정보를 불러오는 로직
+  // DB에서 저장된 알 정보를 불러옴
   useEffect(() => {
-    if (currentUser && studentMasterData && studentMasterData[currentUser.name]) {
-      const savedEgg = studentMasterData[currentUser.name].selected_egg;
+    const targetName = selectedName || currentUser?.name;
+    if (targetName && studentMasterData && studentMasterData[targetName]) {
+      const savedEgg = studentMasterData[targetName].selected_egg;
       if (savedEgg) {
         setSelectedEgg(savedEgg);
+      } else {
+        setSelectedEgg(null);
       }
     }
-  }, [currentUser, studentMasterData]);
+  }, [selectedName, currentUser, studentMasterData]);
 
   // ==========================================
   // [6] 초기 실행 (인증 확인 및 시계)
   // ==========================================
   useEffect(() => {
-    // 1초마다 시간을 업데이트하되, 월요일 18:00 기준 로직을 적용합니다.
+    // 월요일 18:00 기준
     const timer = setInterval(() => {
       const now = new Date();
       const day = now.getDay();
       const hours = now.getHours();
 
-      // 월요일(1)이면서 오후 6시(18시) 이전인 경우 하루 전으로 조정
+      // 월요일 18시 이전인 경우 하루 전으로 조정
       if (day === 1 && hours < 18) {
         const adjusted = new Date(now);
         adjusted.setDate(now.getDate() - 1);
@@ -322,7 +347,6 @@ export default function HogwartsApp() {
     if (resMaster.data) {
       const masterObj: any = {};
       resMaster.data.forEach((item: any) => {
-        // 컬럼명이 student_name이므로 이를 키값으로 저장합니다.
         const key = item.student_name; 
         masterObj[key] = item;
       });
@@ -359,10 +383,8 @@ export default function HogwartsApp() {
     setIsSaving(true);
     try {
       const names = Object.keys(studentData);
-      // 화면 즉시 반영을 위해 현재 마스터 데이터를 복사합니다.
       const newMasterData = { ...studentMasterData };
 
-      // --- [단계 1] 용 성장을 위한 공부 시간 합산 및 마스터 테이블 누적 ---
       const updatePromises = names.map(async (name) => {
         const studentRecords = records.filter(r => r.student_name === name);
         
@@ -383,7 +405,6 @@ export default function HogwartsApp() {
 
           const newTotal = (masterData?.total_study_time || 0) + weeklyMinutes;
           
-          // ✅ 로컬 상태 업데이트 (화면 즉시 반영용)
           if (newMasterData[name]) {
             newMasterData[name].total_study_time = newTotal;
           }
@@ -396,10 +417,9 @@ export default function HogwartsApp() {
       });
 
       await Promise.all(updatePromises);
-      // ✅ 합산된 전체 데이터를 상태에 한 번에 저장합니다.
       setStudentMasterData(newMasterData);
 
-      // --- [단계 2] 기존 주간 기록표(study_records) 초기화 ---
+      // 기존 주간 기록표 초기화
       const resetData = [];
       for (const name of names) {
         for (const day of DAYS) {
@@ -422,7 +442,7 @@ export default function HogwartsApp() {
       
       if (!error) { 
         setRecords(resetData); 
-        alert("이번 주 기록이 용의 먹이로 전환되었으며, 표가 초기화되었습니다!"); 
+        alert("이번 주 기록들이 용의 먹이로 전환되었습니다!"); 
       } else {
         throw error;
       }
@@ -435,24 +455,23 @@ export default function HogwartsApp() {
   };
 
   // ==========================================
-  // [10] 월휴 초기화 (Monthly Reset)
+  // [10] 월휴 초기화
   // ==========================================
   const resetMonthlyOff = async () => {
-    if (!confirm("⚠️ 주의: 모든 학생의 월휴 개수를 초기화하시겠습니까?")) return;
+    if (!confirm("모든 학생의 월휴 개수를 초기화하시겠습니까?")) return;
     setIsSaving(true);
 
     const names = Object.keys(studentData);
     const resetData = [];
 
-    // 현재 records에 있는 기존 데이터를 바탕으로 monthly_off_count만 4로 변경
     for (const name of names) {
       for (const day of DAYS) {
         const existing = records.find(r => r.student_name === name && r.day_of_week === day) || {};
         resetData.push({
-          ...existing, // 기존의 다른 데이터(비번, 시간 등)는 그대로 유지
+          ...existing,
           student_name: name,
           day_of_week: day,
-          monthly_off_count: 4 // 월휴만 4로 리셋
+          monthly_off_count: 4
         });
       }
     }
@@ -461,7 +480,7 @@ export default function HogwartsApp() {
     
     if (!error) { 
       setRecords(resetData); 
-      alert("✅ 월휴 개수가 초기화되었습니다."); 
+      alert("학생들의 월휴 개수가 초기화되었습니다."); 
     }
     setIsSaving(false);
   };
@@ -475,7 +494,7 @@ export default function HogwartsApp() {
       return { penalty: 0, bonus: 0, total: 0, studyH: 0 };
     }
     
-    // 2. 결석은 즉시 벌점 -5점
+    // 2. 결석 벌점 -5점
     if (r.off_type === '결석') return { penalty: -5, bonus: 0, total: -5, studyH: 0 };
     
     const timeVal = r.study_time || "";
@@ -487,25 +506,25 @@ export default function HogwartsApp() {
     const isHalfOff = ['반휴', '월반휴', '늦반휴', '늦월반휴'].includes(r.off_type);
     const isFullOff = ['주휴', '월휴', '자율', '늦휴', '늦월휴'].includes(r.off_type);
     
-    // A. 늦은 휴무 신청 자체 벌점 (-1)
+    // A. 늦휴무 벌점 (-1)
     if (['늦반휴', '늦휴', '늦월반휴', '늦월휴'].includes(r.off_type)) {
       penalty -= 1;
     }
     
-    // B. 지각 벌점 (풀휴무/자율 제외)
+    // B. 지각 벌점
     if (r.is_late && !isFullOff && r.off_type !== '자율') {
       penalty -= 1;
     }
     
-    // C. 시간당 상벌점 로직 (풀휴무/자율 제외)
+    // C. 시간당 상벌점
     if (!isFullOff && r.off_type !== '자율') {
       
-      // [오전 3시간 체크] 반휴 계열이 아니고 공부 기록이 있을 때 미달 시 -1
+      // 오전 3시간 체크
       if (!isHalfOff && r.am_3h === false && studyH > 0) {
         penalty -= 1;
       }
 
-      // [기준 시간 미달/초과 체크]
+      // 기준 시간 미달/초과 체크
       const target = isHalfOff ? 4 : 9;
       
       if (studyH < target) {
@@ -515,7 +534,7 @@ export default function HogwartsApp() {
       }
     }
 
-    // D. 벌점 한도 적용: 벌점은 하루 최대 -5점까지만
+    // 벌점은 하루 최대 -5점까지
     const finalPenalty = Math.max(penalty, -5);
 
     return { 
@@ -526,16 +545,14 @@ export default function HogwartsApp() {
     };
   };
 
- // ==========================================
+  // ==========================================
   // [12] 요약 리포트 팝업 데이터 연동 함수
   // ==========================================
 
   const calculatePoints = (name: string) => {
     let bonus = 0;
     let penalty = 0;
-    let usedWeeklyOff = 0;   // 주간 휴무 (1.5 기준)
-    // usedMonthlyOff 변수는 이제 직접적인 연동을 위해 사용하지 않거나, 초기화만 유지합니다.
-
+    let usedWeeklyOff = 0; 
     const studentRecords = records.filter(r => r.student_name === name);
 
     studentRecords.forEach(r => {
@@ -543,13 +560,12 @@ export default function HogwartsApp() {
       bonus += res.bonus;
       penalty += res.penalty;
 
-      // 주간 휴무 계산: 반휴=0.5, 주휴=1.0 (지각휴무 포함)
+      // 주간 휴무 계산
       if (['반휴', '늦반휴'].includes(r.off_type)) usedWeeklyOff += 0.5;
       if (['주휴', '늦휴'].includes(r.off_type)) usedWeeklyOff += 1.0;
     });
 
-    // [수정 요청 사항 반영] 잔여 월휴 연동: 
-    // 테이블 우측의 월휴 동그라미(monthly_off_count) 값을 직접 가져옵니다.
+    // 잔여 월휴 연동
     const monRec = studentRecords.find(r => r.day_of_week === '월');
     const offCount = monRec?.monthly_off_count ?? 4;
 
@@ -557,7 +573,6 @@ export default function HogwartsApp() {
       bonus, 
       penalty,
       remainingWeeklyOff: (1.5 - usedWeeklyOff).toFixed(1).replace('.0', ''),
-      // 체크된 동그라미 개수당 0.5일로 계산하여 표시
       remainingMonthlyOff: (offCount * 0.5).toFixed(1).replace('.0', '')
     };
   };
@@ -588,18 +603,16 @@ export default function HogwartsApp() {
 
   const getDayDate = (targetDay: string) => {
     const dayIdx = DAYS.indexOf(targetDay);
-    // ✅ 진짜 오늘 날짜(new Date()) 대신, 조정된 시계(currentTime)를 사용합니다.
+    // 조정된 시간 사용
     const today = currentTime; 
     const currentDay = today.getDay();
     const diff = today.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + dayIdx;
     
-    // ✅ target 계산 시에도 기준이 되는 today(currentTime)를 넣어줘야 정확합니다.
     const target = new Date(new Date(today).setDate(diff));
     return `${target.getMonth() + 1}.${target.getDate()}`;
   };
 
   const getMonthAccumulatedTime = (name: string) => {
-    // ✅ 여기도 currentTime을 기준으로 월을 판단합니다.
     const currentMonth = currentTime.getMonth() + 1; 
     let totalMinutes = 0;
     
@@ -646,14 +659,14 @@ export default function HogwartsApp() {
       bgm.pause();
     } else {
       bgm.loop = true;
-      bgm.volume = 0.4; // 볼륨 40%
+      bgm.volume = 0.4;
       bgm.play().catch(e => console.log("음악 재생 실패:", e));
     }
     setIsPlaying(!isPlaying);
   };
 
   // ==========================================
-  // [15] 비밀번호 변경 및 저장 로직
+  // [15] 비밀번호 변경 및 저장
   // ==========================================
   const handleChange = async (name: string, day: string, field: string, value: any) => {
     if (!isAdmin && field !== 'password' && field !== 'goal') return;
@@ -670,7 +683,7 @@ export default function HogwartsApp() {
     else if (field === 'goal') {
 
   // ==========================================
-  // [16] 목표 변경 및 저장 로직
+  // [16] 목표 변경 및 저장
   // ==========================================
       const updatePayload = DAYS.map(d => {
         const existing = records.find(r => r.student_name === name && r.day_of_week === d) || {};
@@ -678,7 +691,7 @@ export default function HogwartsApp() {
           ...existing, 
           student_name: name, 
           day_of_week: d, 
-          goal: value, // 수정된 목표값
+          goal: value,
           password: existing.password || '0000',
           monthly_off_count: existing.monthly_off_count ?? 4
         };
@@ -687,12 +700,10 @@ export default function HogwartsApp() {
       const { error } = await supabase.from('study_records').upsert(updatePayload, { onConflict: 'student_name,day_of_week' });
       
       if (!error) {
-        // [수정/저장 반영] 전체 records에서 해당 학생의 모든 요일 목표를 value로 통일
         setRecords(prev => prev.map(r => r.student_name === name ? { ...r, goal: value } : r));
         
-        // UI 상태 동기화 (저장 버튼 클릭 후 입력 모드 해제 등)
         setDailyGoal(value);
-        setIsEditingGoal(false); // 수정 완료 후 버튼 상태를 다시 '수정'으로 변경하기 위함
+        setIsEditingGoal(false);
       }
     }
     else {
@@ -724,7 +735,7 @@ export default function HogwartsApp() {
   };
 
 // ==========================================
-  // [18] 로그인 화면 (Render Login)
+  // [18] 로그인 화면
   // ==========================================
   if (!isLoggedIn) {
     return (
@@ -753,7 +764,7 @@ export default function HogwartsApp() {
   }
 
   // ==========================================
-  // [19] 메인 화면 데이터 준비 (학생 필터링 등)
+  // [19] 메인 화면 데이터 준비
   // ==========================================
   const displayList = isAdmin 
     ? Object.keys(studentData).sort((a, b) => {
@@ -763,13 +774,11 @@ export default function HogwartsApp() {
     : [selectedName];
 
   // ==========================================
-  // [20] 애니메이션/체크박스 충돌 없는 안전한 이름 추출 함수
+  // [20] 이름 추출 함수
   // ==========================================
   const formatDisplayName = (name: any): string => {
     if (!name || typeof name !== 'string') return "";
     try {
-      // 이모지를 지우는 대신, "한글/영어/숫자" 덩어리만 찾아서 가져옵니다.
-      // 복잡한 유니코드 범위를 건드리지 않아 애니메이션과 디자인이 깨지지 않습니다.
       const match = name.match(/[가-힣a-zA-Z0-9]+/);
       return match ? match[0].trim() : name;
     } catch (e) {
@@ -825,7 +834,7 @@ export default function HogwartsApp() {
         </div>
       )}
 
- {/*[22] 관리자 화면 요약 확인 팝업 (전체 기숙사 요약) */}
+ {/*[22] 관리자 화면 전체 기숙사 요약 */}
       {showSummary && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowSummary(false)}>
           <div className="bg-white rounded-[2rem] p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative" onClick={e => e.stopPropagation()}>
@@ -880,9 +889,9 @@ export default function HogwartsApp() {
               {isPlaying ? '🎵' : '🔇'}
             </button>
             {isAdmin && <button onClick={() => setShowSummary(true)} className="text-[10px] font-black text-white bg-indigo-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-indigo-700">요약</button>}
-            {isAdmin && <button onClick={resetWeeklyData} className="text-[10px] font-black text-white bg-red-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-red-700">W re</button>}
+            {isAdmin && <button onClick={resetWeeklyData} className="text-[10px] font-black text-white bg-red-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-red-700">주간 리셋</button>}
             {isAdmin && (
-              <button onClick={resetMonthlyOff} className="text-[10px] font-black text-white bg-orange-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-orange-700">M re</button>
+              <button onClick={resetMonthlyOff} className="text-[10px] font-black text-white bg-orange-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-orange-700">월휴 리셋</button>
             )}
             <button onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full shadow-sm">Logout</button>
           </div>
@@ -1046,16 +1055,16 @@ export default function HogwartsApp() {
         {/* 지역명 버튼 영역 */}
         <div className="grid grid-cols-3 gap-2 mb-8 max-w-sm">
           {['volcano', 'jungle', 'forest', 'desert', 'coast', 'alpine'].map((region) => {
-            // ✅ 알 보유 여부 확인 (현재 선택했거나, DB에 기록이 있거나)
+            // 알 보유 여부 확인
             const hasEgg = !!(selectedEgg || studentMasterData[selectedName]?.selected_egg);
 
             return (
               <button
                 key={region}
                 onClick={() => {
-                  // ✅ 알이 있다면 다른 지역으로 이동 차단
+                  // 알이 있다면 다른 지역으로 이동 차단
                   if (hasEgg) {
-                    alert("이미 데려온 알이 있습니다. 한 명당 하나의 알만 보살필 수 있어요!");
+                    alert("이미 데려온 알이 있습니다.");
                     return;
                   }
                   handleRegionClick(region);
@@ -1064,7 +1073,7 @@ export default function HogwartsApp() {
                   ${currentImageFile === `${region}.webp` 
                     ? 'bg-slate-900 text-white border-slate-900 shadow-sm' 
                     : hasEgg
-                      ? 'bg-slate-50 text-slate-200 border-slate-50 cursor-not-allowed' // 알이 있을 때 스타일
+                      ? 'bg-slate-50 text-slate-200 border-slate-50 cursor-not-allowed'
                       : 'bg-white text-slate-400 border-slate-100 hover:text-slate-600 hover:bg-slate-50' 
                   }`}
               >
@@ -1087,23 +1096,22 @@ export default function HogwartsApp() {
 
           <div className="w-full rounded-[1.5rem] md:rounded-[2rem] overflow-hidden shadow-2xl border border-slate-200 bg-slate-50 relative aspect-video">
           
-            {/* 배경 이미지 (투명도 60% 적용) */}
+            {/* 지역별 배경 이미지 */}
             <img 
               src={`https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${currentImageFile}`}
               alt="Dragon Habitat"
-              // ✅ opacity-60을 기본으로 하고, 페이드 아웃 시에만 0이 되도록 설정했습니다.
-              className={`w-full h-full object-cover transition-opacity duration-300 ease-in-out ${isFading ? 'opacity-0' : 'opacity-60'}`}
+              className={`w-full h-full object-cover transition-opacity duration-300 ease-in-out ${isFading ? 'opacity-0' : 'opacity-80'}`}
               onError={(e) => {
                 const target = e.currentTarget as HTMLImageElement;
                 target.src = "https://via.placeholder.com/1200x675?text=Habitat+Image+Not+Found";
               }}
             />
 
-            {/* 드래곤 성장 표시 로직 (단계별 위치 및 크기 동기화) */}
+            {/* 드래곤 성장 */}
             {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
               const userData = studentMasterData[selectedName];
               let eggStr = selectedEgg || userData?.selected_egg; 
-              const score = 13000;
+              const score = userData?.total_study_time || 0;
               
               if (!eggStr) return null;
 
@@ -1115,25 +1123,135 @@ export default function HogwartsApp() {
               const eggNumOnly = String(eggStr).substring(2);
 
               let stage = 1;
-              if (score >= 12000) stage = 4;
-              else if (score >= 9000) stage = 3;
+              if (score >= 18000) stage = 4;
+              else if (score >= 12000) stage = 3;
               else if (score >= 6000) stage = 2;
 
               const fileName = `${prefix}${String(eggNumOnly).repeat(stage)}`;
               const baseUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public";
               const finalUrl = `${baseUrl}/${fileName}.webp`;
 
-              // ✅ [핵심 수정] 단계별 위치 분기 처리
-              // 4단계(용)일 때는 이미지가 크므로 조금 더 위로(10, 16) 올리고, 
-              // 1~3단계(알)일 때는 요청하신 대로 (20, 28) 위치를 유지합니다.
+              {/* 드래곤 성장 및 메시지 팝업 */}
+              {(currentImageFile === 'main.webp' || currentImageFile === 'x.jpg') && (() => {
+              const userData = studentMasterData[selectedName];
+              let eggStr = selectedEgg || userData?.selected_egg; 
+              const score = userData?.total_study_time || 0;
+  
+              if (!eggStr) return null;
+
+              // 알/드래곤 이름 및 단계 계산
+              if (eggStr.includes('/')) {
+                eggStr = eggStr.split('/').pop().split('.')[0];
+              }
+              const prefix = String(eggStr).substring(0, 2); 
+              const eggNumOnly = String(eggStr).substring(2);
+
+              let stage = 1;
+              if (score >= 18000) stage = 4;
+              else if (score >= 12000) stage = 3;
+              else if (score >= 6000) stage = 2;
+
+              const fileName = `${prefix}${String(eggNumOnly).repeat(stage)}`;
+              const baseUrl = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public";
+              const finalUrl = `${baseUrl}/${fileName}.webp`;
+
+              // 성장 단계별 랜덤 메시지 설정
+              const messages = {
+                1: [ // 알 상태
+                  '…….',
+                  '…….',
+                  '…….',
+                  '…….',
+                  '…….',
+                  '알이 조금 움직인 것 같다...',
+                  '알 껍데기 너머로 아주 작은 고동소리가 들린다.',
+                  '따스한 온기가 느껴지는 알이다.',
+                  '알 표면에 미세한 금이 간 것 같기도...?',
+                  '알 주변의 공기가 기분 좋게 따스하다.',
+                  '알 속에 아주 강력한 마력이 응축되어 있는 것이 느껴진다.',
+                  '알이 당신의 목소리에 반응해 미세하게 떨린다.',
+                  '알을 가만히 안아보니 마음이 평온해지는 기분이다.',
+                  '알이 꿈을 꾸고 있는것 같다.',
+                  '당신이 집중할 때마다 알의 광채가 더 선명해진다.',
+                  '이름을 불러주니 알이 조금 움직였다!'
+                ],
+                2: [ // 해치 상태
+                  '…….',
+                  '…….',
+                  '…….',
+                  '…….',
+                  '…….',
+                  '배가 고픈지 손가락을 깨문다!',
+                  '주변을 호기심 어린 눈으로 본다.',
+                  '작은 불꽃을 내뿜으려 노력 중이다.',
+                  '공부하는 당신의 옆에 찰싹 붙어 졸고 있다.',
+                  '머리를 긁어주자 고양이처럼 골골대는 것 같다...',
+                  '당신이 펜을 움직일 때마다 고개가 좌우로 바쁘게 움직인다.',
+                  '당신이 자리를 비우려 하자 옷자락을 물고 놓아주지 않는다.',
+                  '서툰 울음소리로 당신의 이름을 부르려 노력한다.',
+                  '아기용이 당신의 펜을 죄다 물어뜯어놓았다...',
+                  '공부하는 당신 곁에서 낮잠을 자고 있다.',
+                  '당신을 부모라고 생각하는 것 같다.'
+                ],
+                3: [ // 성장기
+                  '…….',
+                  '…….',
+                  '…….',
+                  '…….',
+                  '…….',
+                  '날갯짓이 제법 힘차졌다.',
+                  '처음으로 날개를 펴고 당신의 머리 위를 짧게 활공했다!',
+                  '이제는 제법 드래곤다운 울음소리를 낸다.',
+                  '공부하는 당신의 어깨 너머로 책 내용을 같이 읽는 듯하다.',
+                  '날개를 파닥거리며 주변의 먼지를 다 날려버리고는 뿌듯해한다.',
+                  '자신의 발톱을 유심히 살피고 있다.',
+                  '당신이 펜을 놓으면 얼른 다시 공부하라는 듯 코를 킁킁거린다.',
+                  '꽤 높이 날아올라 천장에 닿을뻔한 기록을 세웠다!',
+                  '이제는 간단한 명령을 알아듣는다.',
+                  '공부하는 당신을 지켜보고 있다.'
+                ],
+                4: [ // 성체
+                  '…….',
+                  '…….',
+                  '…….',
+                  '…….',
+                  '…….',
+                  '이제는 당신을 등에 태우고 구름 위를 날 수 있을 만큼 자랐다.',
+                  '비늘 사이로 뿜어져 나오는 마력이 당신을 더욱 지혜롭게 한다.',
+                  '누구도 당신을 방해하지 못하도록 문 앞을 엄숙하게 지키고 있다.',
+                  '보고 있으면 모든 잡념이 정화되는 기분이다.',
+                  '당신을 태우고 하늘을 날고 싶어한다.',
+                  '강력한 마력의 기운이 뿜어져 나오고 있다.',
+                  '영원히 당신의 곁을 지킬 것이다.',
+                  '당신의 행복을 영원히 바라고 있다.',
+                  '피곤한 당신을 위해 당신에게 마력을 불어넣어 주고 있다.',
+                  '언제나 당신을 응원하고 있다.'
+                ]
+             };
+
+              // 현재 단계의 메시지 중 하나를 랜덤 선택
+              const stageMsgs = (messages as any)[stage] || messages[1];
+              const randomMsg = stageMsgs[Math.floor(Math.random() * stageMsgs.length)];
+
               const positionClass = stage === 4 
                 ? "translate-y-10 md:translate-y-16" 
-                : "translate-y-20 md:translate-y-28";
+                : "translate-y-16 md:translate-y-24";
 
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
                   <div className={`relative flex flex-col items-center ${positionClass}`}>
-                    {/* 그림자 위치도 부모 div를 따라 자동으로 조절됩니다 */}
+        
+                    {/* 말풍선 메시지 UI */}
+                    <div className="absolute -top-12 md:-top-16 animate-bounce-slow flex flex-col items-center">
+                      <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-2xl shadow-lg border border-slate-200">
+                        <p className="text-[9px] md:text-xs font-bold text-slate-700 whitespace-nowrap italic">
+                          "{randomMsg}"
+                        </p>
+                      </div>
+                      {/* 말풍선 꼬리 */}
+                      <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-white/90 shadow-sm" />
+                    </div>
+
                     <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
                     <img 
                       key={fileName} 
@@ -1153,10 +1271,37 @@ export default function HogwartsApp() {
               );
             })()}
 
-            {/* 지역별 알 선택 레이어 */}
+              // 4단계: 10, 16 
+              // 1~3단계: 20, 28
+              const positionClass = stage === 4 
+                ? "translate-y-10 md:translate-y-16" 
+                : "translate-y-16 md:translate-y-24";
+
+              return (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
+                  <div className={`relative flex flex-col items-center ${positionClass}`}>
+                    <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
+                    <img 
+                      key={fileName} 
+                      src={finalUrl}
+                      alt="Dragon"
+                      className={`relative object-contain drop-shadow-xl animate-bounce-slow mb-1 transition-all duration-500 ${
+                        stage === 4 
+                          ? 'w-24 h-24 md:w-32 md:h-32' 
+                          : 'w-12 h-12 md:w-16 md:h-16'
+                      }`}
+                      onError={(e) => {
+                        e.currentTarget.src = `${baseUrl}/${eggStr}.webp`;
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 지역별 알 선택 */}
             {!isFading && 
              !['main.webp', 'x.jpg'].includes(currentImageFile) && 
-             // ✅ [핵심 추가] 알을 아직 선택하지 않았을 때만(hasEgg가 아닐 때만) 이 레이어를 보여줌
              !(selectedEgg || studentMasterData[selectedName]?.selected_egg) && (
               <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-8 px-4 z-20">
                 {[1, 2, 3].map((num) => {
@@ -1170,9 +1315,9 @@ export default function HogwartsApp() {
                         src={eggUrl}
                         alt="Dragon Egg"
                         onClick={() => { 
-                          // 1. 임시 주소 저장 (확인 팝업용)
+                          // 1. 임시 주소 저장
                           setTempEgg(eggUrl); 
-                          // 2. 실제 알 이름 저장 (x.jpg 표시용)
+                          // 2. 실제 알 이름 저장
                           setSelectedEgg(`${prefix}${num}`); 
                           // 3. 팝업 열기
                           setEggStep(1); 
@@ -1190,76 +1335,77 @@ export default function HogwartsApp() {
           </div>
         </div>
 
-        {/* 이중 확인 팝업 (에러 방지 안전 코드 적용) */}
-        {eggStep > 0 && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-            <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full mx-4 text-center border-4 border-slate-100">
-              <h3 className="text-xl font-black mb-2 text-slate-800 uppercase tracking-tighter" style={{ fontFamily: "'Cinzel', serif" }}>
-                {eggStep === 1 ? "이 알을 데려갈까요?" : "정말 이 알을 데려갈까요?"}
-              </h3>
-              <p className="text-slate-500 mb-6 text-sm italic">
-                {eggStep === 1 ? "따스한 온기가 느껴지는 알입니다." : "한 번 데려가면 졸업 전까지 함께 해야 합니다."}
-              </p>
+        {/* 이중 확인 팝업 */}
+{eggStep > 0 && (
+  <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full mx-4 text-center border-4 border-slate-100">
+      <h3 className="text-xl font-black mb-2 text-slate-800 uppercase tracking-tighter" style={{ fontFamily: "'Cinzel', serif" }}>
+        {eggStep === 1 ? "이 알을 데려갈까요?" : "정말 이 알을 데려갈까요?"}
+      </h3>
+      <p className="text-slate-500 mb-6 text-sm italic">
+        {eggStep === 1 ? "따스한 온기가 느껴지는 알입니다." : "한 번 데려가면 졸업 전까지 함께 해야 합니다."}
+      </p>
 
-              <div className="flex flex-col gap-3">
-                <button
-                  onClick={async () => {
-                    if (eggStep === 1) {
-                      setEggStep(2);
-                    } else {
-                      // ✅ 1. tempEgg와 selectedName이 모두 있을 때만 실행
-                      if (selectedName && tempEgg) {
-                        try {
-                          // ✅ 2. 에러 방지 추출 로직: tempEgg가 문자열인지 확인 후 분리
-                          // 어떤 URL이 들어와도 마지막 파일명(fo3, ju1 등)만 안전하게 추출합니다.
-                          const fileNameWithExt = typeof tempEgg === 'string' ? tempEgg.split('/').pop() : "";
-                          const eggName = fileNameWithExt ? fileNameWithExt.split('.')[0] : "";
+      <div className="flex flex-col gap-3">
+        <button
+          onClick={async () => {
+            if (eggStep === 1) {
+              setEggStep(2);
+            } else {
+              if (selectedName && tempEgg) {
+                try {
+                  const fileNameWithExt = typeof tempEgg === 'string' ? tempEgg.split('/').pop() : "";
+                  const eggName = fileNameWithExt ? fileNameWithExt.split('.')[0] : "";
 
-                          // 3. 만약 파일명이 정상적으로 추출되었다면 DB 업데이트
-                          if (eggName) {
-                            const { error } = await supabase
-                              .from('student_master')
-                              .update({ selected_egg: eggName })
-                              .eq('student_name', selectedName);
+                  if (eggName) {
+                    const { error } = await supabase
+                      .from('student_master')
+                      .update({ selected_egg: eggName })
+                      .eq('student_name', selectedName);
 
-                            if (error) throw error;
-
-                            // 성공 시 로컬 상태도 업데이트하여 x.jpg에서 즉시 보이게 함
-                            setSelectedEgg(eggName);
-                          }
-                          
-                        } catch (error) {
-                          console.error("Egg Save Error:", error);
-                        }
+                    if (error) throw error;
+                    setStudentMasterData((prev: any) => ({
+                      ...prev,
+                      [selectedName]: {
+                        ...prev[selectedName],
+                        selected_egg: eggName
                       }
-                      
-                      // 4. 상태 초기화 및 화면 이동
-                      setEggStep(0);
-                      setTempEgg(null); // 사용 완료 후 비워줌
-                      if (typeof handleResetImage === 'function') {
-                        handleResetImage();
-                      }
-                    }
-                  }}
-                  className="w-full py-3 bg-slate-900 text-white font-black rounded-xl hover:bg-slate-700 transition-colors uppercase tracking-widest text-xs"
-                >
-                  네
-                </button>
-                <button
-                  onClick={() => { 
-                    setEggStep(0); 
-                    setTempEgg(null); 
-                  }}
-                  className="w-full py-3 bg-slate-100 text-slate-400 font-bold rounded-xl hover:bg-slate-200 transition-colors uppercase tracking-widest text-[10px]"
-                >
-                  고민해볼게요
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+                    }));
+                    setSelectedEgg(eggName);
+                  }
+                  
+                } catch (error) {
+                  console.error("Egg Save Error:", error);
+                  alert("알을 데려오는 데 실패했습니다. 다시 시도해 주세요.");
+                }
+              }
+              
+              setEggStep(0);
+              setTempEgg(null);
+              if (typeof handleResetImage === 'function') {
+                handleResetImage();
+              }
+            }
+          }}
+          className="w-full py-3 bg-slate-900 text-white font-black rounded-xl hover:bg-slate-700 transition-colors uppercase tracking-widest text-xs"
+        >
+          네
+        </button>
+        <button
+          onClick={() => { 
+            setEggStep(0); 
+            setTempEgg(null); 
+          }}
+          className="w-full py-3 bg-slate-100 text-slate-400 font-bold rounded-xl hover:bg-slate-200 transition-colors uppercase tracking-widest text-[10px]"
+        >
+          고민해볼게요
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
-        {/* [27] 학생 개인 리포트 팝업 */}
+        {/* [27] 학생 개인 요약 팝업 */}
         {selectedStudentReport && studentData[selectedStudentReport] && (
           <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
             <div className="bg-white p-5 md:px-10 md:py-8 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
