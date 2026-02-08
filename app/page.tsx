@@ -293,6 +293,74 @@ export default function HogwartsApp() {
     }
   }, [selectedName, currentUser, studentMasterData]);
 
+const [dragonName, setDragonName] = useState("이름 없는 용");
+const [isModalOpen, setIsModalOpen] = useState(false);
+const [tempName, setTempName] = useState("");
+
+// DB에서 저장된 알 정보 및 '이름'을 불러오는 useEffect 수정
+useEffect(() => {
+  const targetName = selectedName || currentUser?.name;
+  if (targetName && studentMasterData && studentMasterData[targetName]) {
+    const master = studentMasterData[targetName];
+    
+    // 알 정보 설정
+    if (master.selected_egg) {
+      setSelectedEgg(master.selected_egg);
+    } else {
+      setSelectedEgg(null);
+    }
+
+    // [중요] 이름 정보 설정 (DB에 dragon_name 컬럼이 있다고 가정)
+    if (master.dragon_name) {
+      setDragonName(master.dragon_name);
+    } else {
+      setDragonName("이름 없는 용");
+    }
+  }
+}, [selectedName, currentUser, studentMasterData]);
+
+const handleSaveName = async () => {
+  if (tempName.trim() === "") {
+    alert("아직 이름을 지어주지 않았습니다.");
+    return;
+  }
+
+  setDragonName(tempName);
+  const targetName = selectedName || currentUser?.name;
+  const { error } = await supabase
+    .from('student_master')
+    .update({ dragon_name: tempName }) // DB 테이블에 dragon_name 컬럼이 있어야 함
+    .eq('student_name', targetName);
+
+  if (error) {
+    console.error("이름 저장 실패:", error);
+  } else {
+    setIsModalOpen(false);
+  }
+};
+
+  // ==========================================================
+  // 실시간으로 변하는 게이지 계산
+  // ==========================================================
+  const totalStudyTime = studentMasterData[selectedName]?.total_study_time || 0;
+
+  let progress = 0;
+  let nextStageGoal = 0;
+
+  if (totalStudyTime < 6000) {
+    progress = (totalStudyTime / 6000) * 100;
+    nextStageGoal = 6000;
+  } else if (totalStudyTime < 12000) {
+    progress = ((totalStudyTime - 6000) / 6000) * 100;
+    nextStageGoal = 12000;
+  } else if (totalStudyTime < 18000) {
+    progress = ((totalStudyTime - 12000) / 6000) * 100;
+    nextStageGoal = 18000;
+  } else {
+    progress = 100;
+    nextStageGoal = 18000;
+  }
+
   // ==========================================
   // [6] 초기 실행 (인증 확인 및 시계)
   // ==========================================
@@ -1243,41 +1311,67 @@ export default function HogwartsApp() {
                 ? "translate-y-10 md:translate-y-16" 
                 : "translate-y-16 md:translate-y-24";
 
-              return (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-                  <div className={`relative flex flex-col items-center ${positionClass}`}>
-        
-                    {/* 말풍선 메시지 UI */}
-                    <div className="absolute -top-14 md:-top-20 animate-bounce-slow flex flex-col items-center">
-                      <div className="bg-white/95 backdrop-blur-sm px-4 py-1.5 rounded-2xl shadow-xl border border-slate-100">
-                        <p className="text-[9px] md:text-[11px] font-bold text-slate-700 whitespace-nowrap italic text-center">
-                          '{randomMsg}'
-                        </p>
-                      </div>
-                      {/* 말풍선 꼬리 */}
-                      <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[7px] border-t-white/95 shadow-sm" />
-                    </div>
+            return (
+  <div className="absolute inset-0 flex items-center justify-center z-30">
+    {/* 1. 게이지바: 모바일에서 너무 구석에 가지 않도록 top-2 left-2로 살짝 조정 */}
+    <div className="absolute top-2 left-2 md:top-4 md:left-4 flex items-center gap-2 pointer-events-auto">
+      <div className="w-20 md:w-24 h-2.5 md:h-3 bg-white/40 backdrop-blur-md rounded-full overflow-hidden border border-white/30 shadow-sm">
+        <div 
+          className="h-full transition-all duration-1000 ease-out" 
+          style={{ width: `${progress}%`, backgroundColor: '#65D35D' }}
+        />
+      </div>
+      <span className="text-[9px] md:text-[10px] font-black text-white drop-shadow-md">{Math.floor(progress)}%</span>
+    </div>
 
-                    {/* 그림자 */}
-                    <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
-                    
-                    {/* 드래곤 이미지 */}
-                    <img 
-                      key={fileName} 
-                      src={finalUrl}
-                      alt="Dragon"
-                      className={`relative object-contain drop-shadow-xl animate-bounce-slow mb-1 transition-all duration-500 ${
-                        stage === 4 
-                          ? 'w-24 h-24 md:w-32 md:h-32' 
-                          : 'w-12 h-12 md:w-16 md:h-16'
-                      }`}
-                      onError={(e) => {
-                        e.currentTarget.src = `${baseUrl}/${eggStr}.webp`;
-                      }}
-                    />
-                  </div>
-                </div>
-              );
+    {/* 전체 컨테이너: flex-col-reverse를 쓰지 않고 간격을 띄웁니다 */}
+    <div className={`relative flex flex-col items-center ${positionClass}`}>
+      
+      {/* 2. 말풍선 & 이름 영역 (하나의 묶음으로 관리) */}
+      <div className="absolute -top-14 md:-top-16 flex flex-col items-center w-full">
+        
+        {/* 말풍선 메시지 */}
+        <div className="relative bg-white/95 backdrop-blur-sm px-3 py-1 md:px-4 md:py-1.5 rounded-2xl shadow-xl border border-slate-100 animate-bounce-slow">
+           <p className="text-[8px] md:text-[11px] font-bold text-slate-700 whitespace-nowrap italic text-center">
+             ({randomMsg})
+           </p>
+           {/* 말풍선 꼬리 */}
+           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[6px] border-t-white/95" />
+        </div>
+
+        {/* 3. 이름표: 배경 삭제 + 흰색 글자 + 검정 외곽선 적용 */}
+          <div 
+            className="mt-1 md:mt-1 cursor-pointer pointer-events-auto hover:scale-110 active:scale-95 transition-all"
+            onClick={() => setIsModalOpen(true)}
+            style={{
+              // 글자에 검정색 테두리
+              textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000'
+            }}
+          >
+          <span className="text-white text-[10px] md:text-[13px] font-black tracking-tight whitespace-nowrap uppercase">
+      {dragonName}
+    </span>
+  </div>
+</div>
+
+      {/* 4. 드래곤 이미지: mb-2 정도의 여백을 주어 바닥 그림자와 겹치지 않게 함 */}
+      <img 
+        key={fileName} 
+        src={finalUrl}
+        alt="Dragon"
+        className={`relative object-contain drop-shadow-2xl animate-bounce-slow pointer-events-auto transition-all duration-500 ${
+  stage === 4 
+    ? 'w-24 h-24 md:w-32 md:h-32 -translate-y-2'
+    : 'w-12 h-12 md:w-16 md:h-16 -translate-y-2'
+}`}
+        onError={(e) => { e.currentTarget.src = `${baseUrl}/${eggStr}.webp`; }}
+      />
+
+      {/* 그림자 */}
+      <div className="absolute -bottom-2 w-7 h-1.5 md:w-10 md:h-2 bg-black/25 rounded-[100%] blur-[5px]" />
+    </div>
+  </div>
+);
             })()}
 
             {/* 지역별 알 선택 */}
@@ -1316,80 +1410,120 @@ export default function HogwartsApp() {
           </div>
         </div>
 
-        {/* 이중 확인 팝업 */}
-{eggStep > 0 && (
-  <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-    <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full mx-4 text-center border-4 border-slate-100">
-      <h3 className="text-xl font-black mb-2 text-slate-800 uppercase tracking-tighter" style={{ fontFamily: "'Cinzel', serif" }}>
-        {eggStep === 1 ? "이 알을 데려갈까요?" : "정말 이 알을 데려갈까요?"}
-      </h3>
-      <p className="text-slate-500 mb-6 text-sm italic">
-        {eggStep === 1 ? "따스한 온기가 느껴지는 알입니다." : "한 번 데려가면 졸업 전까지 함께 해야 합니다."}
-      </p>
+            {/* 이중 확인 팝업 */}
+            {eggStep > 0 && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full mx-4 text-center border-4 border-slate-100">
+                  <h3 className="text-xl font-black mb-2 text-slate-800 uppercase tracking-tighter" style={{ fontFamily: "'Cinzel', serif" }}>
+                    {eggStep === 1 ? "이 알을 데려갈까요?" : "정말 이 알을 데려갈까요?"}
+                  </h3>
+                  <p className="text-slate-500 mb-6 text-sm italic">
+                    {eggStep === 1 ? "따스한 온기가 느껴지는 알입니다." : "한 번 데려가면 졸업 전까지 함께 해야 합니다."}
+                  </p>
 
-      <div className="flex flex-col gap-3">
-        <button
-          onClick={async () => {
-            if (eggStep === 1) {
-              setEggStep(2);
-            } else {
-              if (selectedName && tempEgg) {
-                try {
-                  const fileNameWithExt = typeof tempEgg === 'string' ? tempEgg.split('/').pop() : "";
-                  const eggName = fileNameWithExt ? fileNameWithExt.split('.')[0] : "";
+                  <div className="flex flex-col gap-3">
+                    <button
+                      onClick={async () => {
+                        if (eggStep === 1) {
+                          setEggStep(2);
+                        } else {
+                          if (selectedName && tempEgg) {
+                            try {
+                              const fileNameWithExt = typeof tempEgg === 'string' ? tempEgg.split('/').pop() : "";
+                              const eggName = fileNameWithExt ? fileNameWithExt.split('.')[0] : "";
 
-                  if (eggName) {
-                    const { error } = await supabase
-                      .from('student_master')
-                      .update({ selected_egg: eggName })
-                      .eq('student_name', selectedName);
+                              if (eggName) {
+                                const { error } = await supabase
+                                  .from('student_master')
+                                  .update({ selected_egg: eggName })
+                                  .eq('student_name', selectedName);
 
-                    if (error) throw error;
-                    setStudentMasterData((prev: any) => ({
-                      ...prev,
-                      [selectedName]: {
-                        ...prev[selectedName],
-                        selected_egg: eggName
-                      }
-                    }));
-                    setSelectedEgg(eggName);
-                  }
+                                if (error) throw error;
+                                setStudentMasterData((prev: any) => ({
+                                  ...prev,
+                                  [selectedName]: {
+                                    ...prev[selectedName],
+                                    selected_egg: eggName
+                                  }
+                                }));
+                                setSelectedEgg(eggName);
+                              }
                   
-                } catch (error) {
-                  console.error("Egg Save Error:", error);
-                  alert("알을 데려오는 데 실패했습니다. 다시 시도해 주세요.");
-                }
-              }
+                            } catch (error) {
+                              console.error("Egg Save Error:", error);
+                              alert("알을 데려오는 데 실패했습니다. 다시 시도해 주세요.");
+                            }
+                          }
               
-              setEggStep(0);
-              setTempEgg(null);
-              if (typeof handleResetImage === 'function') {
-                handleResetImage();
-              }
-            }
-          }}
-          className="w-full py-3 bg-slate-900 text-white font-black rounded-xl hover:bg-slate-700 transition-colors uppercase tracking-widest text-xs"
-        >
-          네
-        </button>
-        <button
-          onClick={() => { 
-            setEggStep(0); 
-            setTempEgg(null); 
-          }}
-          className="w-full py-3 bg-slate-100 text-slate-400 font-bold rounded-xl hover:bg-slate-200 transition-colors uppercase tracking-widest text-[10px]"
-        >
-          고민해볼게요
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+                          setEggStep(0);
+                          setTempEgg(null);
+                          if (typeof handleResetImage === 'function') {
+                            handleResetImage();
+                          }
+                        }
+                      }}
+                      className="w-full py-3 bg-slate-900 text-white font-black rounded-xl hover:bg-slate-700 transition-colors uppercase tracking-widest text-xs"
+                    >
+                      네
+                    </button>
+                    <button
+                      onClick={() => { 
+                        setEggStep(0); 
+                        setTempEgg(null); 
+                      }}
+                      className="w-full py-3 bg-slate-100 text-slate-400 font-bold rounded-xl hover:bg-slate-200 transition-colors uppercase tracking-widest text-[10px]"
+                    >
+                      고민해볼게요
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
-        {/* [27] 학생 개인 요약 팝업 */}
-        {selectedStudentReport && studentData[selectedStudentReport] && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
-            <div className="bg-white p-5 md:px-10 md:py-8 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            {/* 이름 짓기 팝업 */}
+            {isModalOpen && (
+              <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full mx-4 text-center border-4 border-slate-100">
+                  <h3 className="text-xl font-black mb-2 text-slate-800 uppercase tracking-tighter" style={{ fontFamily: "'Cinzel', serif" }}>
+                    이름을 지어줄까요?
+                  </h3>
+                  <p className="text-slate-500 mb-6 text-sm italic">
+                   이름은 언제든지 변경할 수 있습니다.
+                  </p>
+
+                  <input 
+                    type="text" 
+                    value={tempName}
+                    onChange={(e) => setTempName(e.target.value)}
+                    placeholder="이름을 입력하세요"
+                    className="w-full border-2 border-slate-100 rounded-xl p-3 mb-6 focus:border-[#65D35D] outline-none text-center font-bold text-slate-700 transition-colors"
+                  />
+
+                  <div className="flex flex-col gap-3">
+                    <button
+                      onClick={handleSaveName}
+                     className="w-full py-3 bg-[#65D35D] text-white font-black rounded-xl hover:opacity-90 transition-opacity uppercase tracking-widest text-xs shadow-lg shadow-green-100"
+                    >
+                      이름을 지어준다
+                    </button>
+                    <button
+                      onClick={() => { 
+                        setIsModalOpen(false); 
+                        setTempName(""); 
+                      }}
+                      className="w-full py-3 bg-slate-100 text-slate-400 font-bold rounded-xl hover:bg-slate-200 transition-colors uppercase tracking-widest text-[10px]"
+                    >
+                      지어주지 않는다
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+                    {/* [27] 학생 개인 요약 팝업 */}
+                    {selectedStudentReport && studentData[selectedStudentReport] && (
+                      <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
+                        <div className="bg-white p-5 md:px-10 md:py-8 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
               <div className="flex items-end justify-center mb-6 w-full">
                 <div className="w-[45%] flex justify-end">
                   <img 
