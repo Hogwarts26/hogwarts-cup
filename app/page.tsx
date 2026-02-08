@@ -1328,7 +1328,7 @@ const handleSaveName = async () => {
     <div className={`relative flex flex-col items-center ${positionClass}`}>
       
       {/* 2. 말풍선 & 이름 영역 (하나의 묶음으로 관리) */}
-      <div className="absolute -top-16 md:-top-20 flex flex-col items-center w-full">
+      <div className="absolute -top-14 md:-top-18 flex flex-col items-center w-full">
         
         {/* 말풍선 메시지 */}
         <div className="relative bg-white/95 backdrop-blur-sm px-3 py-1 md:px-4 md:py-1.5 rounded-2xl shadow-xl border border-slate-100 animate-bounce-slow">
