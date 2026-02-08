@@ -1333,7 +1333,7 @@ const handleSaveName = async () => {
         {/* 말풍선 메시지 */}
         <div className="relative bg-white/95 backdrop-blur-sm px-3 py-1 md:px-4 md:py-1.5 rounded-2xl shadow-xl border border-slate-100 animate-bounce-slow">
            <p className="text-[8px] md:text-[11px] font-bold text-slate-700 whitespace-nowrap italic text-center">
-             '{randomMsg}'
+             ({randomMsg})
            </p>
            {/* 말풍선 꼬리 */}
            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[6px] border-t-white/95" />
