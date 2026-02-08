@@ -1206,10 +1206,13 @@ export default function HogwartsApp() {
                 ]
              };
 
-              // 현재 단계의 메시지 중 하나를 랜덤 선택
+              // 현재 단계의 메시지 배열 가져오기
               const stageMsgs = (messages as any)[stage] || messages[1];
-              const randomMsg = stageMsgs[Math.floor(Math.random() * stageMsgs.length)];
 
+              // 점수와 이름 길이를 활용해 고정된 인덱스 계산 (새로고침 전까지 고정)
+              const msgIndex = (score + (selectedName?.length || 0)) % stageMsgs.length;
+              const randomMsg = stageMsgs[msgIndex];
+              
               // 성장 단계별 위치 설정 (4단계는 위로, 나머지는 아래로)
               const positionClass = stage === 4 
                 ? "translate-y-10 md:translate-y-16" 
