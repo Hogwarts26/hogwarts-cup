@@ -1328,7 +1328,7 @@ const handleSaveName = async () => {
     <div className={`relative flex flex-col items-center ${positionClass}`}>
       
       {/* 2. 말풍선 & 이름 영역 (하나의 묶음으로 관리) */}
-      <div className="absolute -top-20 md:-top-28 flex flex-col items-center w-full">
+      <div className="absolute -top-16 md:-top-20 flex flex-col items-center w-full">
         
         {/* 말풍선 메시지 */}
         <div className="relative bg-white/95 backdrop-blur-sm px-3 py-1 md:px-4 md:py-1.5 rounded-2xl shadow-xl border border-slate-100 animate-bounce-slow">
@@ -1339,16 +1339,20 @@ const handleSaveName = async () => {
            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[6px] border-t-white/95" />
         </div>
 
-        {/* 3. 이름표: 말풍선과의 간격을 mt-2 정도로 유지하며 이미지와 거리를 둡니다 */}
-        <div 
-          className="mt-4 md:mt-6 cursor-pointer pointer-events-auto hover:scale-105 active:scale-95 transition-all"
-          onClick={() => setIsModalOpen(true)}
-        >
-          <span className="bg-black/50 text-white px-2.5 py-0.5 rounded-full text-[9px] md:text-xs font-bold backdrop-blur-md border border-white/20 whitespace-nowrap shadow-lg">
-            {dragonName}
-          </span>
-        </div>
-      </div>
+        {/* 3. 이름표: 배경 삭제 + 흰색 글자 + 검정 외곽선 적용 */}
+          <div 
+            className="mt-1 md:mt-1 cursor-pointer pointer-events-auto hover:scale-110 active:scale-95 transition-all"
+            onClick={() => setIsModalOpen(true)}
+            style={{
+              // 글자에 검정색 테두리
+              textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000'
+            }}
+          >
+          <span className="text-white text-[10px] md:text-[13px] font-black tracking-tight whitespace-nowrap uppercase">
+      {dragonName}
+    </span>
+  </div>
+</div>
 
       {/* 4. 드래곤 이미지: mb-2 정도의 여백을 주어 바닥 그림자와 겹치지 않게 함 */}
       <img 
