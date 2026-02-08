@@ -1362,7 +1362,7 @@ const handleSaveName = async () => {
         className={`relative object-contain drop-shadow-2xl animate-bounce-slow pointer-events-auto transition-all duration-500 ${
           stage === 4 
             ? 'w-24 h-24 md:w-32 md:h-32 mt-4' 
-            : 'w-12 h-12 md:w-16 md:h-16 mt-2'
+            : 'w-12 h-12 md:w-16 md:h-16 mt-4'
         }`}
         onError={(e) => { e.currentTarget.src = `${baseUrl}/${eggStr}.webp`; }}
       />
