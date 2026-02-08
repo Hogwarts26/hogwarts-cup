@@ -1328,7 +1328,7 @@ const handleSaveName = async () => {
     <div className={`relative flex flex-col items-center ${positionClass}`}>
       
       {/* 2. 말풍선 & 이름 영역 (하나의 묶음으로 관리) */}
-      <div className="absolute -top-12 md:-top-16 flex flex-col items-center w-full">
+      <div className="absolute -top-14 md:-top-16 flex flex-col items-center w-full">
         
         {/* 말풍선 메시지 */}
         <div className="relative bg-white/95 backdrop-blur-sm px-3 py-1 md:px-4 md:py-1.5 rounded-2xl shadow-xl border border-slate-100 animate-bounce-slow">
@@ -1361,7 +1361,7 @@ const handleSaveName = async () => {
         alt="Dragon"
         className={`relative object-contain drop-shadow-2xl animate-bounce-slow pointer-events-auto transition-all duration-500 ${
   stage === 4 
-    ? 'w-24 h-24 md:w-32 md:h-32 -translate-y-2' // -translate-y를 쓰면 위로 확 올라갑니다
+    ? 'w-24 h-24 md:w-32 md:h-32 -translate-y-2'
     : 'w-12 h-12 md:w-16 md:h-16 -translate-y-2'
 }`}
         onError={(e) => { e.currentTarget.src = `${baseUrl}/${eggStr}.webp`; }}
