@@ -1206,17 +1206,29 @@ export default function HogwartsApp() {
                 ]
              };
 
-              // 현재 단계의 메시지 배열 가져오기
-              const stageMsgs = (messages as any)[stage] || messages[1];
+              // 1. 현재 단계에 맞는 메시지 배열 가져오기
+const stageMsgs = (messages as any)[stage] || messages[1];
 
-              // 점수와 이름 길이를 활용해 고정된 인덱스 계산 (새로고침 전까지 고정)
-              const msgIndex = (score + (selectedName?.length || 0)) % stageMsgs.length;
-              const randomMsg = stageMsgs[msgIndex];
-              
-              // 성장 단계별 위치 설정 (4단계는 위로, 나머지는 아래로)
-              const positionClass = stage === 4 
-                ? "translate-y-10 md:translate-y-16" 
-                : "translate-y-16 md:translate-y-24";
+// 2. 새로고침 시에만 메시지를 바꾸기 위한 '세션 저장소' 로직
+const randomMsg = (() => {
+  // 세션 키에 '단계(stage)'를 포함시켜서, 단계가 변하면 메시지도 새로 뽑게 합니다.
+  const sessionKey = `dragon_msg_${selectedName}_stage${stage}`;
+  let savedIdx = sessionStorage.getItem(sessionKey);
+
+  if (savedIdx === null) {
+    // 해당 단계의 메시지 중 하나를 랜덤으로 결정
+    const newIdx = Math.floor(Math.random() * stageMsgs.length);
+    sessionStorage.setItem(sessionKey, String(newIdx));
+    savedIdx = String(newIdx);
+  }
+
+  return stageMsgs[Number(savedIdx)] || stageMsgs[0];
+})();
+
+// 3. 위치 설정
+const positionClass = stage === 4 
+  ? "translate-y-10 md:translate-y-16" 
+  : "translate-y-16 md:translate-y-24";
 
               return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
