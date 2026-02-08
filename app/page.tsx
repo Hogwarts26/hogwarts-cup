@@ -1137,6 +1137,10 @@ export default function HogwartsApp() {
                   '…….',
                   '…….',
                   '…….',
+                  '…….',
+                  '…….',
+                  '…….',
+                  '…….',
                   '알이 조금 움직인 것 같다...',
                   '알 껍데기 너머로 아주 작은 고동소리가 들린다.',
                   '따스한 온기가 느껴지는 알이다.',
@@ -1150,6 +1154,11 @@ export default function HogwartsApp() {
                   '이름을 불러주니 알이 조금 움직였다!'
                 ],
                 2: [ // 해치 상태
+                  '…….',
+                  '…….',
+                  '…….',
+                  '…….',
+                  '…….',
                   '…….',
                   '…….',
                   '…….',
@@ -1173,6 +1182,10 @@ export default function HogwartsApp() {
                   '…….',
                   '…….',
                   '…….',
+                  '…….',
+                  '…….',
+                  '…….',
+                  '…….',
                   '날갯짓이 제법 힘차졌다.',
                   '처음으로 날개를 펴고 당신의 머리 위를 짧게 활공했다!',
                   '이제는 제법 드래곤다운 울음소리를 낸다.',
@@ -1185,6 +1198,10 @@ export default function HogwartsApp() {
                   '공부하는 당신을 지켜보고 있다.'
                 ],
                 4: [ // 성체
+                  '…….',
+                  '…….',
+                  '…….',
+                  '…….',
                   '…….',
                   '…….',
                   '…….',
@@ -1234,7 +1251,7 @@ export default function HogwartsApp() {
                     <div className="absolute -top-14 md:-top-20 animate-bounce-slow flex flex-col items-center">
                       <div className="bg-white/95 backdrop-blur-sm px-4 py-1.5 rounded-2xl shadow-xl border border-slate-100">
                         <p className="text-[9px] md:text-[11px] font-bold text-slate-700 whitespace-nowrap italic text-center">
-                          "{randomMsg}"
+                          '{randomMsg}'
                         </p>
                       </div>
                       {/* 말풍선 꼬리 */}
