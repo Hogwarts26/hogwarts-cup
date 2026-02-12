@@ -20,17 +20,19 @@ export default function TimerPage() {
   const [now, setNow] = useState<Date | null>(null);
   const [isMuted, setIsMuted] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(true);
+  
+  // 현재 상태를 추적하여 변경될 때만 소리를 재생하기 위한 Ref
   const lastPlayedRef = useRef<string>("");
 
+  // 1. 초기화 및 시간 업데이트 인터벌
   useEffect(() => {
     setMounted(true);
-    setNow(new Date()); // ✨ 실제 현재 시간으로 복구
+    setNow(new Date());
 
     const interval = setInterval(() => {
-      setNow(new Date()); // ✨ 매초 실제 시간 업데이트
+      setNow(new Date()); 
     }, 1000);
 
-    // 외부 오디오(학습내역 BGM 등) 정지 로직
     const stopAllExternalAudio = () => {
       const allAudios = document.querySelectorAll('audio');
       allAudios.forEach(audio => {
@@ -51,6 +53,7 @@ export default function TimerPage() {
     return h * 3600 + m * 60;
   };
 
+  // 2. 현재 교시/쉬는시간 데이터 계산
   const timerData = useMemo(() => {
     if (!now) return null;
     const nowTotalSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
@@ -80,34 +83,43 @@ export default function TimerPage() {
     return { current, isGap, isAllDone, nowTotalSec, gapStart };
   }, [now]);
 
+  // 3. 진입 시 첫 알람 방지 및 상태 변경 감지 종소리 로직
   useEffect(() => {
-    if (isMuted || !timerData) return;
+    if (!mounted || !timerData) return;
     const { current, isAllDone } = timerData;
+    const currentLabel = isAllDone ? "DONE" : (current?.label || "");
+
+    // [중요] 페이지 처음 들어왔을 때 현재 상태를 lastPlayedRef에 기록하여 첫 소리 차단
+    if (lastPlayedRef.current === "") {
+      lastPlayedRef.current = currentLabel;
+      return;
+    }
+
+    // 상태가 변하지 않았거나 음소거 상태면 리턴
+    if (lastPlayedRef.current === currentLabel || isMuted) return;
 
     const playAudio = (id: string) => {
       const audio = document.getElementById(id) as HTMLAudioElement;
       if (audio) {
         audio.currentTime = 0;
-        audio.volume = 0.4; // ✨ 볼륨을 40%로 설정
+        audio.volume = 0.2; // ✨ 볼륨 20% 설정
         audio.play().catch(() => {});
       }
     };
 
     if (isAllDone) {
-      if (lastPlayedRef.current !== "END") {
-        playAudio("end");
-        lastPlayedRef.current = "END";
-      }
-      return;
-    }
-
-    if (current && lastPlayedRef.current !== current.label) {
+      playAudio("end");
+    } else if (current) {
+      // 공부 시작인지 휴식 시작인지 판단하여 재생
       const isStudyStart = current.isStudy === true && current.label !== "쉬는시간";
       playAudio(isStudyStart ? "study" : "break");
-      lastPlayedRef.current = current.label;
     }
-  }, [timerData?.current?.label, timerData?.isAllDone, isMuted]);
 
+    // 재생 후 현재 라벨 업데이트
+    lastPlayedRef.current = currentLabel;
+  }, [timerData, isMuted, mounted]);
+
+  // 렌더링 시작
   if (!mounted || !now || !timerData) return <div className="min-h-screen bg-[#020617]" />;
 
   const { current, isGap, isAllDone, nowTotalSec, gapStart } = timerData;
