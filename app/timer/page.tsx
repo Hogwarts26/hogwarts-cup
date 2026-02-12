@@ -103,7 +103,7 @@ export default function TimerPage() {
       const audio = document.getElementById(id) as HTMLAudioElement;
       if (audio) {
         audio.currentTime = 0;
-        audio.volume = 0.4; // 40% 볼륨
+        audio.volume = 0.2; // 20% 볼륨
         audio.play().catch(err => console.error("재생 에러:", err));
       }
     };
