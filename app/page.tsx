@@ -958,17 +958,12 @@ const handleSaveName = async () => {
         </div>
       )}
 
-      {/*[23] 상단 헤더 및 기숙사 점수판 구역 */}
-      <div className="max-w-[1100px] mx-auto mb-8 px-4"> {/* 모바일 여백 위해 px-4 추가 */}
-        {/* flex-wrap: 공간 부족 시 줄바꿈 / gap-y-3: 줄바꿈 시 위아래 간격 */}
-        <div className="flex justify-between items-center mb-6 flex-wrap gap-y-3">
-          {/* whitespace-nowrap: 로고가 절대 두 줄로 쪼개지지 않게 함 */}
-          <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight whitespace-nowrap">
-            Hogwarts School
-          </h2>
-          {/* flex-wrap: 버튼들이 많아지면 세로로 꺾이지 않고 다음 줄로 넘어가게 함 */}
-          <div className="flex gap-2 flex-wrap justify-end flex-1">
-
+     {/* [23] 상단 헤더 및 기숙사 점수판 구역 */}
+      <div className="max-w-[1100px] mx-auto mb-8 px-4"> 
+        <div className="flex flex-col gap-y-4 mb-6">
+          
+          {/* 1열: 버튼 그룹 (우측 정렬) */}
+          <div className="flex gap-2 flex-wrap justify-end items-center">
             {/* [24] 음악 및 관리자 버튼들 */}
             <button 
               onClick={toggleMusic} 
@@ -979,7 +974,6 @@ const handleSaveName = async () => {
               {isPlaying ? '🎵' : '🔇'}
             </button>
 
-            {/* 관리자가 아닐 때(학생일 때)만 교시제 버튼 노출 */}
             {!isAdmin && (
               <Link 
                 href="/timer" 
@@ -989,14 +983,12 @@ const handleSaveName = async () => {
               </Link>
             )}
 
-            {/* 관리자 버튼들: whitespace-nowrap 추가로 글자 꺾임 방지 */}
             {isAdmin && <button onClick={() => setShowSummary(true)} className="text-[10px] font-black text-white bg-indigo-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-indigo-700 whitespace-nowrap">요약</button>}
             {isAdmin && <button onClick={resetWeeklyData} className="text-[10px] font-black text-white bg-red-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-red-700 whitespace-nowrap">주간 리셋</button>}
             {isAdmin && (
               <button onClick={resetMonthlyOff} className="text-[10px] font-black text-white bg-orange-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-orange-700 whitespace-nowrap">월휴 리셋</button>
             )}
             
-            {/* 로그아웃 버튼 */}
             <button 
               onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} 
               className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full shadow-sm whitespace-nowrap"
@@ -1004,27 +996,15 @@ const handleSaveName = async () => {
               Logout
             </button>
           </div>
-        </div>
 
-        {/* 기숙사 점수판 구역 */}
-        <div className="grid grid-cols-4 gap-1.5 md:gap-4">
-          {houseRankings.map((item, idx) => {
-            const config = (HOUSE_CONFIG as any)[item.house];
-            return (
-              <div key={item.house} onClick={() => setSelectedHouseNotice(item.house as any)} className={`${config.bg} ${config.border} ${idx === 0 ? 'winner-sparkle ring-4 ring-yellow-400 ring-offset-2' : ''} border-b-4 p-1.5 md:p-5 rounded-xl md:rounded-[2rem] text-white shadow-xl relative cursor-pointer active:scale-95 transition-all hover:brightness-110 overflow-hidden`}>
-                <div className="absolute right-[-10px] bottom-[-10px] text-5xl md:text-7xl opacity-20 pointer-events-none">{config.icon}</div>
-                <div className="relative z-10">
-                  <div className="flex justify-between items-start mb-1">
-                    <div className="text-[7px] md:text-xs font-black opacity-90 tracking-widest">{item.house}</div>
-                    <div className={`text-[8px] md:text-[10px] font-black px-1.5 md:px-2 py-0.5 rounded-full ${config.accent} text-slate-900 shadow-sm`}>{["1st", "2nd", "3rd", "4th"][idx]}</div>
-                  </div>
-                  <div className="text-lg md:text-4xl font-black italic">{(Math.round(item.finalPoint * 10) / 10).toLocaleString()}</div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+          {/* 2열: 로고 (가운데 정렬) */}
+          <div className="flex justify-center">
+            <h2 className="text-3xl font-serif font-black text-slate-800 italic tracking-tight whitespace-nowrap">
+              Hogwarts School
+            </h2>
+          </div>
+        </div> {/* <- flex-col 닫기 */}
+      </div> {/* <- max-w-[1100px] 닫기 */}
 
       {/* [25] 학습 기록 메인 테이블 및 목표 */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
