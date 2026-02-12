@@ -67,10 +67,10 @@ export default function TimerPage() {
       const currentMin = now.getMinutes();
       const isStudyTime = currentMin < 50;
       
-      // 50분 모드: 라벨을 단순화하여 '학습'과 '쉬는시간'으로 고정 (시간 변동에 의한 중복 재생 방지)
+      // 50분/10분
       const current = isStudyTime 
-        ? { label: `학습 시간`, start: `${currentHour.toString().padStart(2, '0')}:00`, end: `${currentHour.toString().padStart(2, '0')}:50`, isStudy: true }
-        : { label: `쉬는시간`, start: `${currentHour.toString().padStart(2, '0')}:50`, end: `${(currentHour + 1).toString().padStart(2, '0')}:00`, isStudy: false };
+        ? { label: `Study`, start: `${currentHour.toString().padStart(2, '0')}:00`, end: `${currentHour.toString().padStart(2, '0')}:50`, isStudy: true }
+        : { label: `Break`, start: `${currentHour.toString().padStart(2, '0')}:50`, end: `${(currentHour + 1).toString().padStart(2, '0')}:00`, isStudy: false };
       
       return { current, isGap: false, isAllDone: false, nowTotalSec, gapStart: getSeconds(current.start) };
     }
@@ -92,7 +92,7 @@ export default function TimerPage() {
         isGap = true;
         const nextP = activeList[nextIdx];
         gapStart = nextIdx > 0 ? getSeconds(activeList[nextIdx - 1].end) : 0;
-        current = { label: "쉬는시간", start: "", end: nextP.start, isStudy: false };
+        current = { label: "Break", start: "", end: nextP.start, isStudy: false };
       } else {
         isAllDone = true;
       }
@@ -105,7 +105,7 @@ export default function TimerPage() {
     const { current, isAllDone } = timerData;
     const currentLabel = isAllDone ? "DONE" : (current?.label || "");
 
-    // [진입 차단] 처음 접속 시 현재 상태 기록 후 종료
+    // 처음 접속 시 현재 상태 기록 후 종료
     if (lastPlayedRef.current === "") {
       lastPlayedRef.current = currentLabel;
       return; 
@@ -124,17 +124,16 @@ export default function TimerPage() {
       const audio = document.getElementById(id) as HTMLAudioElement;
       if (audio) {
         audio.volume = 0.1; // 볼륨 10%
-        audio.loop = false; // ✨ 무한 반복 해제 (딱 한 번 재생)
+        audio.loop = false;
         audio.currentTime = 0;
         audio.play().catch(() => {});
       }
     };
 
-    // 재생 판정
     if (isAllDone) {
       playAudio("end");
     } else if (current) {
-      // 공부 시작인지 쉬는 시간 시작인지 판별
+      // 공부 시작인지 쉬는 시간 시작인지
       const isStudyStart = current.isStudy === true && current.label !== "쉬는시간";
       playAudio(isStudyStart ? "study" : "break");
     }
