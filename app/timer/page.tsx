@@ -24,7 +24,34 @@ export default function TimerPage() {
 
   useEffect(() => {
     setMounted(true);
-    setNow(new Date());
+
+    // 🕒 테스트 시간 설정 (08:39:55) -> 5초 뒤에 1교시 종료 종소리 테스트
+    const testTime = new Date();
+    testTime.setHours(8, 39, 55); 
+    setNow(testTime);
+
+    // 1초마다 '조작된 시간'이 흐르게 만듦
+    const interval = setInterval(() => {
+      setNow(prevNow => {
+        if (!prevNow) return new Date();
+        return new Date(prevNow.getTime() + 1000);
+      });
+    }, 1000);
+
+    // 기존 오디오 정지 로직
+    const stopAllExternalAudio = () => {
+      const allAudios = document.querySelectorAll('audio');
+      allAudios.forEach(audio => {
+        if (!['study', 'break', 'end'].includes(audio.id)) {
+          audio.pause();
+          audio.currentTime = 0;
+        }
+      });
+    };
+    stopAllExternalAudio();
+
+    return () => clearInterval(interval);
+  }, []);
 
     const stopAllExternalAudio = () => {
       const allAudios = document.querySelectorAll('audio');
