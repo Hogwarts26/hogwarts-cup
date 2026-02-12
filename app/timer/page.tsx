@@ -66,9 +66,12 @@ export default function TimerPage() {
       const currentHour = now.getHours();
       const currentMin = now.getMinutes();
       const isStudyTime = currentMin < 50;
+      
+      // 50분 모드: 라벨을 단순화하여 '학습'과 '쉬는시간'으로 고정 (시간 변동에 의한 중복 재생 방지)
       const current = isStudyTime 
-        ? { label: `${currentHour}시 학습`, start: `${currentHour.toString().padStart(2, '0')}:00`, end: `${currentHour.toString().padStart(2, '0')}:50`, isStudy: true }
+        ? { label: `학습 시간`, start: `${currentHour.toString().padStart(2, '0')}:00`, end: `${currentHour.toString().padStart(2, '0')}:50`, isStudy: true }
         : { label: `쉬는시간`, start: `${currentHour.toString().padStart(2, '0')}:50`, end: `${(currentHour + 1).toString().padStart(2, '0')}:00`, isStudy: false };
+      
       return { current, isGap: false, isAllDone: false, nowTotalSec, gapStart: getSeconds(current.start) };
     }
 
@@ -102,65 +105,49 @@ export default function TimerPage() {
     const { current, isAllDone } = timerData;
     const currentLabel = isAllDone ? "DONE" : (current?.label || "");
 
-    // ⛔ [진입 차단 로직] 페이지 접속 시 현재 상태를 저장만 하고 바로 종료
+    // [진입 차단] 처음 접속 시 현재 상태 기록 후 종료
     if (lastPlayedRef.current === "") {
       lastPlayedRef.current = currentLabel;
       return; 
     }
 
-    // 상태 변화가 없으면 재생하지 않음 (단, 50분 모드 루프 시작점은 예외)
-    if (lastPlayedRef.current === currentLabel && scheduleMode !== '50') return;
+    // 상태 변화가 없으면 재생하지 않음
+    if (lastPlayedRef.current === currentLabel) return;
 
-    // 음소거면 절대 금지
-    if (isMuted) return;
+    // 음소거 시 재생 불가
+    if (isMuted) {
+      lastPlayedRef.current = currentLabel;
+      return;
+    }
 
-    const playAudio = (id: string, loop: boolean = false) => {
+    const playAudio = (id: string) => {
       const audio = document.getElementById(id) as HTMLAudioElement;
       if (audio) {
-        audio.volume = 0.05; // 🔊 볼륨 5%로 대폭 하향
-        audio.loop = loop;
-        if (loop) {
-          if (audio.paused) audio.play().catch(() => {});
-        } else {
-          audio.currentTime = 0;
-          audio.play().catch(() => {});
-        }
+        audio.volume = 0.1; // 볼륨 10%
+        audio.loop = false; // ✨ 무한 반복 해제 (딱 한 번 재생)
+        audio.currentTime = 0;
+        audio.play().catch(() => {});
       }
     };
 
-    const stopAudio = (id: string) => {
-      const audio = document.getElementById(id) as HTMLAudioElement;
-      if (audio) { audio.pause(); audio.currentTime = 0; audio.loop = false; }
-    };
-
-    // --- 실제 재생 판정 구간 ---
-    if (scheduleMode === '50') {
-      if (currentLabel === "쉬는시간") {
-        playAudio("break", true); // 50분 모드 휴식 무한 루프
-      } else if (lastPlayedRef.current !== currentLabel) {
-        stopAudio("break");
-        playAudio("study");
-      }
-    } else {
-      // 일반 모드 (상태가 변한 그 '순간'에만 재생)
-      if (lastPlayedRef.current !== currentLabel) {
-        if (isAllDone) {
-          playAudio("end");
-        } else if (current) {
-          const isStudyStart = current.isStudy === true && current.label !== "쉬는시간";
-          playAudio(isStudyStart ? "study" : "break");
-        }
-      }
+    // 재생 판정
+    if (isAllDone) {
+      playAudio("end");
+    } else if (current) {
+      // 공부 시작인지 쉬는 시간 시작인지 판별
+      const isStudyStart = current.isStudy === true && current.label !== "쉬는시간";
+      playAudio(isStudyStart ? "study" : "break");
     }
 
     lastPlayedRef.current = currentLabel;
-  }, [timerData, isMuted, mounted, scheduleMode]);
+  }, [timerData, isMuted, mounted]);
 
-  // (이하 디자인 코드는 동일합니다)
   if (!mounted || !now || !timerData) return <div className="min-h-screen bg-[#020617]" />;
+
   const { current, isGap, isAllDone, nowTotalSec, gapStart } = timerData;
   const circumference = 2 * Math.PI * 180;
   let offset = circumference;
+
   if (current) {
     const endSec = getSeconds(current.end);
     const startSec = isGap ? gapStart : getSeconds(current.start);
@@ -169,6 +156,7 @@ export default function TimerPage() {
     const ratio = total > 0 ? Math.min(1, remaining / total) : 0;
     offset = circumference * (1 - ratio);
   }
+
   const theme = {
     bg: isDarkMode ? 'bg-[#020617]' : 'bg-slate-50',
     card: isDarkMode ? 'bg-slate-900/60' : 'bg-white shadow-xl',
@@ -181,6 +169,7 @@ export default function TimerPage() {
   return (
     <main className={`${theme.bg} ${theme.textMain} min-h-screen flex flex-col items-center p-4 py-8 transition-colors duration-500`} style={{ fontFamily: "'Pretendard Variable', sans-serif" }}>
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css" />
+
       <div className="w-full max-w-lg flex flex-col gap-4 mb-10 z-10">
         <div className="flex justify-between items-center">
           <Link href="/" className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${theme.btn}`}>학습내역</Link>
@@ -189,13 +178,12 @@ export default function TimerPage() {
             <button onClick={() => setIsMuted(!isMuted)} className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${theme.btn}`}>{isMuted ? '🔇' : '🔊'}</button>
           </div>
         </div>
+
         <div className={`flex p-1 rounded-2xl border ${isDarkMode ? 'bg-slate-900/40 border-white/5' : 'bg-slate-200/50 border-slate-300'}`}>
           {(['100', '80', '50'] as const).map((m) => (
             <button
               key={m}
               onClick={() => {
-                const breakAudio = document.getElementById("break") as HTMLAudioElement;
-                if (breakAudio) { breakAudio.loop = false; breakAudio.pause(); }
                 setScheduleMode(m);
                 lastPlayedRef.current = ""; 
               }}
@@ -206,7 +194,9 @@ export default function TimerPage() {
           ))}
         </div>
       </div>
+
       <div className={`text-4xl font-black mb-6 ${theme.accentClass}`}>{isAllDone ? "수고하셨습니다.🪄✨" : (current ? current.label : "자율학습")}</div>
+
       <div className="relative flex items-center justify-center mb-8 scale-90 sm:scale-100">
         <svg width="400" height="400" viewBox="0 0 400 400">
           <circle cx="200" cy="200" r="180" fill="none" stroke={isDarkMode ? "#1e293b" : "#e2e8f0"} strokeWidth="12" />
@@ -222,11 +212,13 @@ export default function TimerPage() {
           <div className="text-lg font-bold mt-4 opacity-50">{now.getHours().toString().padStart(2, '0')}:{now.getMinutes().toString().padStart(2, '0')}:{now.getSeconds().toString().padStart(2, '0')}</div>
         </div>
       </div>
+
       {isMuted && (
         <button onClick={() => setIsMuted(false)} className="mb-8 px-6 py-3 bg-blue-600 text-white rounded-full font-bold shadow-lg animate-pulse">
           🔊 종소리 마법 활성화
         </button>
       )}
+
       <div className={`w-full max-w-[320px] ${theme.card} rounded-[2rem] p-6 border border-white/5 transition-all overflow-y-auto max-h-[350px]`}>
         <div className="flex flex-col items-center space-y-3">
           {scheduleMode === '50' ? (
@@ -245,6 +237,7 @@ export default function TimerPage() {
           )}
         </div>
       </div>
+
       <audio id="study" src="/study.mp3" preload="auto" />
       <audio id="break" src="/break.mp3" preload="auto" />
       <audio id="end" src="/end.mp3" preload="auto" />
