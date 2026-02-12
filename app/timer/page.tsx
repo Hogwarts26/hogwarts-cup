@@ -25,6 +25,20 @@ export default function TimerPage() {
   useEffect(() => {
     setMounted(true);
     setNow(new Date());
+
+    // [추가] 페이지 진입 시 기존에 재생 중인 모든 오디오(학습내역 BGM 등) 정지
+    const stopAllExternalAudio = () => {
+      const allAudios = document.querySelectorAll('audio');
+      allAudios.forEach(audio => {
+        // 현재 페이지의 종소리용 오디오(study, break, end)가 아닌 것들만 정지
+        if (!['study', 'break', 'end'].includes(audio.id)) {
+          audio.pause();
+          audio.currentTime = 0;
+        }
+      });
+    };
+    stopAllExternalAudio();
+
     const interval = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
