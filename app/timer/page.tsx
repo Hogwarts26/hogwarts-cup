@@ -26,11 +26,9 @@ export default function TimerPage() {
     setMounted(true);
     setNow(new Date());
 
-    // [추가] 페이지 진입 시 기존에 재생 중인 모든 오디오(학습내역 BGM 등) 정지
     const stopAllExternalAudio = () => {
       const allAudios = document.querySelectorAll('audio');
       allAudios.forEach(audio => {
-        // 현재 페이지의 종소리용 오디오(study, break, end)가 아닌 것들만 정지
         if (!['study', 'break', 'end'].includes(audio.id)) {
           audio.pause();
           audio.currentTime = 0;
@@ -122,10 +120,12 @@ export default function TimerPage() {
 
   const theme = {
     bg: isDarkMode ? 'bg-[#020617]' : 'bg-slate-50',
-    card: isDarkMode ? 'bg-slate-900/60' : 'bg-white',
+    card: isDarkMode ? 'bg-slate-900/60' : 'bg-white shadow-xl',
     textMain: isDarkMode ? 'text-white' : 'text-slate-900',
+    // ✨ 라이트 모드용 버튼 테마 추가
+    btn: isDarkMode ? 'bg-slate-800/50 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-600 shadow-sm',
     accent: isAllDone ? '#94a3b8' : (current?.isStudy ? '#3b82f6' : '#f59e0b'),
-    accentClass: isAllDone ? 'text-slate-400' : (current?.isStudy ? 'text-blue-400' : 'text-amber-400'),
+    accentClass: isAllDone ? 'text-slate-400' : (current?.isStudy ? 'text-blue-500' : 'text-amber-500'),
   };
 
   return (
@@ -135,11 +135,18 @@ export default function TimerPage() {
     >
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css" />
 
+      {/* 상단 버튼 섹션: 테마 적용 */}
       <div className="w-full max-w-lg flex justify-between items-center mb-10 z-10">
-        <Link href="/" className="px-4 py-2 bg-slate-800/50 rounded-xl text-xs font-bold border border-white/10">📊 학습내역</Link>
+        <Link href="/" className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${theme.btn}`}>
+          📊 학습내역
+        </Link>
         <div className="flex gap-2">
-          <button onClick={() => setIsDarkMode(!isDarkMode)} className="w-10 h-10 bg-slate-800/50 rounded-xl border border-white/10 flex items-center justify-center text-lg">{isDarkMode ? '🌝' : '🌞'}</button>
-          <button onClick={() => setIsMuted(!isMuted)} className="w-10 h-10 bg-slate-800/50 rounded-xl border border-white/10 flex items-center justify-center text-lg">{isMuted ? '🔇' : '🔊'}</button>
+          <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 rounded-xl border flex items-center justify-center text-lg transition-all ${theme.btn}`}>
+            {isDarkMode ? '🌝' : '🌞'}
+          </button>
+          <button onClick={() => setIsMuted(!isMuted)} className={`w-10 h-10 rounded-xl border flex items-center justify-center text-lg transition-all ${theme.btn}`}>
+            {isMuted ? '🔇' : '🔊'}
+          </button>
         </div>
       </div>
 
@@ -180,17 +187,16 @@ export default function TimerPage() {
         </button>
       )}
 
-      {/* 시간표 여백 최적화 구간 */}
-      <div className={`w-full max-w-[320px] ${theme.card} rounded-[2rem] p-6 border border-white/5 shadow-2xl`}>
-        <div className="space-y-3">
+      {/* ✨ 시간표 섹션: 전체 가운데 정렬 최적화 */}
+      <div className={`w-full max-w-[320px] ${theme.card} rounded-[2rem] p-6 border border-white/5 transition-all`}>
+        <div className="flex flex-col items-center space-y-3">
           {SCHEDULE.map((p, i) => {
             const isItemCurrent = !isAllDone && current?.label === p.label;
             const isItemPast = nowTotalSec >= getSeconds(p.end);
             return (
-              <div key={i} className={`flex items-center gap-4 ${isItemCurrent ? theme.accentClass + ' font-bold' : isItemPast ? 'opacity-20 line-through' : 'opacity-60'}`}>
-                {/* 교시 라벨 너비 고정으로 간격 최적화 */}
-                <span className="text-base font-bold min-w-[65px]">{p.label}</span>
-                <span className="text-sm font-medium tracking-tight" style={{ fontVariantNumeric: "tabular-nums" }}>
+              <div key={i} className={`flex items-center justify-center w-full gap-4 ${isItemCurrent ? theme.accentClass + ' font-bold' : isItemPast ? 'opacity-20 line-through' : 'opacity-60'}`}>
+                <span className="text-base font-bold min-w-[70px] text-right">{p.label}</span>
+                <span className="text-sm font-medium tracking-tight min-w-[100px] text-left" style={{ fontVariantNumeric: "tabular-nums" }}>
                   {p.start} - {p.end}
                 </span>
               </div>
