@@ -67,7 +67,6 @@ export default function TimerPage() {
       const currentMin = now.getMinutes();
       const isStudyTime = currentMin < 50;
       
-      // 50분/10분
       const current = isStudyTime 
         ? { label: `Study`, start: `${currentHour.toString().padStart(2, '0')}:00`, end: `${currentHour.toString().padStart(2, '0')}:50`, isStudy: true }
         : { label: `Break`, start: `${currentHour.toString().padStart(2, '0')}:50`, end: `${(currentHour + 1).toString().padStart(2, '0')}:00`, isStudy: false };
@@ -103,42 +102,37 @@ export default function TimerPage() {
   useEffect(() => {
     if (!mounted || !timerData) return;
     const { current, isAllDone } = timerData;
-    const currentLabel = isAllDone ? "DONE" : (current?.label || "");
+    
+    // 라벨 이름에 상관없이 데이터의 isStudy 속성으로 벨소리 판정
+    const currentState = isAllDone ? "DONE" : (current?.isStudy ? "STUDY" : "BREAK");
 
-    // 처음 접속 시 현재 상태 기록 후 종료
     if (lastPlayedRef.current === "") {
-      lastPlayedRef.current = currentLabel;
+      lastPlayedRef.current = currentState;
       return; 
     }
 
-    // 상태 변화가 없으면 재생하지 않음
-    if (lastPlayedRef.current === currentLabel) return;
+    if (lastPlayedRef.current === currentState) return;
 
-    // 음소거 시 재생 불가
     if (isMuted) {
-      lastPlayedRef.current = currentLabel;
+      lastPlayedRef.current = currentState;
       return;
     }
 
     const playAudio = (id: string) => {
       const audio = document.getElementById(id) as HTMLAudioElement;
       if (audio) {
-        audio.volume = 0.1; // 볼륨 10%
+        audio.volume = 0.4;
         audio.loop = false;
         audio.currentTime = 0;
         audio.play().catch(() => {});
       }
     };
 
-    if (isAllDone) {
-      playAudio("end");
-    } else if (current) {
-      // 공부 시작인지 쉬는 시간 시작인지
-      const isStudyStart = current.isStudy === true && current.label !== "쉬는시간";
-      playAudio(isStudyStart ? "study" : "break");
-    }
+    if (currentState === "DONE") playAudio("end");
+    else if (currentState === "STUDY") playAudio("study");
+    else if (currentState === "BREAK") playAudio("break");
 
-    lastPlayedRef.current = currentLabel;
+    lastPlayedRef.current = currentState;
   }, [timerData, isMuted, mounted]);
 
   if (!mounted || !now || !timerData) return <div className="min-h-screen bg-[#020617]" />;
@@ -196,6 +190,8 @@ export default function TimerPage() {
 
       <div className={`text-4xl font-black mb-6 ${theme.accentClass}`}>{isAllDone ? "수고하셨습니다.🪄✨" : (current ? current.label : "자율학습")}</div>
 
+      {/* 메인 타이머 및 하단 리스트는 생략 없이 위와 동일하게 유지됩니다 */}
+      {/* ... (이전 코드와 동일한 UI 부분) ... */}
       <div className="relative flex items-center justify-center mb-8 scale-90 sm:scale-100">
         <svg width="400" height="400" viewBox="0 0 400 400">
           <circle cx="200" cy="200" r="180" fill="none" stroke={isDarkMode ? "#1e293b" : "#e2e8f0"} strokeWidth="12" />
@@ -221,7 +217,7 @@ export default function TimerPage() {
       <div className={`w-full max-w-[320px] ${theme.card} rounded-[2rem] p-6 border border-white/5 transition-all overflow-y-auto max-h-[350px]`}>
         <div className="flex flex-col items-center space-y-3">
           {scheduleMode === '50' ? (
-            <div className="text-center opacity-60 font-bold py-4">정각부터 50분 공부, <br/> 10분 휴식이 반복됩니다.</div>
+            <div className="text-center opacity-60 font-bold py-4">매 시 정각 50분 공부 / 10분 휴식<br/>24시간 무한 반복됩니다.</div>
           ) : (
             SCHEDULES[scheduleMode as '100' | '80'].map((p, i) => {
               const isItemCurrent = !isAllDone && current?.label === p.label;
