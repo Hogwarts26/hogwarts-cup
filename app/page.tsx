@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from './supabase';
+import Link from 'next/link';
 
 // ==========================================
 // [1] 기숙사컵 스타일 및 애니메이션 설정
@@ -719,23 +720,35 @@ const handleSaveName = async () => {
     }).sort((a, b) => b.finalPoint - a.finalPoint);
   }, [records]);
 
-  // ==========================================
-  // [14] 배경음악(BGM) 로직
-  // ==========================================
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [bgm] = useState(() => typeof Audio !== 'undefined' ? new Audio('/hedwig.mp3') : null);
+ // ==========================================
+ // [14] 배경음악(BGM) 로직
+ // ==========================================
+ const [isPlaying, setIsPlaying] = useState(false);
+ const [bgm] = useState(() => typeof Audio !== 'undefined' ? new Audio('/hedwig.mp3') : null);
 
-  const toggleMusic = () => {
-    if (!bgm) return;
-    if (isPlaying) {
-      bgm.pause();
-    } else {
-      bgm.loop = true;
-      bgm.volume = 0.4;
-      bgm.play().catch(e => console.log("음악 재생 실패:", e));
-    }
-    setIsPlaying(!isPlaying);
-  };
+ const toggleMusic = () => {
+   if (!bgm) return;
+   if (isPlaying) {
+     bgm.pause();
+   } else {
+     bgm.loop = true;
+     bgm.volume = 0.4;
+     bgm.play().catch(e => console.log("음악 재생 실패:", e));
+   }
+   setIsPlaying(!isPlaying);
+ };
+
+ // ✨ [추가할 부분]: 페이지를 떠날 때 음악을 강제로 끄는 로직
+ useEffect(() => {
+   // 이 함수는 '학습내역' 페이지가 화면에서 사라질 때 실행됩니다.
+   return () => {
+     if (bgm) {
+       bgm.pause();
+       // 다시 돌아왔을 때 재생 버튼 상태가 '재생 중'으로 보이지 않게 초기화
+       setIsPlaying(false); 
+     }
+   };
+ }, [bgm]);
 
   // ==========================================
   // [15] 비밀번호 변경 및 저장
@@ -946,29 +959,54 @@ const handleSaveName = async () => {
       )}
 
       {/*[23] 상단 헤더 및 기숙사 점수판 구역 */}
-      <div className="max-w-[1100px] mx-auto mb-8">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight">Hogwarts School</h2>
-          <div className="flex gap-2">
+      <div className="max-w-[1100px] mx-auto mb-8 px-4"> {/* 모바일 여백 위해 px-4 추가 */}
+        {/* flex-wrap: 공간 부족 시 줄바꿈 / gap-y-3: 줄바꿈 시 위아래 간격 */}
+        <div className="flex justify-between items-center mb-6 flex-wrap gap-y-3">
+          {/* whitespace-nowrap: 로고가 절대 두 줄로 쪼개지지 않게 함 */}
+          <h2 className="text-2xl font-serif font-black text-slate-800 italic tracking-tight whitespace-nowrap">
+            Hogwarts School
+          </h2>
+          {/* flex-wrap: 버튼들이 많아지면 세로로 꺾이지 않고 다음 줄로 넘어가게 함 */}
+          <div className="flex gap-2 flex-wrap justify-end flex-1">
 
             {/* [24] 음악 및 관리자 버튼들 */}
             <button 
               onClick={toggleMusic} 
-              className={`text-[10px] font-black px-3 py-1.5 rounded-full shadow-sm transition-all border-2 ${
+              className={`text-[10px] font-black px-3 py-1.5 rounded-full shadow-sm transition-all border-2 whitespace-nowrap ${
                 isPlaying ? 'bg-white border-yellow-400 text-yellow-500 animate-pulse' : 'bg-white border-slate-200 text-slate-400'
               }`}
             >
               {isPlaying ? '🎵' : '🔇'}
             </button>
-            {isAdmin && <button onClick={() => setShowSummary(true)} className="text-[10px] font-black text-white bg-indigo-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-indigo-700">요약</button>}
-            {isAdmin && <button onClick={resetWeeklyData} className="text-[10px] font-black text-white bg-red-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-red-700">주간 리셋</button>}
-            {isAdmin && (
-              <button onClick={resetMonthlyOff} className="text-[10px] font-black text-white bg-orange-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-orange-700">월휴 리셋</button>
+
+            {/* 관리자가 아닐 때(학생일 때)만 교시제 버튼 노출 */}
+            {!isAdmin && (
+              <Link 
+                href="/timer" 
+                className="text-[10px] font-black text-white bg-blue-500 px-3 py-1.5 rounded-full shadow-md hover:bg-blue-600 transition-all active:scale-95 flex items-center gap-1 whitespace-nowrap"
+              >
+                교시제
+              </Link>
             )}
-            <button onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full shadow-sm">Logout</button>
+
+            {/* 관리자 버튼들: whitespace-nowrap 추가로 글자 꺾임 방지 */}
+            {isAdmin && <button onClick={() => setShowSummary(true)} className="text-[10px] font-black text-white bg-indigo-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-indigo-700 whitespace-nowrap">요약</button>}
+            {isAdmin && <button onClick={resetWeeklyData} className="text-[10px] font-black text-white bg-red-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-red-700 whitespace-nowrap">주간 리셋</button>}
+            {isAdmin && (
+              <button onClick={resetMonthlyOff} className="text-[10px] font-black text-white bg-orange-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-orange-700 whitespace-nowrap">월휴 리셋</button>
+            )}
+            
+            {/* 로그아웃 버튼 */}
+            <button 
+              onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} 
+              className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full shadow-sm whitespace-nowrap"
+            >
+              Logout
+            </button>
           </div>
         </div>
 
+        {/* 기숙사 점수판 구역 */}
         <div className="grid grid-cols-4 gap-1.5 md:gap-4">
           {houseRankings.map((item, idx) => {
             const config = (HOUSE_CONFIG as any)[item.house];
