@@ -136,7 +136,7 @@ export default function TimerPage() {
     const playAudio = (id: string) => {
       const audio = document.getElementById(id) as HTMLAudioElement;
       if (audio) {
-        audio.volume = 0.2; // 아이패드용으로 볼륨을 좀 더 키움
+        audio.volume = 0.4; //종소리 크기
         audio.currentTime = 0;
         audio.play().catch(() => {});
       }
