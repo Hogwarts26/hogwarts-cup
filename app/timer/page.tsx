@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 
 const SCHEDULE = [
@@ -16,158 +16,223 @@ const SCHEDULE = [
 ];
 
 export default function TimerPage() {
-  const [now, setNow] = useState(new Date());
   const [mounted, setMounted] = useState(false);
+  const [now, setNow] = useState<Date | null>(null);
   const [isMuted, setIsMuted] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(true);
+  
+  // 현재 상태를 추적하여 변경될 때만 소리를 재생하기 위한 Ref
+  const lastPlayedRef = useRef<string>("");
 
+  // ✨ 음소거 버튼을 누르면 즉시 모든 소리를 멈추는 로직
+  useEffect(() => {
+    if (isMuted) {
+      const allAudios = document.querySelectorAll('audio');
+      allAudios.forEach(audio => {
+        audio.pause();
+        audio.currentTime = 0; // 소리를 끄고 처음으로 되돌림
+      });
+    }
+  }, [isMuted]); // isMuted 상태가 바뀔 때마다 실행
+
+  // 1. 초기화 및 시간 업데이트 인터벌
   useEffect(() => {
     setMounted(true);
-    const interval = setInterval(() => setNow(new Date()), 1000);
+    setNow(new Date());
+
+    const interval = setInterval(() => {
+      setNow(new Date()); 
+    }, 1000);
+
+    const stopAllExternalAudio = () => {
+      const allAudios = document.querySelectorAll('audio');
+      allAudios.forEach(audio => {
+        if (!['study', 'break', 'end'].includes(audio.id)) {
+          audio.pause();
+          audio.currentTime = 0;
+        }
+      });
+    };
+    stopAllExternalAudio();
+
     return () => clearInterval(interval);
   }, []);
 
   const getSeconds = (timeStr: string) => {
+    if (!timeStr || !timeStr.includes(':')) return 0;
     const [h, m] = timeStr.split(':').map(Number);
     return h * 3600 + m * 60;
   };
 
-  const nowTotalSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-
-  const currentPeriod = SCHEDULE.find(p => {
-    const start = getSeconds(p.start);
-    const end = getSeconds(p.end);
-    return nowTotalSec >= start && nowTotalSec < end;
-  });
-
-  const isStudyTime = currentPeriod?.isStudy ?? false;
-
-  const playSound = (id: string) => {
-    if (isMuted) return;
-    const audio = document.getElementById(id) as HTMLAudioElement;
-    if (audio) {
-      audio.currentTime = 0;
-      audio.play().catch(() => {});
-    }
-  };
-
-  useEffect(() => {
-    SCHEDULE.forEach(p => {
-      const start = getSeconds(p.start);
-      const end = getSeconds(p.end);
-      if (nowTotalSec === start) playSound('studyBell');
-      if (nowTotalSec === end - 1) {
-        if (p.label === "7교시") playSound('endBell');
-        else playSound('breakBell');
-      }
+  // 2. 현재 교시/쉬는시간 데이터 계산
+  const timerData = useMemo(() => {
+    if (!now) return null;
+    const nowTotalSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+    
+    let current = SCHEDULE.find(p => {
+      const s = getSeconds(p.start);
+      const e = getSeconds(p.end);
+      return nowTotalSec >= s && nowTotalSec < e;
     });
-  }, [nowTotalSec]);
 
-  if (!mounted) return null;
+    let isGap = false;
+    let isAllDone = false;
+    let gapStart = 0;
 
-  const circleRadius = 180;
-  const circumference = 2 * Math.PI * circleRadius;
-  let strokeDashoffset = circumference;
+    if (!current) {
+      const nextIdx = SCHEDULE.findIndex(p => getSeconds(p.start) > nowTotalSec);
+      if (nextIdx !== -1) {
+        isGap = true;
+        const nextP = SCHEDULE[nextIdx];
+        gapStart = nextIdx > 0 ? getSeconds(SCHEDULE[nextIdx - 1].end) : 0;
+        current = { label: "쉬는시간", start: "", end: nextP.start, isStudy: false };
+      } else {
+        isAllDone = true;
+      }
+    }
 
-  if (currentPeriod) {
-    const start = getSeconds(currentPeriod.start);
-    const end = getSeconds(currentPeriod.end);
-    const total = end - start;
-    const elapsed = nowTotalSec - start;
-    const remainingRatio = Math.max(0, (total - elapsed) / total);
-    strokeDashoffset = circumference * (1 - remainingRatio);
+    return { current, isGap, isAllDone, nowTotalSec, gapStart };
+  }, [now]);
+
+  // 3. 진입 시 첫 알람 방지 및 상태 변경 감지 종소리 로직
+  useEffect(() => {
+    if (!mounted || !timerData) return;
+    const { current, isAllDone } = timerData;
+    const currentLabel = isAllDone ? "DONE" : (current?.label || "");
+
+    // [중요] 페이지 처음 들어왔을 때 현재 상태를 lastPlayedRef에 기록하여 첫 소리 차단
+    if (lastPlayedRef.current === "") {
+      lastPlayedRef.current = currentLabel;
+      return;
+    }
+
+    // 상태가 변하지 않았거나 음소거 상태면 리턴
+    if (lastPlayedRef.current === currentLabel || isMuted) return;
+
+    const playAudio = (id: string) => {
+      const audio = document.getElementById(id) as HTMLAudioElement;
+      if (audio) {
+        audio.currentTime = 0;
+        audio.volume = 0.2; // ✨ 볼륨 20% 설정
+        audio.play().catch(() => {});
+      }
+    };
+
+    if (isAllDone) {
+      playAudio("end");
+    } else if (current) {
+      // 공부 시작인지 휴식 시작인지 판단하여 재생
+      const isStudyStart = current.isStudy === true && current.label !== "쉬는시간";
+      playAudio(isStudyStart ? "study" : "break");
+    }
+
+    // 재생 후 현재 라벨 업데이트
+    lastPlayedRef.current = currentLabel;
+  }, [timerData, isMuted, mounted]);
+
+  // 렌더링 시작
+  if (!mounted || !now || !timerData) return <div className="min-h-screen bg-[#020617]" />;
+
+  const { current, isGap, isAllDone, nowTotalSec, gapStart } = timerData;
+  const circumference = 2 * Math.PI * 180;
+  let offset = circumference;
+
+  if (current) {
+    const endSec = getSeconds(current.end);
+    const startSec = isGap ? gapStart : getSeconds(current.start);
+    const total = endSec - startSec;
+    const remaining = Math.max(0, endSec - nowTotalSec);
+    const ratio = total > 0 ? Math.min(1, remaining / total) : 0;
+    offset = circumference * (1 - ratio);
   }
 
   const theme = {
     bg: isDarkMode ? 'bg-[#020617]' : 'bg-slate-50',
-    card: isDarkMode ? 'bg-slate-900/40' : 'bg-white',
+    card: isDarkMode ? 'bg-slate-900/60' : 'bg-white shadow-xl',
     textMain: isDarkMode ? 'text-white' : 'text-slate-900',
-    textSub: isDarkMode ? 'text-slate-500' : 'text-slate-400',
-    btnBg: isDarkMode ? 'bg-slate-800/40 hover:bg-slate-700/60' : 'bg-white hover:bg-slate-100 shadow-md',
-    accent: isStudyTime 
-      ? (isDarkMode ? '#3b82f6' : '#2563eb') 
-      : (isDarkMode ? '#f59e0b' : '#d97706'),
-    accentClass: isStudyTime 
-      ? (isDarkMode ? 'text-blue-400' : 'text-blue-600') 
-      : (isDarkMode ? 'text-amber-400' : 'text-amber-600'),
+    btn: isDarkMode ? 'bg-slate-800/50 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-600 shadow-sm',
+    accent: isAllDone ? '#94a3b8' : (current?.isStudy ? '#3b82f6' : '#f59e0b'),
+    accentClass: isAllDone ? 'text-slate-400' : (current?.isStudy ? 'text-blue-500' : 'text-amber-500'),
   };
 
   return (
-    <>
-      <script src="https://cdn.tailwindcss.com"></script>
-      <style dangerouslySetInnerHTML={{ __html: `
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@800&family=Pretendard:wght@400;700&display=swap');
-        body { margin: 0; font-family: 'Pretendard', sans-serif; transition: background-color 0.5s ease; overflow-x: hidden; }
-        .timer-font { font-family: 'JetBrains+Mono', monospace !important; font-weight: 800; letter-spacing: -0.05em; }
-        .circle-progress { transform: rotate(-90deg) scaleY(-1); transform-origin: 50% 50%; transition: stroke-dashoffset 1s linear, stroke 0.5s ease; }
-      `}} />
+    <main 
+      className={`${theme.bg} ${theme.textMain} min-h-screen flex flex-col items-center p-4 py-8 transition-colors duration-500`}
+      style={{ fontFamily: "'Pretendard Variable', Pretendard, -apple-system, sans-serif" }}
+    >
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css" />
 
-      <main className={`${theme.bg} ${theme.textMain} min-h-screen flex flex-col items-center p-4 py-8 transition-colors duration-500`}>
-        
-        <div className="w-full max-w-2xl flex justify-between items-center mb-6">
-          {/* 이전 페이지로 돌아가는 버튼 (사용자 경험상 필수!) */}
-          <Link href="/" className={`px-4 py-2 ${theme.btnBg} backdrop-blur-xl border border-slate-700/20 rounded-xl transition-all flex items-center gap-2 font-bold text-sm`}>
-            <span>📊</span> <span>학습내역</span>
-          </Link>
+      <div className="w-full max-w-lg flex justify-between items-center mb-10 z-10">
+        <Link href="/" className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${theme.btn}`}>
+          학습내역
+        </Link>
+        <div className="flex gap-2">
+          <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 rounded-xl border flex items-center justify-center text-lg transition-all ${theme.btn}`}>
+            {isDarkMode ? '🌝' : '🌞'}
+          </button>
+          <button onClick={() => setIsMuted(!isMuted)} className={`w-10 h-10 rounded-xl border flex items-center justify-center text-lg transition-all ${theme.btn}`}>
+            {isMuted ? '🔇' : '🔊'}
+          </button>
+        </div>
+      </div>
 
-          <div className="flex gap-3">
-            <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 flex items-center justify-center ${theme.btnBg} border border-slate-700/20 rounded-xl transition-all`}>
-              <span className="text-xl">{isDarkMode ? '🌝' : '🌞'}</span>
-            </button>
-            <button onClick={() => setIsMuted(!isMuted)} className={`w-10 h-10 flex items-center justify-center ${theme.btnBg} border border-slate-700/20 rounded-xl transition-all`}>
-              <span className="text-xl">{isMuted ? '🔇' : '🔊'}</span>
-            </button>
+      <div className={`text-4xl font-black mb-6 ${theme.accentClass} tracking-tight`}>
+        {isAllDone ? "일과 종료" : (current ? current.label : "자율학습")}
+      </div>
+
+      <div className="relative flex items-center justify-center mb-8 scale-90 sm:scale-100">
+        <svg width="400" height="400" viewBox="0 0 400 400">
+          <circle cx="200" cy="200" r="180" fill="none" stroke={isDarkMode ? "#1e293b" : "#e2e8f0"} strokeWidth="12" />
+          <circle 
+            cx="200" cy="200" r="180" fill="none" stroke={theme.accent} strokeWidth="12" strokeLinecap="round" 
+            style={{ 
+              transform: 'rotate(-90deg) scaleY(-1)', 
+              transformOrigin: 'center',
+              transition: 'stroke-dashoffset 1s linear',
+              strokeDasharray: circumference, 
+              strokeDashoffset: isAllDone ? 0 : offset 
+            }} 
+          />
+        </svg>
+        <div className="absolute flex flex-col items-center">
+          <div className="text-8xl leading-none font-black tracking-tighter" style={{ fontVariantNumeric: "tabular-nums" }}>
+            {!isAllDone && current ? (() => {
+              const diff = Math.max(0, getSeconds(current.end) - nowTotalSec);
+              return `${Math.floor(diff / 60)}:${(diff % 60).toString().padStart(2, '0')}`;
+            })() : "DONE"}
+          </div>
+          <div className="text-lg font-bold mt-4 opacity-50 tracking-widest" style={{ fontVariantNumeric: "tabular-nums" }}>
+            {now.getHours().toString().padStart(2, '0')}:{now.getMinutes().toString().padStart(2, '0')}:{now.getSeconds().toString().padStart(2, '0')}
           </div>
         </div>
+      </div>
 
-        <div className={`text-5xl md:text-7xl font-black mb-4 text-center transition-colors duration-500 ${theme.accentClass}`}>
-          {currentPeriod ? currentPeriod.label : "자율학습"}
+      {isMuted && (
+        <button onClick={() => setIsMuted(false)} className="mb-8 px-6 py-3 bg-blue-600 text-white rounded-full font-bold shadow-lg animate-pulse">
+          🔊 종소리 마법 활성화
+        </button>
+      )}
+
+      <div className={`w-full max-w-[320px] ${theme.card} rounded-[2rem] p-6 border border-white/5 transition-all`}>
+        <div className="flex flex-col items-center space-y-3">
+          {SCHEDULE.map((p, i) => {
+            const isItemCurrent = !isAllDone && current?.label === p.label;
+            const isItemPast = nowTotalSec >= getSeconds(p.end);
+            return (
+              <div key={i} className={`flex items-center justify-center w-full gap-4 ${isItemCurrent ? theme.accentClass + ' font-bold' : isItemPast ? 'opacity-20 line-through' : 'opacity-60'}`}>
+                <span className="text-base font-bold min-w-[70px] text-right">{p.label}</span>
+                <span className="text-sm font-medium tracking-tight min-w-[100px] text-left" style={{ fontVariantNumeric: "tabular-nums" }}>
+                  {p.start} - {p.end}
+                </span>
+              </div>
+            );
+          })}
         </div>
+      </div>
 
-        <div className="relative flex items-center justify-center mb-8 scale-95 md:scale-110">
-          <svg width="420" height="420">
-            <circle cx="210" cy="210" r="180" fill="none" stroke={isDarkMode ? "#1e293b" : "#e2e8f0"} strokeWidth="16" />
-            <circle cx="210" cy="210" r="180" fill="none" stroke={theme.accent} strokeWidth="16" strokeLinecap="round" className="circle-progress"
-              style={{ strokeDasharray: circumference, strokeDashoffset: currentPeriod ? strokeDashoffset : 0, filter: `drop-shadow(0 0 10px ${theme.accent}80)` }} />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <div className="timer-font text-[9rem] md:text-[12rem] leading-none">
-              {currentPeriod ? (() => {
-                const diff = getSeconds(currentPeriod.end) - nowTotalSec;
-                const min = Math.floor(diff / 60);
-                const sec = diff % 60;
-                return `${min}:${sec.toString().padStart(2, '0')}`;
-              })() : "--:--"}
-            </div>
-            <div className={`text-2xl ${theme.textSub} font-bold mt-4 tracking-[0.3em]`}>
-              {now.toLocaleTimeString('ko-KR', { hour12: false })}
-            </div>
-          </div>
-        </div>
-
-        <div className={`w-full max-w-md ${theme.card} rounded-[40px] p-8 border ${isDarkMode ? 'border-slate-800/40' : 'border-slate-200'} shadow-2xl transition-all duration-500`}>
-          <ul className="space-y-4">
-            {SCHEDULE.map((p, i) => {
-              const start = getSeconds(p.start);
-              const end = getSeconds(p.end);
-              const isPast = nowTotalSec >= end;
-              const isCurrent = nowTotalSec >= start && nowTotalSec < end;
-              return (
-                <li key={i} className={`flex justify-between text-xl px-2 transition-all duration-500 
-                  ${isCurrent ? (isStudyTime ? 'text-blue-500 font-black scale-105' : 'text-amber-500 font-black scale-105') 
-                  : isPast ? 'text-slate-400 line-through opacity-30' : theme.textMain}`}>
-                  <span>{p.label}</span>
-                  <span className="font-mono tracking-tighter opacity-80">{p.start} - {p.end}</span>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-
-        <audio id="studyBell" src="/study.mp3" />
-        <audio id="breakBell" src="/break.mp3" />
-        <audio id="endBell" src="/end.mp3" />
-      </main>
-    </>
+      <audio id="study" src="/study.mp3" preload="auto" />
+      <audio id="break" src="/break.mp3" preload="auto" />
+      <audio id="end" src="/end.mp3" preload="auto" />
+    </main>
   );
 }
