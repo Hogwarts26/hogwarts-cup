@@ -3,60 +3,54 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 
-const SCHEDULE = [
-  { label: "1교시", start: "07:00", end: "08:40", isStudy: true },
-  { label: "2교시", start: "09:00", end: "10:40", isStudy: true },
-  { label: "3교시", start: "11:00", end: "12:40", isStudy: true },
-  { label: "점심시간", start: "12:40", end: "14:00", isStudy: false },
-  { label: "4교시", start: "14:00", end: "15:40", isStudy: true },
-  { label: "5교시", start: "16:00", end: "17:40", isStudy: true },
-  { label: "저녁시간", start: "17:40", end: "19:00", isStudy: false },
-  { label: "6교시", start: "19:00", end: "20:40", isStudy: true },
-  { label: "7교시", start: "20:50", end: "22:30", isStudy: true }
-];
+const SCHEDULES = {
+  '100': [
+    { label: "1교시", start: "07:00", end: "08:40", isStudy: true },
+    { label: "2교시", start: "09:00", end: "10:40", isStudy: true },
+    { label: "3교시", start: "11:00", end: "12:40", isStudy: true },
+    { label: "점심시간", start: "12:40", end: "14:00", isStudy: false },
+    { label: "4교시", start: "14:00", end: "15:40", isStudy: true },
+    { label: "5교시", start: "16:00", end: "17:40", isStudy: true },
+    { label: "저녁시간", start: "17:40", end: "19:00", isStudy: false },
+    { label: "6교시", start: "19:00", end: "20:40", isStudy: true },
+    { label: "7교시", start: "20:50", end: "22:30", isStudy: true }
+  ],
+  '80': [
+    { label: "1교시", start: "08:00", end: "09:20", isStudy: true },
+    { label: "2교시", start: "09:30", end: "10:50", isStudy: true },
+    { label: "3교시", start: "11:00", end: "12:20", isStudy: true },
+    { label: "점심시간", start: "12:20", end: "13:40", isStudy: false },
+    { label: "4교시", start: "13:40", end: "15:00", isStudy: true },
+    { label: "5교시", start: "15:10", end: "16:30", isStudy: true },
+    { label: "6교시", start: "16:40", end: "18:00", isStudy: true },
+    { label: "저녁시간", start: "18:00", end: "19:20", isStudy: false },
+    { label: "7교시", start: "19:20", end: "20:40", isStudy: true },
+    { label: "8교시", start: "20:50", end: "22:10", isStudy: true }
+  ]
+};
 
 export default function TimerPage() {
   const [mounted, setMounted] = useState(false);
   const [now, setNow] = useState<Date | null>(null);
   const [isMuted, setIsMuted] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [scheduleMode, setScheduleMode] = useState<'100' | '80' | '50'>('100');
   
-  // 현재 상태를 추적하여 변경될 때만 소리를 재생하기 위한 Ref
   const lastPlayedRef = useRef<string>("");
 
-  // ✨ 음소거 버튼을 누르면 즉시 모든 소리를 멈추는 로직
-  useEffect(() => {
-    if (isMuted) {
-      const allAudios = document.querySelectorAll('audio');
-      allAudios.forEach(audio => {
-        audio.pause();
-        audio.currentTime = 0; // 소리를 끄고 처음으로 되돌림
-      });
-    }
-  }, [isMuted]); // isMuted 상태가 바뀔 때마다 실행
-
-  // 1. 초기화 및 시간 업데이트 인터벌
   useEffect(() => {
     setMounted(true);
     setNow(new Date());
-
-    const interval = setInterval(() => {
-      setNow(new Date()); 
-    }, 1000);
-
-    const stopAllExternalAudio = () => {
-      const allAudios = document.querySelectorAll('audio');
-      allAudios.forEach(audio => {
-        if (!['study', 'break', 'end'].includes(audio.id)) {
-          audio.pause();
-          audio.currentTime = 0;
-        }
-      });
-    };
-    stopAllExternalAudio();
-
+    const interval = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (isMuted) {
+      const allAudios = document.querySelectorAll('audio');
+      allAudios.forEach(audio => { audio.pause(); audio.currentTime = 0; });
+    }
+  }, [isMuted]);
 
   const getSeconds = (timeStr: string) => {
     if (!timeStr || !timeStr.includes(':')) return 0;
@@ -64,12 +58,27 @@ export default function TimerPage() {
     return h * 3600 + m * 60;
   };
 
-  // 2. 현재 교시/쉬는시간 데이터 계산
+  // ✨ 타이머 데이터 계산 로직 (50분 모드 자동 생성 포함)
   const timerData = useMemo(() => {
     if (!now) return null;
     const nowTotalSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-    
-    let current = SCHEDULE.find(p => {
+
+    // 50분 모드: 무조건 현재 시간 기준 정각~50분 / 50분~정각 계산
+    if (scheduleMode === '50') {
+      const currentHour = now.getHours();
+      const currentMin = now.getMinutes();
+      const isStudyTime = currentMin < 50;
+      
+      const current = isStudyTime 
+        ? { label: `${currentHour}시 학습`, start: `${currentHour.toString().padStart(2, '0')}:00`, end: `${currentHour.toString().padStart(2, '0')}:50`, isStudy: true }
+        : { label: `쉬는시간`, start: `${currentHour.toString().padStart(2, '0')}:50`, end: `${(currentHour + 1).toString().padStart(2, '0')}:00`, isStudy: false };
+      
+      return { current, isGap: false, isAllDone: false, nowTotalSec, gapStart: getSeconds(current.start) };
+    }
+
+    // 100분, 80분 모드 (기본 로직)
+    const activeList = SCHEDULES[scheduleMode as '100' | '80'];
+    let current = activeList.find(p => {
       const s = getSeconds(p.start);
       const e = getSeconds(p.end);
       return nowTotalSec >= s && nowTotalSec < e;
@@ -80,57 +89,65 @@ export default function TimerPage() {
     let gapStart = 0;
 
     if (!current) {
-      const nextIdx = SCHEDULE.findIndex(p => getSeconds(p.start) > nowTotalSec);
+      const nextIdx = activeList.findIndex(p => getSeconds(p.start) > nowTotalSec);
       if (nextIdx !== -1) {
         isGap = true;
-        const nextP = SCHEDULE[nextIdx];
-        gapStart = nextIdx > 0 ? getSeconds(SCHEDULE[nextIdx - 1].end) : 0;
+        const nextP = activeList[nextIdx];
+        gapStart = nextIdx > 0 ? getSeconds(activeList[nextIdx - 1].end) : 0;
         current = { label: "쉬는시간", start: "", end: nextP.start, isStudy: false };
       } else {
         isAllDone = true;
       }
     }
-
     return { current, isGap, isAllDone, nowTotalSec, gapStart };
-  }, [now]);
+  }, [now, scheduleMode]);
 
-  // 3. 진입 시 첫 알람 방지 및 상태 변경 감지 종소리 로직
+  // 🔊 종소리 로직 (50분 모드 무한반복 포함)
   useEffect(() => {
-    if (!mounted || !timerData) return;
+    if (!mounted || !timerData || isMuted) return;
     const { current, isAllDone } = timerData;
     const currentLabel = isAllDone ? "DONE" : (current?.label || "");
 
-    // [중요] 페이지 처음 들어왔을 때 현재 상태를 lastPlayedRef에 기록하여 첫 소리 차단
-    if (lastPlayedRef.current === "") {
-      lastPlayedRef.current = currentLabel;
-      return;
-    }
-
-    // 상태가 변하지 않았거나 음소거 상태면 리턴
-    if (lastPlayedRef.current === currentLabel || isMuted) return;
-
-    const playAudio = (id: string) => {
+    const playAudio = (id: string, loop: boolean = false) => {
       const audio = document.getElementById(id) as HTMLAudioElement;
       if (audio) {
-        audio.currentTime = 0;
-        audio.volume = 0.2; // ✨ 볼륨 20% 설정
-        audio.play().catch(() => {});
+        audio.volume = 0.2;
+        audio.loop = loop;
+        if (audio.paused) audio.play().catch(() => {});
       }
     };
 
-    if (isAllDone) {
-      playAudio("end");
-    } else if (current) {
-      // 공부 시작인지 휴식 시작인지 판단하여 재생
-      const isStudyStart = current.isStudy === true && current.label !== "쉬는시간";
-      playAudio(isStudyStart ? "study" : "break");
+    const stopAudio = (id: string) => {
+      const audio = document.getElementById(id) as HTMLAudioElement;
+      if (audio) { audio.pause(); audio.currentTime = 0; audio.loop = false; }
+    };
+
+    // 50분 모드 특수 규칙: 50~60분 사이 무한 반복
+    if (scheduleMode === '50') {
+      const minutes = now?.getMinutes() || 0;
+      if (minutes >= 50 && minutes < 60) {
+        playAudio("break", true);
+        lastPlayedRef.current = "REPEATING_BREAK";
+        return;
+      } else {
+        stopAudio("break");
+      }
+    } else {
+      const breakAudio = document.getElementById("break") as HTMLAudioElement;
+      if (breakAudio) breakAudio.loop = false;
     }
 
-    // 재생 후 현재 라벨 업데이트
-    lastPlayedRef.current = currentLabel;
-  }, [timerData, isMuted, mounted]);
+    if (lastPlayedRef.current !== currentLabel) {
+      if (isAllDone) {
+        playAudio("end");
+      } else if (current) {
+        const isStudyStart = current.isStudy === true && current.label !== "쉬는시간";
+        playAudio(isStudyStart ? "study" : "break");
+      }
+      lastPlayedRef.current = currentLabel;
+    }
+  }, [timerData, isMuted, mounted, scheduleMode, now]);
 
-  // 렌더링 시작
   if (!mounted || !now || !timerData) return <div className="min-h-screen bg-[#020617]" />;
 
   const { current, isGap, isAllDone, nowTotalSec, gapStart } = timerData;
@@ -156,54 +173,51 @@ export default function TimerPage() {
   };
 
   return (
-    <main 
-      className={`${theme.bg} ${theme.textMain} min-h-screen flex flex-col items-center p-4 py-8 transition-colors duration-500`}
-      style={{ fontFamily: "'Pretendard Variable', Pretendard, -apple-system, sans-serif" }}
-    >
+    <main className={`${theme.bg} ${theme.textMain} min-h-screen flex flex-col items-center p-4 py-8 transition-colors duration-500`} style={{ fontFamily: "'Pretendard Variable', sans-serif" }}>
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css" />
 
-      <div className="w-full max-w-lg flex justify-between items-center mb-10 z-10">
-        <Link href="/" className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${theme.btn}`}>
-          학습내역
-        </Link>
-        <div className="flex gap-2">
-          <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 rounded-xl border flex items-center justify-center text-lg transition-all ${theme.btn}`}>
-            {isDarkMode ? '🌝' : '🌞'}
-          </button>
-          <button onClick={() => setIsMuted(!isMuted)} className={`w-10 h-10 rounded-xl border flex items-center justify-center text-lg transition-all ${theme.btn}`}>
-            {isMuted ? '🔇' : '🔊'}
-          </button>
+      <div className="w-full max-w-lg flex flex-col gap-4 mb-10 z-10">
+        <div className="flex justify-between items-center">
+          <Link href="/" className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${theme.btn}`}>학습내역</Link>
+          <div className="flex gap-2">
+            <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${theme.btn}`}>{isDarkMode ? '🌝' : '🌞'}</button>
+            <button onClick={() => setIsMuted(!isMuted)} className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${theme.btn}`}>{isMuted ? '🔇' : '🔊'}</button>
+          </div>
+        </div>
+
+        <div className={`flex p-1 rounded-2xl border ${isDarkMode ? 'bg-slate-900/40 border-white/5' : 'bg-slate-200/50 border-slate-300'}`}>
+          {(['100', '80', '50'] as const).map((m) => (
+            <button
+              key={m}
+              onClick={() => {
+                const breakAudio = document.getElementById("break") as HTMLAudioElement;
+                if (breakAudio) { breakAudio.loop = false; breakAudio.pause(); }
+                setScheduleMode(m);
+                lastPlayedRef.current = ""; 
+              }}
+              className={`flex-1 py-2 rounded-xl text-[10px] font-black transition-all ${scheduleMode === m ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500'}`}
+            >
+              {m === '100' ? '기본(100)' : m === '80' ? '80분(08시)' : '50분(정각)'}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className={`text-4xl font-black mb-6 ${theme.accentClass} tracking-tight`}>
-        {isAllDone ? "일과 종료" : (current ? current.label : "자율학습")}
-      </div>
+      <div className={`text-4xl font-black mb-6 ${theme.accentClass}`}>{isAllDone ? "일과 종료" : (current ? current.label : "자율학습")}</div>
 
       <div className="relative flex items-center justify-center mb-8 scale-90 sm:scale-100">
         <svg width="400" height="400" viewBox="0 0 400 400">
           <circle cx="200" cy="200" r="180" fill="none" stroke={isDarkMode ? "#1e293b" : "#e2e8f0"} strokeWidth="12" />
-          <circle 
-            cx="200" cy="200" r="180" fill="none" stroke={theme.accent} strokeWidth="12" strokeLinecap="round" 
-            style={{ 
-              transform: 'rotate(-90deg) scaleY(-1)', 
-              transformOrigin: 'center',
-              transition: 'stroke-dashoffset 1s linear',
-              strokeDasharray: circumference, 
-              strokeDashoffset: isAllDone ? 0 : offset 
-            }} 
-          />
+          <circle cx="200" cy="200" r="180" fill="none" stroke={theme.accent} strokeWidth="12" strokeLinecap="round" style={{ transform: 'rotate(-90deg) scaleY(-1)', transformOrigin: 'center', transition: 'stroke-dashoffset 1s linear', strokeDasharray: circumference, strokeDashoffset: isAllDone ? 0 : offset }} />
         </svg>
         <div className="absolute flex flex-col items-center">
-          <div className="text-8xl leading-none font-black tracking-tighter" style={{ fontVariantNumeric: "tabular-nums" }}>
+          <div className="text-8xl leading-none font-black tracking-tighter">
             {!isAllDone && current ? (() => {
               const diff = Math.max(0, getSeconds(current.end) - nowTotalSec);
               return `${Math.floor(diff / 60)}:${(diff % 60).toString().padStart(2, '0')}`;
             })() : "DONE"}
           </div>
-          <div className="text-lg font-bold mt-4 opacity-50 tracking-widest" style={{ fontVariantNumeric: "tabular-nums" }}>
-            {now.getHours().toString().padStart(2, '0')}:{now.getMinutes().toString().padStart(2, '0')}:{now.getSeconds().toString().padStart(2, '0')}
-          </div>
+          <div className="text-lg font-bold mt-4 opacity-50">{now.getHours().toString().padStart(2, '0')}:{now.getMinutes().toString().padStart(2, '0')}:{now.getSeconds().toString().padStart(2, '0')}</div>
         </div>
       </div>
 
@@ -213,20 +227,22 @@ export default function TimerPage() {
         </button>
       )}
 
-      <div className={`w-full max-w-[320px] ${theme.card} rounded-[2rem] p-6 border border-white/5 transition-all`}>
+      <div className={`w-full max-w-[320px] ${theme.card} rounded-[2rem] p-6 border border-white/5 transition-all overflow-y-auto max-h-[350px]`}>
         <div className="flex flex-col items-center space-y-3">
-          {SCHEDULE.map((p, i) => {
-            const isItemCurrent = !isAllDone && current?.label === p.label;
-            const isItemPast = nowTotalSec >= getSeconds(p.end);
-            return (
-              <div key={i} className={`flex items-center justify-center w-full gap-4 ${isItemCurrent ? theme.accentClass + ' font-bold' : isItemPast ? 'opacity-20 line-through' : 'opacity-60'}`}>
-                <span className="text-base font-bold min-w-[70px] text-right">{p.label}</span>
-                <span className="text-sm font-medium tracking-tight min-w-[100px] text-left" style={{ fontVariantNumeric: "tabular-nums" }}>
-                  {p.start} - {p.end}
-                </span>
-              </div>
-            );
-          })}
+          {scheduleMode === '50' ? (
+            <div className="text-center opacity-60 font-bold py-4">매 시 정각 ~ 50분 학습<br/>매 시 50분 ~ 정각 휴식</div>
+          ) : (
+            SCHEDULES[scheduleMode as '100' | '80'].map((p, i) => {
+              const isItemCurrent = !isAllDone && current?.label === p.label;
+              const isItemPast = nowTotalSec >= getSeconds(p.end);
+              return (
+                <div key={i} className={`flex items-center justify-center w-full gap-4 ${isItemCurrent ? theme.accentClass + ' font-bold' : isItemPast ? 'opacity-20 line-through' : 'opacity-60'}`}>
+                  <span className="text-base font-bold min-w-[70px] text-right">{p.label}</span>
+                  <span className="text-sm font-medium min-w-[100px] text-left">{p.start} - {p.end}</span>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 
