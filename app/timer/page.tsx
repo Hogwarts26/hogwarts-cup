@@ -99,12 +99,14 @@ export default function TimerPage() {
     return { current, isGap, isAllDone, nowTotalSec, gapStart };
   }, [now, scheduleMode]);
 
+  // 벨소리 재생 핵심 로직
   useEffect(() => {
-    if (!mounted || !timerData) return;
+    if (!mounted || !timerData || !now) return;
     const { current, isAllDone } = timerData;
     
-    // 라벨 이름에 상관없이 데이터의 isStudy 속성으로 벨소리 판정
-    const currentState = isAllDone ? "DONE" : (current?.isStudy ? "STUDY" : "BREAK");
+    // 현재 시간(Hour)을 상태에 포함시켜 매 시간 정각/50분마다 새로운 변화로 감지하게 함
+    const currentHour = now.getHours();
+    const currentState = isAllDone ? "DONE" : `${current?.isStudy ? "STUDY" : "BREAK"}_${currentHour}`;
 
     if (lastPlayedRef.current === "") {
       lastPlayedRef.current = currentState;
@@ -128,12 +130,12 @@ export default function TimerPage() {
       }
     };
 
-    if (currentState === "DONE") playAudio("end");
-    else if (currentState === "STUDY") playAudio("study");
-    else if (currentState === "BREAK") playAudio("break");
+    if (isAllDone) playAudio("end");
+    else if (current?.isStudy) playAudio("study");
+    else playAudio("break");
 
     lastPlayedRef.current = currentState;
-  }, [timerData, isMuted, mounted]);
+  }, [timerData, isMuted, mounted, now]);
 
   if (!mounted || !now || !timerData) return <div className="min-h-screen bg-[#020617]" />;
 
@@ -190,8 +192,6 @@ export default function TimerPage() {
 
       <div className={`text-4xl font-black mb-6 ${theme.accentClass}`}>{isAllDone ? "수고하셨습니다.🪄✨" : (current ? current.label : "자율학습")}</div>
 
-      {/* 메인 타이머 및 하단 리스트는 생략 없이 위와 동일하게 유지됩니다 */}
-      {/* ... (이전 코드와 동일한 UI 부분) ... */}
       <div className="relative flex items-center justify-center mb-8 scale-90 sm:scale-100">
         <svg width="400" height="400" viewBox="0 0 400 400">
           <circle cx="200" cy="200" r="180" fill="none" stroke={isDarkMode ? "#1e293b" : "#e2e8f0"} strokeWidth="12" />
