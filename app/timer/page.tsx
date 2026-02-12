@@ -45,17 +45,14 @@ export default function TimerPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // [수정] 아이패드용 무음 잠금 해제 함수
   const unlockAudio = () => {
     ["study", "break", "end"].forEach(id => {
       const audio = document.getElementById(id) as HTMLAudioElement;
       if (audio) {
-        // 소리가 들리지 않게 음소거 상태로 잠시 재생
         audio.muted = true;
         audio.play().then(() => {
           audio.pause();
           audio.currentTime = 0;
-          // 재생 시도가 끝났으니 다시 음소거를 해제 (그래야 나중에 종이 울림)
           audio.muted = false;
         }).catch(() => {});
       }
@@ -89,10 +86,12 @@ export default function TimerPage() {
         ? { label: `Study`, start: `${currentHour.toString().padStart(2, '0')}:00`, end: `${currentHour.toString().padStart(2, '0')}:50`, isStudy: true }
         : { label: `Break`, start: `${currentHour.toString().padStart(2, '0')}:50`, end: `${(currentHour + 1).toString().padStart(2, '0')}:00`, isStudy: false };
       
-      return { current, isGap: false, isAllDone: false, nowTotalSec, gapStart: getSeconds(current.start) };
+      return { current, isGap: false, isAllDone: false, nowTotalSec, gapStart: getSeconds(current.start), lastScheduleEndSec: 0 };
     }
 
     const activeList = SCHEDULES[scheduleMode as '100' | '80'];
+    const lastScheduleEndSec = getSeconds(activeList[activeList.length - 1].end); // 마지막 교시 종료 시간
+
     let current = activeList.find(p => {
       const s = getSeconds(p.start);
       const e = getSeconds(p.end);
@@ -114,7 +113,7 @@ export default function TimerPage() {
         isAllDone = true;
       }
     }
-    return { current, isGap, isAllDone, nowTotalSec, gapStart };
+    return { current, isGap, isAllDone, nowTotalSec, gapStart, lastScheduleEndSec };
   }, [now, scheduleMode]);
 
   useEffect(() => {
@@ -154,7 +153,17 @@ export default function TimerPage() {
 
   if (!mounted || !now || !timerData) return <div className="min-h-screen bg-[#020617]" />;
 
-  const { current, isGap, isAllDone, nowTotalSec, gapStart } = timerData;
+  const { current, isGap, isAllDone, nowTotalSec, gapStart, lastScheduleEndSec } = timerData;
+
+  // 상단 레이블 결정 로직
+  const displayLabel = (() => {
+    if (isAllDone && scheduleMode !== '50') {
+      const secondsSinceEnd = nowTotalSec - lastScheduleEndSec;
+      return secondsSinceEnd < 300 ? "수고하셨습니다.🪄✨" : "자율학습";
+    }
+    return current ? current.label : "자율학습";
+  })();
+
   const circumference = 2 * Math.PI * 180;
   let offset = circumference;
 
@@ -172,8 +181,9 @@ export default function TimerPage() {
     card: isDarkMode ? 'bg-slate-900/60' : 'bg-white shadow-xl',
     textMain: isDarkMode ? 'text-white' : 'text-slate-900',
     btn: isDarkMode ? 'bg-slate-800/50 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-600 shadow-sm',
-    accent: isAllDone ? '#94a3b8' : (current?.isStudy ? '#3b82f6' : '#f59e0b'),
-    accentClass: isAllDone ? 'text-slate-400' : (current?.isStudy ? 'text-blue-500' : 'text-amber-500'),
+    // 자율학습(isAllDone)일 때 파란색으로 변경
+    accent: isAllDone ? '#3b82f6' : (current?.isStudy ? '#3b82f6' : '#f59e0b'),
+    accentClass: isAllDone ? 'text-blue-500' : (current?.isStudy ? 'text-blue-500' : 'text-amber-500'),
   };
 
   return (
@@ -185,7 +195,6 @@ export default function TimerPage() {
           <Link href="/" className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${theme.btn}`}>학습내역</Link>
           <div className="flex gap-2">
             <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${theme.btn}`}>{isDarkMode ? '🌝' : '🌞'}</button>
-            {/* [수정] 스피커 버튼 클릭 시 소리가 꺼져있을 때만 unlock 시도 */}
             <button onClick={() => isMuted ? unlockAudio() : setIsMuted(true)} className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${theme.btn}`}>{isMuted ? '🔇' : '🔊'}</button>
           </div>
         </div>
@@ -206,19 +215,33 @@ export default function TimerPage() {
         </div>
       </div>
 
-      <div className={`text-4xl font-black mb-6 ${theme.accentClass}`}>{isAllDone ? "수고하셨습니다.🪄✨" : (current ? current.label : "자율학습")}</div>
+      {/* 상단 레이블: 5분 여운 시스템 적용 */}
+      <div className={`text-4xl font-black mb-6 ${theme.accentClass}`}>{displayLabel}</div>
 
       <div className="relative flex items-center justify-center mb-8 scale-90 sm:scale-100">
         <svg width="400" height="400" viewBox="0 0 400 400">
           <circle cx="200" cy="200" r="180" fill="none" stroke={isDarkMode ? "#1e293b" : "#e2e8f0"} strokeWidth="12" />
-          <circle cx="200" cy="200" r="180" fill="none" stroke={theme.accent} strokeWidth="12" strokeLinecap="round" style={{ transform: 'rotate(-90deg) scaleY(-1)', transformOrigin: 'center', transition: 'stroke-dashoffset 1s linear', strokeDasharray: circumference, strokeDashoffset: isAllDone ? 0 : offset }} />
+          <circle 
+            cx="200" cy="200" r="180" fill="none" 
+            stroke={theme.accent} 
+            strokeWidth="12" 
+            strokeLinecap="round" 
+            style={{ 
+              transform: 'rotate(-90deg) scaleY(-1)', 
+              transformOrigin: 'center', 
+              transition: 'stroke-dashoffset 1s linear', 
+              strokeDasharray: circumference, 
+              // 완료 시(isAllDone) 원을 꽉 채움
+              strokeDashoffset: isAllDone ? 0 : offset 
+            }} 
+          />
         </svg>
         <div className="absolute flex flex-col items-center">
           <div className="text-8xl leading-none font-black tracking-tighter" style={{ fontVariantNumeric: "tabular-nums" }}>
             {!isAllDone && current ? (() => {
               const diff = Math.max(0, getSeconds(current.end) - nowTotalSec);
               return `${Math.floor(diff / 60)}:${(diff % 60).toString().padStart(2, '0')}`;
-            })() : "DONE"}
+            })() : "FREE"}
           </div>
           <div className="text-lg font-bold mt-4 opacity-50">{now.getHours().toString().padStart(2, '0')}:{now.getMinutes().toString().padStart(2, '0')}:{now.getSeconds().toString().padStart(2, '0')}</div>
         </div>
