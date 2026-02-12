@@ -50,12 +50,10 @@ export default function TimerPage() {
     let gapStart = 0;
 
     if (!current) {
-      // 다음 교시 찾기
       const nextIdx = SCHEDULE.findIndex(p => getSeconds(p.start) > nowTotalSec);
       if (nextIdx !== -1) {
         isGap = true;
         const nextP = SCHEDULE[nextIdx];
-        // 쉬는시간의 시작점은 '이전 교시의 끝' 혹은 '오늘의 시작'
         gapStart = nextIdx > 0 ? getSeconds(SCHEDULE[nextIdx - 1].end) : 0;
         current = { label: "쉬는시간", start: "", end: nextP.start, isStudy: false };
       } else {
@@ -66,7 +64,6 @@ export default function TimerPage() {
     return { current, isGap, isAllDone, nowTotalSec, gapStart };
   }, [now]);
 
-  // 종소리 재생 (current.label이 바뀔 때 실행)
   useEffect(() => {
     if (isMuted || !timerData) return;
     const { current, isAllDone } = timerData;
@@ -74,8 +71,8 @@ export default function TimerPage() {
     const playAudio = (id: string) => {
       const audio = document.getElementById(id) as HTMLAudioElement;
       if (audio) {
-        audio.currentTime = 0; // 처음부터 재생
-        audio.play().catch(e => console.log("Audio play failed:", e));
+        audio.currentTime = 0;
+        audio.play().catch(() => {});
       }
     };
 
@@ -88,7 +85,6 @@ export default function TimerPage() {
     }
 
     if (current && lastPlayedRef.current !== current.label) {
-      // 공부 시작인지 쉬는시간/식사시간 시작인지 판별
       const isStudyStart = current.isStudy === true && current.label !== "쉬는시간";
       playAudio(isStudyStart ? "study" : "break");
       lastPlayedRef.current = current.label;
@@ -103,12 +99,9 @@ export default function TimerPage() {
 
   if (current) {
     const endSec = getSeconds(current.end);
-    // [핵심 수정] 쉬는시간일 때는 이전 교시 종료 시점을 시작점으로 고정하여 게이지 계산
     const startSec = isGap ? gapStart : getSeconds(current.start);
     const total = endSec - startSec;
     const remaining = Math.max(0, endSec - nowTotalSec);
-    
-    // total이 0이 되는 경우 방지
     const ratio = total > 0 ? Math.min(1, remaining / total) : 0;
     offset = circumference * (1 - ratio);
   }
@@ -140,7 +133,7 @@ export default function TimerPage() {
         {isAllDone ? "일과 종료" : (current ? current.label : "자율학습")}
       </div>
 
-      <div className="relative flex items-center justify-center mb-10 scale-90 sm:scale-100">
+      <div className="relative flex items-center justify-center mb-8 scale-90 sm:scale-100">
         <svg width="400" height="400" viewBox="0 0 400 400">
           <circle cx="200" cy="200" r="180" fill="none" stroke={isDarkMode ? "#1e293b" : "#e2e8f0"} strokeWidth="12" />
           <circle 
@@ -161,7 +154,7 @@ export default function TimerPage() {
               return `${Math.floor(diff / 60)}:${(diff % 60).toString().padStart(2, '0')}`;
             })() : "DONE"}
           </div>
-          <div className="text-lg font-bold mt-4 opacity-50 tracking-widest font-mono">
+          <div className="text-lg font-bold mt-4 opacity-50 tracking-widest" style={{ fontVariantNumeric: "tabular-nums" }}>
             {now.getHours().toString().padStart(2, '0')}:{now.getMinutes().toString().padStart(2, '0')}:{now.getSeconds().toString().padStart(2, '0')}
           </div>
         </div>
@@ -173,15 +166,19 @@ export default function TimerPage() {
         </button>
       )}
 
-      <div className={`w-full max-w-sm ${theme.card} rounded-[2rem] p-6 border border-white/5 shadow-2xl`}>
-        <div className="space-y-4">
+      {/* 시간표 여백 최적화 구간 */}
+      <div className={`w-full max-w-[320px] ${theme.card} rounded-[2rem] p-6 border border-white/5 shadow-2xl`}>
+        <div className="space-y-3">
           {SCHEDULE.map((p, i) => {
             const isItemCurrent = !isAllDone && current?.label === p.label;
             const isItemPast = nowTotalSec >= getSeconds(p.end);
             return (
-              <div key={i} className={`flex justify-between items-center ${isItemCurrent ? theme.accentClass + ' font-bold' : isItemPast ? 'opacity-20 line-through' : 'opacity-60'}`}>
-                <span className="text-base font-semibold">{p.label}</span>
-                <span className="text-sm font-medium" style={{ fontVariantNumeric: "tabular-nums" }}>{p.start} - {p.end}</span>
+              <div key={i} className={`flex items-center gap-4 ${isItemCurrent ? theme.accentClass + ' font-bold' : isItemPast ? 'opacity-20 line-through' : 'opacity-60'}`}>
+                {/* 교시 라벨 너비 고정으로 간격 최적화 */}
+                <span className="text-base font-bold min-w-[65px]">{p.label}</span>
+                <span className="text-sm font-medium tracking-tight" style={{ fontVariantNumeric: "tabular-nums" }}>
+                  {p.start} - {p.end}
+                </span>
               </div>
             );
           })}
