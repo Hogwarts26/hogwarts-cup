@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 
 const SCHEDULE = [
@@ -24,9 +24,8 @@ export default function TimerPage() {
 
   useEffect(() => {
     setMounted(true);
-    const interval = setInterval(() => {
-      setNow(new Date());
-    }, 1000);
+    setNow(new Date());
+    const interval = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -36,68 +35,64 @@ export default function TimerPage() {
     return h * 3600 + m * 60;
   };
 
-  if (!mounted || !now) {
-    return <div className="min-h-screen bg-[#020617]" />;
-  }
+  const timerData = useMemo(() => {
+    if (!now) return null;
+    const nowTotalSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+    
+    let current = SCHEDULE.find(p => {
+      const s = getSeconds(p.start);
+      const e = getSeconds(p.end);
+      return nowTotalSec >= s && nowTotalSec < e;
+    });
 
-  const nowTotalSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+    let isGap = false;
+    let isAllDone = false;
 
-  let currentPeriod = SCHEDULE.find(p => {
-    const s = getSeconds(p.start);
-    const e = getSeconds(p.end);
-    return nowTotalSec >= s && nowTotalSec < e;
-  });
-
-  let isGapTime = false;
-  let isAllOver = false;
-
-  if (!currentPeriod) {
-    const nextP = SCHEDULE.find(p => getSeconds(p.start) > nowTotalSec);
-    if (nextP) {
-      isGapTime = true;
-      currentPeriod = { label: "쉬는시간", start: "", end: nextP.start, isStudy: false };
-    } else {
-      isAllOver = true;
+    if (!current) {
+      const nextP = SCHEDULE.find(p => getSeconds(p.start) > nowTotalSec);
+      if (nextP) {
+        isGap = true;
+        current = { label: "쉬는시간", start: "", end: nextP.start, isStudy: false };
+      } else {
+        isAllDone = true;
+      }
     }
-  }
 
-  const isStudyTime = currentPeriod?.isStudy ?? false;
+    return { current, isGap, isAllDone, nowTotalSec };
+  }, [now]);
 
-  // [수정] 파일명과 ID를 study.mp3 기준으로 변경
   useEffect(() => {
-    if (isMuted) return;
+    if (isMuted || !timerData) return;
+    const { current, isAllDone } = timerData;
 
-    if (isAllOver) {
+    if (isAllDone) {
       if (lastPlayedRef.current !== "END") {
         const audio = document.getElementById("end") as HTMLAudioElement;
-        if (audio) audio.play().catch(() => {});
+        audio?.play().catch(() => {});
         lastPlayedRef.current = "END";
       }
       return;
     }
 
-    if (currentPeriod && lastPlayedRef.current !== currentPeriod.label) {
-      let audioId = "";
-      if (currentPeriod.label === "쉬는시간" || currentPeriod.isStudy === false) {
-        audioId = "break"; 
-      } else if (currentPeriod.isStudy) {
-        audioId = "study"; // study.mp3를 재생할 ID
-      }
-
+    if (current && lastPlayedRef.current !== current.label) {
+      const audioId = (current.label === "쉬는시간" || !current.isStudy) ? "break" : "study";
       const audio = document.getElementById(audioId) as HTMLAudioElement;
-      if (audio) audio.play().catch(() => {});
-      lastPlayedRef.current = currentPeriod.label;
+      audio?.play().catch(() => {});
+      lastPlayedRef.current = current.label;
     }
-  }, [currentPeriod?.label, isMuted, isAllOver]);
+  }, [timerData, isMuted]);
 
+  if (!mounted || !now || !timerData) return <div className="min-h-screen bg-[#020617]" />;
+
+  const { current, isGap, isAllDone, nowTotalSec } = timerData;
   const circumference = 2 * Math.PI * 180;
   let offset = circumference;
-  if (currentPeriod) {
-    const endSec = getSeconds(currentPeriod.end);
-    const startSec = isGapTime ? nowTotalSec - 1 : getSeconds(currentPeriod.start);
+  if (current) {
+    const endSec = getSeconds(current.end);
+    const startSec = isGap ? nowTotalSec - 1 : getSeconds(current.start);
     const total = endSec - startSec;
-    const remaining = endSec - nowTotalSec;
-    const ratio = total > 0 ? Math.max(0, Math.min(1, remaining / total)) : 0;
+    const remaining = Math.max(0, endSec - nowTotalSec);
+    const ratio = total > 0 ? Math.min(1, remaining / total) : 0;
     offset = circumference * (1 - ratio);
   }
 
@@ -105,26 +100,24 @@ export default function TimerPage() {
     bg: isDarkMode ? 'bg-[#020617]' : 'bg-slate-50',
     card: isDarkMode ? 'bg-slate-900/60' : 'bg-white',
     textMain: isDarkMode ? 'text-white' : 'text-slate-900',
-    accent: isAllOver ? '#94a3b8' : (isStudyTime ? '#3b82f6' : '#f59e0b'),
-    accentClass: isAllOver ? 'text-slate-400' : (isStudyTime ? 'text-blue-400' : 'text-amber-400'),
+    accent: isAllDone ? '#94a3b8' : (current?.isStudy ? '#3b82f6' : '#f59e0b'),
+    accentClass: isAllDone ? 'text-slate-400' : (current?.isStudy ? 'text-blue-400' : 'text-amber-400'),
   };
 
-  const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-
   return (
-    <main className={`${theme.bg} ${theme.textMain} min-h-screen flex flex-col items-center p-4 py-8`}>
+    <main className={`${theme.bg} ${theme.textMain} min-h-screen flex flex-col items-center p-4 py-8 transition-colors duration-500`}>
       <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@800&display=swap" rel="stylesheet" />
 
       <div className="w-full max-w-lg flex justify-between items-center mb-10 z-10">
         <Link href="/" className="px-4 py-2 bg-slate-800/50 rounded-xl text-xs font-bold border border-white/10">📊 학습내역</Link>
         <div className="flex gap-2">
-          <button onClick={() => setIsDarkMode(!isDarkMode)} className="w-10 h-10 bg-slate-800/50 rounded-xl border border-white/10 flex items-center justify-center">{isDarkMode ? '🌝' : '🌞'}</button>
-          <button onClick={() => setIsMuted(!isMuted)} className="w-10 h-10 bg-slate-800/50 rounded-xl border border-white/10 flex items-center justify-center">{isMuted ? '🔇' : '🔊'}</button>
+          <button onClick={() => setIsDarkMode(!isDarkMode)} className="w-10 h-10 bg-slate-800/50 rounded-xl border border-white/10 flex items-center justify-center text-lg">{isDarkMode ? '🌝' : '🌞'}</button>
+          <button onClick={() => setIsMuted(!isMuted)} className="w-10 h-10 bg-slate-800/50 rounded-xl border border-white/10 flex items-center justify-center text-lg">{isMuted ? '🔇' : '🔊'}</button>
         </div>
       </div>
 
       <div className={`text-4xl font-black mb-6 ${theme.accentClass}`}>
-        {isAllOver ? "일과 종료" : (currentPeriod ? currentPeriod.label : "자율학습")}
+        {isAllDone ? "일과 종료" : (current ? current.label : "자율학습")}
       </div>
 
       <div className="relative flex items-center justify-center mb-10 scale-90 sm:scale-100">
@@ -137,19 +130,19 @@ export default function TimerPage() {
               transformOrigin: 'center',
               transition: 'stroke-dashoffset 1s linear',
               strokeDasharray: circumference, 
-              strokeDashoffset: isAllOver ? 0 : offset 
+              strokeDashoffset: isAllDone ? 0 : offset 
             }} 
           />
         </svg>
         <div className="absolute flex flex-col items-center">
-          <div className="text-8xl leading-none font-bold" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-            {!isAllOver && currentPeriod ? (() => {
-              const diff = Math.max(0, getSeconds(currentPeriod.end) - nowTotalSec);
+          <div className="text-8xl leading-none font-bold font-mono" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+            {!isAllDone && current ? (() => {
+              const diff = Math.max(0, getSeconds(current.end) - nowTotalSec);
               return `${Math.floor(diff / 60)}:${(diff % 60).toString().padStart(2, '0')}`;
             })() : "DONE"}
           </div>
           <div className="text-lg font-bold mt-4 opacity-50 tracking-widest font-mono">
-            {timeString}
+            {now.getHours().toString().padStart(2, '0')}:{now.getMinutes().toString().padStart(2, '0')}:{now.getSeconds().toString().padStart(2, '0')}
           </div>
         </div>
       </div>
@@ -163,10 +156,10 @@ export default function TimerPage() {
       <div className={`w-full max-w-sm ${theme.card} rounded-[2rem] p-6 border border-white/5 shadow-2xl`}>
         <div className="space-y-4">
           {SCHEDULE.map((p, i) => {
-            const isCurrent = !isAllOver && currentPeriod?.label === p.label;
-            const isPast = nowTotalSec >= getSeconds(p.end);
+            const isItemCurrent = !isAllDone && current?.label === p.label;
+            const isItemPast = nowTotalSec >= getSeconds(p.end);
             return (
-              <div key={i} className={`flex justify-between items-center ${isCurrent ? theme.accentClass + ' font-bold' : isPast ? 'opacity-20 line-through' : 'opacity-60'}`}>
+              <div key={i} className={`flex justify-between items-center ${isItemCurrent ? theme.accentClass + ' font-bold' : isItemPast ? 'opacity-20 line-through' : 'opacity-60'}`}>
                 <span className="text-base">{p.label}</span>
                 <span className="text-sm font-mono">{p.start} - {p.end}</span>
               </div>
@@ -175,7 +168,6 @@ export default function TimerPage() {
         </div>
       </div>
 
-      {/* [최종] ID와 파일명 매칭 완료 */}
       <audio id="study" src="/study.mp3" preload="auto" />
       <audio id="break" src="/break.mp3" preload="auto" />
       <audio id="end" src="/end.mp3" preload="auto" />
