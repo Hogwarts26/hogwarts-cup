@@ -24,6 +24,17 @@ export default function TimerPage() {
   // 현재 상태를 추적하여 변경될 때만 소리를 재생하기 위한 Ref
   const lastPlayedRef = useRef<string>("");
 
+  // ✨ 음소거 버튼을 누르면 즉시 모든 소리를 멈추는 로직
+  useEffect(() => {
+    if (isMuted) {
+      const allAudios = document.querySelectorAll('audio');
+      allAudios.forEach(audio => {
+        audio.pause();
+        audio.currentTime = 0; // 소리를 끄고 처음으로 되돌림
+      });
+    }
+  }, [isMuted]); // isMuted 상태가 바뀔 때마다 실행
+
   // 1. 초기화 및 시간 업데이트 인터벌
   useEffect(() => {
     setMounted(true);
