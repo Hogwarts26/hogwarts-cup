@@ -955,8 +955,8 @@ const handleSaveName = async () => {
             Hogwarts School
           </h2>
           {/* flex-wrap: 버튼들이 많아지면 세로로 꺾이지 않고 다음 줄로 넘어가게 함 */}
-          <div className="flex gap-2 flex-wrap justify-end">
-
+          <div className="flex gap-2 flex-wrap justify-end flex-1">
+            
             {/* [24] 음악 및 관리자 버튼들 */}
             <button 
               onClick={toggleMusic} 
@@ -994,7 +994,7 @@ const handleSaveName = async () => {
           </div>
         </div>
 
-        {/* 기숙사 점수판 구역 (변동 없음) */}
+        {/* 기숙사 점수판 구역 */}
         <div className="grid grid-cols-4 gap-1.5 md:gap-4">
           {houseRankings.map((item, idx) => {
             const config = (HOUSE_CONFIG as any)[item.house];
