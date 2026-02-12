@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 
 const SCHEDULE = [
@@ -34,11 +34,13 @@ export default function TimerPage() {
 
   const nowTotalSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
 
-  const currentPeriod = SCHEDULE.find(p => {
-    const start = getSeconds(p.start);
-    const end = getSeconds(p.end);
-    return nowTotalSec >= start && nowTotalSec < end;
-  });
+  const currentPeriod = useMemo(() => {
+    return SCHEDULE.find(p => {
+      const start = getSeconds(p.start);
+      const end = getSeconds(p.end);
+      return nowTotalSec >= start && nowTotalSec < end;
+    });
+  }, [nowTotalSec]);
 
   const isStudyTime = currentPeriod?.isStudy ?? false;
 
@@ -47,7 +49,8 @@ export default function TimerPage() {
     const audio = document.getElementById(id) as HTMLAudioElement;
     if (audio) {
       audio.currentTime = 0;
-      audio.play().catch(() => {});
+      // 모바일 브라우저 정책 대응: 에러 핸들링 추가
+      audio.play().catch((err) => console.log("Audio play blocked", err));
     }
   };
 
@@ -63,7 +66,8 @@ export default function TimerPage() {
     });
   }, [nowTotalSec]);
 
-  if (!mounted) return null;
+  // 하이드레이션 오류 방지: 마운트 전에는 아무것도 렌더링하지 않음
+  if (!mounted) return <div className="min-h-screen bg-[#020617]" />;
 
   const circleRadius = 180;
   const circumference = 2 * Math.PI * circleRadius;
@@ -76,6 +80,8 @@ export default function TimerPage() {
     const elapsed = nowTotalSec - start;
     const remainingRatio = Math.max(0, (total - elapsed) / total);
     strokeDashoffset = circumference * (1 - remainingRatio);
+    // 숫자가 유효하지 않을 경우 대비
+    if (isNaN(strokeDashoffset)) strokeDashoffset = circumference;
   }
 
   const theme = {
@@ -92,6 +98,14 @@ export default function TimerPage() {
       : (isDarkMode ? 'text-amber-400' : 'text-amber-600'),
   };
 
+  // 모바일 호환성을 위해 시간을 직접 포맷팅 (toLocaleTimeString 대신 사용)
+  const formatCurrentTime = () => {
+    const h = now.getHours().toString().padStart(2, '0');
+    const m = now.getMinutes().toString().padStart(2, '0');
+    const s = now.getSeconds().toString().padStart(2, '0');
+    return `${h}:${m}:${s}`;
+  };
+
   return (
     <>
       <script src="https://cdn.tailwindcss.com"></script>
@@ -105,9 +119,8 @@ export default function TimerPage() {
       <main className={`${theme.bg} ${theme.textMain} min-h-screen flex flex-col items-center p-4 py-8 transition-colors duration-500`}>
         
         <div className="w-full max-w-2xl flex justify-between items-center mb-6">
-          {/* 이전 페이지로 돌아가는 버튼 (사용자 경험상 필수!) */}
           <Link href="/" className={`px-4 py-2 ${theme.btnBg} backdrop-blur-xl border border-slate-700/20 rounded-xl transition-all flex items-center gap-2 font-bold text-sm`}>
-            <span>📊</span> <span>학습내역</span>
+            <span>학습내역</span>
           </Link>
 
           <div className="flex gap-3">
@@ -124,14 +137,14 @@ export default function TimerPage() {
           {currentPeriod ? currentPeriod.label : "자율학습"}
         </div>
 
-        <div className="relative flex items-center justify-center mb-8 scale-95 md:scale-110">
+        <div className="relative flex items-center justify-center mb-8 scale-[0.8] sm:scale-95 md:scale-110">
           <svg width="420" height="420">
             <circle cx="210" cy="210" r="180" fill="none" stroke={isDarkMode ? "#1e293b" : "#e2e8f0"} strokeWidth="16" />
             <circle cx="210" cy="210" r="180" fill="none" stroke={theme.accent} strokeWidth="16" strokeLinecap="round" className="circle-progress"
-              style={{ strokeDasharray: circumference, strokeDashoffset: currentPeriod ? strokeDashoffset : 0, filter: `drop-shadow(0 0 10px ${theme.accent}80)` }} />
+              style={{ strokeDasharray: circumference, strokeDashoffset: strokeDashoffset, filter: `drop-shadow(0 0 10px ${theme.accent}80)` }} />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <div className="timer-font text-[9rem] md:text-[12rem] leading-none">
+            <div className="timer-font text-[8rem] md:text-[12rem] leading-none">
               {currentPeriod ? (() => {
                 const diff = getSeconds(currentPeriod.end) - nowTotalSec;
                 const min = Math.floor(diff / 60);
@@ -139,8 +152,8 @@ export default function TimerPage() {
                 return `${min}:${sec.toString().padStart(2, '0')}`;
               })() : "--:--"}
             </div>
-            <div className={`text-2xl ${theme.textSub} font-bold mt-4 tracking-[0.3em]`}>
-              {now.toLocaleTimeString('ko-KR', { hour12: false })}
+            <div className={`text-xl md:text-2xl ${theme.textSub} font-bold mt-4 tracking-[0.3em]`}>
+              {formatCurrentTime()}
             </div>
           </div>
         </div>
@@ -164,9 +177,9 @@ export default function TimerPage() {
           </ul>
         </div>
 
-        <audio id="studyBell" src="/study.mp3" />
-        <audio id="breakBell" src="/break.mp3" />
-        <audio id="endBell" src="/end.mp3" />
+        <audio id="studyBell" src="/study.mp3" preload="auto" />
+        <audio id="breakBell" src="/break.mp3" preload="auto" />
+        <audio id="endBell" src="/end.mp3" preload="auto" />
       </main>
     </>
   );
