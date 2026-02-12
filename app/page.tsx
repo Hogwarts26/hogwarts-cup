@@ -958,11 +958,11 @@ const handleSaveName = async () => {
         </div>
       )}
 
-     {/* [23] 상단 헤더 및 기숙사 점수판 구역 */}
-      <div className="max-w-[1100px] mx-auto mb-8 px-4"> 
-        <div className="flex flex-col gap-y-4 mb-6">
+{/* [23] 상단 헤더 및 기숙사 점수판 구역 */}
+      <div className="max-w-[1100px] mx-auto mb-8 px-4">
+        <div className="flex flex-col gap-y-6">
           
-          {/* 1열: 버튼 그룹 (우측 정렬) */}
+          {/* 1열: 버튼 그룹 (우상단 정렬) */}
           <div className="flex gap-2 flex-wrap justify-end items-center">
             {/* [24] 음악 및 관리자 버튼들 */}
             <button 
@@ -1003,8 +1003,42 @@ const handleSaveName = async () => {
               Hogwarts School
             </h2>
           </div>
-        </div> {/* <- flex-col 닫기 */}
-      </div> {/* <- max-w-[1100px] 닫기 */}
+
+          {/* 3열: 기숙사 점수판 (houseRankings 원본 디자인 복구) */}
+          <div className="grid grid-cols-4 gap-1.5 md:gap-4">
+            {houseRankings.map((item, idx) => {
+              const config = (HOUSE_CONFIG as any)[item.house];
+              return (
+                <div 
+                  key={item.house} 
+                  onClick={() => setSelectedHouseNotice(item.house as any)} 
+                  className={`${config.bg} ${config.border} ${idx === 0 ? 'winner-sparkle ring-4 ring-yellow-400 ring-offset-2' : ''} border-b-4 p-1.5 md:p-5 rounded-xl md:rounded-[2rem] text-white shadow-xl relative cursor-pointer active:scale-95 transition-all hover:brightness-110 overflow-hidden`}
+                >
+                  {/* 배경 아이콘 */}
+                  <div className="absolute right-[-10px] bottom-[-10px] text-5xl md:text-7xl opacity-20 pointer-events-none">
+                    {config.icon}
+                  </div>
+                  
+                  <div className="relative z-10">
+                    <div className="flex justify-between items-start mb-1">
+                      <div className="text-[7px] md:text-xs font-black opacity-90 tracking-widest uppercase">
+                        {item.house}
+                      </div>
+                      <div className={`text-[8px] md:text-[10px] font-black px-1.5 md:px-2 py-0.5 rounded-full ${config.accent} text-slate-900 shadow-sm`}>
+                        {["1st", "2nd", "3rd", "4th"][idx]}
+                      </div>
+                    </div>
+                    <div className="text-lg md:text-4xl font-black italic">
+                      {(Math.round(item.finalPoint * 10) / 10).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+        </div>
+      </div>
 
       {/* [25] 학습 기록 메인 테이블 및 목표 */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
