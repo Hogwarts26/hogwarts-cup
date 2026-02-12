@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 
-// ... (SCHEDULES 생략 - 이전과 동일)
 const SCHEDULES = {
   '100': [
     { label: "1교시", start: "07:00", end: "08:40", isStudy: true },
@@ -46,14 +45,18 @@ export default function TimerPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // 아이패드용 강제 잠금 해제 함수
+  // [수정] 아이패드용 무음 잠금 해제 함수
   const unlockAudio = () => {
     ["study", "break", "end"].forEach(id => {
       const audio = document.getElementById(id) as HTMLAudioElement;
       if (audio) {
+        // 소리가 들리지 않게 음소거 상태로 잠시 재생
+        audio.muted = true;
         audio.play().then(() => {
           audio.pause();
           audio.currentTime = 0;
+          // 재생 시도가 끝났으니 다시 음소거를 해제 (그래야 나중에 종이 울림)
+          audio.muted = false;
         }).catch(() => {});
       }
     });
@@ -136,7 +139,7 @@ export default function TimerPage() {
     const playAudio = (id: string) => {
       const audio = document.getElementById(id) as HTMLAudioElement;
       if (audio) {
-        audio.volume = 0.4; //종소리 크기
+        audio.volume = 0.4;
         audio.currentTime = 0;
         audio.play().catch(() => {});
       }
@@ -182,7 +185,7 @@ export default function TimerPage() {
           <Link href="/" className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${theme.btn}`}>학습내역</Link>
           <div className="flex gap-2">
             <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${theme.btn}`}>{isDarkMode ? '🌝' : '🌞'}</button>
-            {/* 상단 스피커 버튼에도 unlock 로직 적용 */}
+            {/* [수정] 스피커 버튼 클릭 시 소리가 꺼져있을 때만 unlock 시도 */}
             <button onClick={() => isMuted ? unlockAudio() : setIsMuted(true)} className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${theme.btn}`}>{isMuted ? '🔇' : '🔊'}</button>
           </div>
         </div>
