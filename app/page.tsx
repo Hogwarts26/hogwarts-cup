@@ -720,23 +720,35 @@ const handleSaveName = async () => {
     }).sort((a, b) => b.finalPoint - a.finalPoint);
   }, [records]);
 
-  // ==========================================
-  // [14] 배경음악(BGM) 로직
-  // ==========================================
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [bgm] = useState(() => typeof Audio !== 'undefined' ? new Audio('/hedwig.mp3') : null);
+ // ==========================================
+ // [14] 배경음악(BGM) 로직
+ // ==========================================
+ const [isPlaying, setIsPlaying] = useState(false);
+ const [bgm] = useState(() => typeof Audio !== 'undefined' ? new Audio('/hedwig.mp3') : null);
 
-  const toggleMusic = () => {
-    if (!bgm) return;
-    if (isPlaying) {
-      bgm.pause();
-    } else {
-      bgm.loop = true;
-      bgm.volume = 0.4;
-      bgm.play().catch(e => console.log("음악 재생 실패:", e));
-    }
-    setIsPlaying(!isPlaying);
-  };
+ const toggleMusic = () => {
+   if (!bgm) return;
+   if (isPlaying) {
+     bgm.pause();
+   } else {
+     bgm.loop = true;
+     bgm.volume = 0.4;
+     bgm.play().catch(e => console.log("음악 재생 실패:", e));
+   }
+   setIsPlaying(!isPlaying);
+ };
+
+ // ✨ [추가할 부분]: 페이지를 떠날 때 음악을 강제로 끄는 로직
+ useEffect(() => {
+   // 이 함수는 '학습내역' 페이지가 화면에서 사라질 때 실행됩니다.
+   return () => {
+     if (bgm) {
+       bgm.pause();
+       // 다시 돌아왔을 때 재생 버튼 상태가 '재생 중'으로 보이지 않게 초기화
+       setIsPlaying(false); 
+     }
+   };
+ }, [bgm]);
 
   // ==========================================
   // [15] 비밀번호 변경 및 저장
@@ -956,7 +968,7 @@ const handleSaveName = async () => {
           </h2>
           {/* flex-wrap: 버튼들이 많아지면 세로로 꺾이지 않고 다음 줄로 넘어가게 함 */}
           <div className="flex gap-2 flex-wrap justify-end flex-1">
-            
+
             {/* [24] 음악 및 관리자 버튼들 */}
             <button 
               onClick={toggleMusic} 
