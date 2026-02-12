@@ -30,7 +30,7 @@ export default function TimerPage() {
     testTime.setHours(8, 39, 55); 
     setNow(testTime);
 
-    // 1초마다 '조작된 시간'이 흐르게 만듦
+    // 1초마다 '조작된 시간'이 흐르게 만드는 인터벌
     const interval = setInterval(() => {
       setNow(prevNow => {
         if (!prevNow) return new Date();
@@ -50,21 +50,6 @@ export default function TimerPage() {
     };
     stopAllExternalAudio();
 
-    return () => clearInterval(interval);
-  }, []);
-
-    const stopAllExternalAudio = () => {
-      const allAudios = document.querySelectorAll('audio');
-      allAudios.forEach(audio => {
-        if (!['study', 'break', 'end'].includes(audio.id)) {
-          audio.pause();
-          audio.currentTime = 0;
-        }
-      });
-    };
-    stopAllExternalAudio();
-
-    const interval = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -149,7 +134,6 @@ export default function TimerPage() {
     bg: isDarkMode ? 'bg-[#020617]' : 'bg-slate-50',
     card: isDarkMode ? 'bg-slate-900/60' : 'bg-white shadow-xl',
     textMain: isDarkMode ? 'text-white' : 'text-slate-900',
-    // ✨ 라이트 모드용 버튼 테마 추가
     btn: isDarkMode ? 'bg-slate-800/50 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-600 shadow-sm',
     accent: isAllDone ? '#94a3b8' : (current?.isStudy ? '#3b82f6' : '#f59e0b'),
     accentClass: isAllDone ? 'text-slate-400' : (current?.isStudy ? 'text-blue-500' : 'text-amber-500'),
@@ -162,7 +146,6 @@ export default function TimerPage() {
     >
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css" />
 
-      {/* 상단 버튼 섹션: 테마 적용 */}
       <div className="w-full max-w-lg flex justify-between items-center mb-10 z-10">
         <Link href="/" className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${theme.btn}`}>
           📊 학습내역
@@ -214,7 +197,6 @@ export default function TimerPage() {
         </button>
       )}
 
-      {/* ✨ 시간표 섹션: 전체 가운데 정렬 최적화 */}
       <div className={`w-full max-w-[320px] ${theme.card} rounded-[2rem] p-6 border border-white/5 transition-all`}>
         <div className="flex flex-col items-center space-y-3">
           {SCHEDULE.map((p, i) => {
