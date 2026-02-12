@@ -36,7 +36,6 @@ export default function TimerPage() {
     return h * 3600 + m * 60;
   };
 
-  // 하이드레이션 에러 원천 차단: 마운트 전에는 빈 배경만 노출
   if (!mounted || !now) {
     return <div className="min-h-screen bg-[#020617]" />;
   }
@@ -50,25 +49,46 @@ export default function TimerPage() {
   });
 
   let isGapTime = false;
+  let isAllOver = false;
+
   if (!currentPeriod) {
     const nextP = SCHEDULE.find(p => getSeconds(p.start) > nowTotalSec);
     if (nextP) {
       isGapTime = true;
       currentPeriod = { label: "쉬는시간", start: "", end: nextP.start, isStudy: false };
+    } else {
+      isAllOver = true;
     }
   }
 
   const isStudyTime = currentPeriod?.isStudy ?? false;
 
+  // [수정] 파일명과 ID를 study.mp3 기준으로 변경
   useEffect(() => {
-    if (isMuted || !currentPeriod) return;
-    if (lastPlayedRef.current !== currentPeriod.label) {
-      const audioId = currentPeriod.isStudy ? "studyBell" : "breakBell";
+    if (isMuted) return;
+
+    if (isAllOver) {
+      if (lastPlayedRef.current !== "END") {
+        const audio = document.getElementById("end") as HTMLAudioElement;
+        if (audio) audio.play().catch(() => {});
+        lastPlayedRef.current = "END";
+      }
+      return;
+    }
+
+    if (currentPeriod && lastPlayedRef.current !== currentPeriod.label) {
+      let audioId = "";
+      if (currentPeriod.label === "쉬는시간" || currentPeriod.isStudy === false) {
+        audioId = "break"; 
+      } else if (currentPeriod.isStudy) {
+        audioId = "study"; // study.mp3를 재생할 ID
+      }
+
       const audio = document.getElementById(audioId) as HTMLAudioElement;
       if (audio) audio.play().catch(() => {});
       lastPlayedRef.current = currentPeriod.label;
     }
-  }, [currentPeriod?.label, isMuted]);
+  }, [currentPeriod?.label, isMuted, isAllOver]);
 
   const circumference = 2 * Math.PI * 180;
   let offset = circumference;
@@ -85,16 +105,14 @@ export default function TimerPage() {
     bg: isDarkMode ? 'bg-[#020617]' : 'bg-slate-50',
     card: isDarkMode ? 'bg-slate-900/60' : 'bg-white',
     textMain: isDarkMode ? 'text-white' : 'text-slate-900',
-    accent: isStudyTime ? '#3b82f6' : '#f59e0b',
-    accentClass: isStudyTime ? 'text-blue-400' : 'text-amber-400',
+    accent: isAllOver ? '#94a3b8' : (isStudyTime ? '#3b82f6' : '#f59e0b'),
+    accentClass: isAllOver ? 'text-slate-400' : (isStudyTime ? 'text-blue-400' : 'text-amber-400'),
   };
 
-  // 시간을 00:00:00 형식으로 직접 변환 (toLocaleTimeString 대신 사용)
   const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
 
   return (
     <main className={`${theme.bg} ${theme.textMain} min-h-screen flex flex-col items-center p-4 py-8`}>
-      {/* 구글 폰트 주입 방식 변경: style 태그 최소화 */}
       <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@800&display=swap" rel="stylesheet" />
 
       <div className="w-full max-w-lg flex justify-between items-center mb-10 z-10">
@@ -106,7 +124,7 @@ export default function TimerPage() {
       </div>
 
       <div className={`text-4xl font-black mb-6 ${theme.accentClass}`}>
-        {currentPeriod ? currentPeriod.label : "자율학습"}
+        {isAllOver ? "일과 종료" : (currentPeriod ? currentPeriod.label : "자율학습")}
       </div>
 
       <div className="relative flex items-center justify-center mb-10 scale-90 sm:scale-100">
@@ -119,16 +137,16 @@ export default function TimerPage() {
               transformOrigin: 'center',
               transition: 'stroke-dashoffset 1s linear',
               strokeDasharray: circumference, 
-              strokeDashoffset: offset 
+              strokeDashoffset: isAllOver ? 0 : offset 
             }} 
           />
         </svg>
         <div className="absolute flex flex-col items-center">
           <div className="text-8xl leading-none font-bold" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-            {currentPeriod ? (() => {
+            {!isAllOver && currentPeriod ? (() => {
               const diff = Math.max(0, getSeconds(currentPeriod.end) - nowTotalSec);
               return `${Math.floor(diff / 60)}:${(diff % 60).toString().padStart(2, '0')}`;
-            })() : "--:--"}
+            })() : "DONE"}
           </div>
           <div className="text-lg font-bold mt-4 opacity-50 tracking-widest font-mono">
             {timeString}
@@ -137,7 +155,7 @@ export default function TimerPage() {
       </div>
 
       {isMuted && (
-        <button onClick={() => setIsMuted(false)} className="mb-8 px-6 py-3 bg-blue-600 text-white rounded-full font-bold shadow-lg">
+        <button onClick={() => setIsMuted(false)} className="mb-8 px-6 py-3 bg-blue-600 text-white rounded-full font-bold shadow-lg animate-pulse">
           🔊 종소리 마법 활성화
         </button>
       )}
@@ -145,7 +163,7 @@ export default function TimerPage() {
       <div className={`w-full max-w-sm ${theme.card} rounded-[2rem] p-6 border border-white/5 shadow-2xl`}>
         <div className="space-y-4">
           {SCHEDULE.map((p, i) => {
-            const isCurrent = currentPeriod?.label === p.label;
+            const isCurrent = !isAllOver && currentPeriod?.label === p.label;
             const isPast = nowTotalSec >= getSeconds(p.end);
             return (
               <div key={i} className={`flex justify-between items-center ${isCurrent ? theme.accentClass + ' font-bold' : isPast ? 'opacity-20 line-through' : 'opacity-60'}`}>
@@ -157,8 +175,10 @@ export default function TimerPage() {
         </div>
       </div>
 
-      <audio id="studyBell" src="/study.mp3" preload="auto" />
-      <audio id="breakBell" src="/break.mp3" preload="auto" />
+      {/* [최종] ID와 파일명 매칭 완료 */}
+      <audio id="study" src="/study.mp3" preload="auto" />
+      <audio id="break" src="/break.mp3" preload="auto" />
+      <audio id="end" src="/end.mp3" preload="auto" />
     </main>
   );
 }
