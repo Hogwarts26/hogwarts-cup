@@ -24,21 +24,13 @@ export default function TimerPage() {
 
   useEffect(() => {
     setMounted(true);
+    setNow(new Date()); // ✨ 실제 현재 시간으로 복구
 
-    // 🕒 테스트 시간 설정 (08:39:55) -> 5초 뒤에 1교시 종료 종소리 테스트
-    const testTime = new Date();
-    testTime.setHours(8, 39, 55); 
-    setNow(testTime);
-
-    // 1초마다 '조작된 시간'이 흐르게 만드는 인터벌
     const interval = setInterval(() => {
-      setNow(prevNow => {
-        if (!prevNow) return new Date();
-        return new Date(prevNow.getTime() + 1000);
-      });
+      setNow(new Date()); // ✨ 매초 실제 시간 업데이트
     }, 1000);
 
-    // 기존 오디오 정지 로직
+    // 외부 오디오(학습내역 BGM 등) 정지 로직
     const stopAllExternalAudio = () => {
       const allAudios = document.querySelectorAll('audio');
       allAudios.forEach(audio => {
@@ -96,7 +88,7 @@ export default function TimerPage() {
       const audio = document.getElementById(id) as HTMLAudioElement;
       if (audio) {
         audio.currentTime = 0;
-        audio.volume = 0.5;
+        audio.volume = 0.4; // ✨ 볼륨을 40%로 설정
         audio.play().catch(() => {});
       }
     };
@@ -149,7 +141,7 @@ export default function TimerPage() {
 
       <div className="w-full max-w-lg flex justify-between items-center mb-10 z-10">
         <Link href="/" className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${theme.btn}`}>
-          📊 학습내역
+          학습내역
         </Link>
         <div className="flex gap-2">
           <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 rounded-xl border flex items-center justify-center text-lg transition-all ${theme.btn}`}>
