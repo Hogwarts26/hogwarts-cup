@@ -70,8 +70,8 @@ export default function TimerPage() {
       const isStudyTime = currentMin < 50;
       
       const current = isStudyTime 
-        ? { label: `${currentHour}시 학습`, start: `${currentHour.toString().padStart(2, '0')}:00`, end: `${currentHour.toString().padStart(2, '0')}:50`, isStudy: true }
-        : { label: `쉬는시간`, start: `${currentHour.toString().padStart(2, '0')}:50`, end: `${(currentHour + 1).toString().padStart(2, '0')}:00`, isStudy: false };
+        ? { label: `${currentHour}시 Study`, start: `${currentHour.toString().padStart(2, '0')}:00`, end: `${currentHour.toString().padStart(2, '0')}:50`, isStudy: true }
+        : { label: `Break`, start: `${currentHour.toString().padStart(2, '0')}:50`, end: `${(currentHour + 1).toString().padStart(2, '0')}:00`, isStudy: false };
       
       return { current, isGap: false, isAllDone: false, nowTotalSec, gapStart: getSeconds(current.start) };
     }
@@ -178,7 +178,7 @@ export default function TimerPage() {
 
       <div className="w-full max-w-lg flex flex-col gap-4 mb-10 z-10">
         <div className="flex justify-between items-center">
-          <Link href="/" className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${theme.btn}`}>학습내역</Link>
+          <Link href="/" className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${theme.btn}`}>주간학습기록</Link>
           <div className="flex gap-2">
             <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${theme.btn}`}>{isDarkMode ? '🌝' : '🌞'}</button>
             <button onClick={() => setIsMuted(!isMuted)} className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${theme.btn}`}>{isMuted ? '🔇' : '🔊'}</button>
@@ -197,13 +197,13 @@ export default function TimerPage() {
               }}
               className={`flex-1 py-2 rounded-xl text-[10px] font-black transition-all ${scheduleMode === m ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500'}`}
             >
-              {m === '100' ? '기본(100)' : m === '80' ? '80분(08시)' : '50분(정각)'}
+              {m === '100' ? '100/20' : m === '80' ? '80/10' : '50/10'}
             </button>
           ))}
         </div>
       </div>
 
-      <div className={`text-4xl font-black mb-6 ${theme.accentClass}`}>{isAllDone ? "일과 종료" : (current ? current.label : "자율학습")}</div>
+      <div className={`text-4xl font-black mb-6 ${theme.accentClass}`}>{isAllDone ? "수고하셨습니다🪄✨🌟" : (current ? current.label : "자율학습")}</div>
 
       <div className="relative flex items-center justify-center mb-8 scale-90 sm:scale-100">
         <svg width="400" height="400" viewBox="0 0 400 400">
@@ -230,7 +230,7 @@ export default function TimerPage() {
       <div className={`w-full max-w-[320px] ${theme.card} rounded-[2rem] p-6 border border-white/5 transition-all overflow-y-auto max-h-[350px]`}>
         <div className="flex flex-col items-center space-y-3">
           {scheduleMode === '50' ? (
-            <div className="text-center opacity-60 font-bold py-4">매 시 정각 ~ 50분 학습<br/>매 시 50분 ~ 정각 휴식</div>
+            <div className="text-center opacity-60 font-bold py-4">50분 공부 10분 쉬는시간이 반복됩니다.</div>
           ) : (
             SCHEDULES[scheduleMode as '100' | '80'].map((p, i) => {
               const isItemCurrent = !isAllDone && current?.label === p.label;
