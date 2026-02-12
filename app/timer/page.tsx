@@ -96,6 +96,7 @@ export default function TimerPage() {
       const audio = document.getElementById(id) as HTMLAudioElement;
       if (audio) {
         audio.currentTime = 0;
+        audio.volume = 0.5;
         audio.play().catch(() => {});
       }
     };
