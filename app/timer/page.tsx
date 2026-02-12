@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 
+// ... (SCHEDULES 생략 - 이전과 동일)
 const SCHEDULES = {
   '100': [
     { label: "1교시", start: "07:00", end: "08:40", isStudy: true },
@@ -44,6 +45,20 @@ export default function TimerPage() {
     const interval = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // 아이패드용 강제 잠금 해제 함수
+  const unlockAudio = () => {
+    ["study", "break", "end"].forEach(id => {
+      const audio = document.getElementById(id) as HTMLAudioElement;
+      if (audio) {
+        audio.play().then(() => {
+          audio.pause();
+          audio.currentTime = 0;
+        }).catch(() => {});
+      }
+    });
+    setIsMuted(false);
+  };
 
   useEffect(() => {
     if (isMuted) {
@@ -99,12 +114,10 @@ export default function TimerPage() {
     return { current, isGap, isAllDone, nowTotalSec, gapStart };
   }, [now, scheduleMode]);
 
-  // 벨소리 재생 핵심 로직
   useEffect(() => {
     if (!mounted || !timerData || !now) return;
     const { current, isAllDone } = timerData;
     
-    // 현재 시간(Hour)을 상태에 포함시켜 매 시간 정각/50분마다 새로운 변화로 감지하게 함
     const currentHour = now.getHours();
     const currentState = isAllDone ? "DONE" : `${current?.isStudy ? "STUDY" : "BREAK"}_${currentHour}`;
 
@@ -123,8 +136,7 @@ export default function TimerPage() {
     const playAudio = (id: string) => {
       const audio = document.getElementById(id) as HTMLAudioElement;
       if (audio) {
-        audio.volume = 0.4;
-        audio.loop = false;
+        audio.volume = 0.5; // 아이패드용으로 볼륨을 좀 더 키움
         audio.currentTime = 0;
         audio.play().catch(() => {});
       }
@@ -170,7 +182,8 @@ export default function TimerPage() {
           <Link href="/" className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${theme.btn}`}>학습내역</Link>
           <div className="flex gap-2">
             <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${theme.btn}`}>{isDarkMode ? '🌝' : '🌞'}</button>
-            <button onClick={() => setIsMuted(!isMuted)} className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${theme.btn}`}>{isMuted ? '🔇' : '🔊'}</button>
+            {/* 상단 스피커 버튼에도 unlock 로직 적용 */}
+            <button onClick={() => isMuted ? unlockAudio() : setIsMuted(true)} className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${theme.btn}`}>{isMuted ? '🔇' : '🔊'}</button>
           </div>
         </div>
 
@@ -209,7 +222,7 @@ export default function TimerPage() {
       </div>
 
       {isMuted && (
-        <button onClick={() => setIsMuted(false)} className="mb-8 px-6 py-3 bg-blue-600 text-white rounded-full font-bold shadow-lg animate-pulse">
+        <button onClick={unlockAudio} className="mb-8 px-6 py-3 bg-blue-600 text-white rounded-full font-bold shadow-lg animate-pulse">
           🔊 종소리 마법 활성화
         </button>
       )}
@@ -217,7 +230,7 @@ export default function TimerPage() {
       <div className={`w-full max-w-[320px] ${theme.card} rounded-[2rem] p-6 border border-white/5 transition-all overflow-y-auto max-h-[350px]`}>
         <div className="flex flex-col items-center space-y-3">
           {scheduleMode === '50' ? (
-            <div className="text-center opacity-60 font-bold py-4">매 시 정각 50분 공부 / 10분 휴식<br/>24시간 무한 반복됩니다.</div>
+            <div className="text-center opacity-60 font-bold py-4">정각부터 50분 공부, <br/> 10분 휴식이 반복됩니다.</div>
           ) : (
             SCHEDULES[scheduleMode as '100' | '80'].map((p, i) => {
               const isItemCurrent = !isAllDone && current?.label === p.label;
