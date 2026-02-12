@@ -16,7 +16,6 @@ const SCHEDULE = [
 ];
 
 export default function TimerPage() {
-  // 클라이언트 마운트 여부만 체크
   const [mounted, setMounted] = useState(false);
   const [now, setNow] = useState<Date | null>(null);
   const [isMuted, setIsMuted] = useState(true);
@@ -25,7 +24,6 @@ export default function TimerPage() {
 
   useEffect(() => {
     setMounted(true);
-    setNow(new Date());
     const interval = setInterval(() => {
       setNow(new Date());
     }, 1000);
@@ -38,14 +36,13 @@ export default function TimerPage() {
     return h * 3600 + m * 60;
   };
 
-  // [중요] 마운트 되기 전에는 에러 방지를 위해 빈 화면(또는 스켈레톤) 반환
+  // 하이드레이션 에러 원천 차단: 마운트 전에는 빈 배경만 노출
   if (!mounted || !now) {
     return <div className="min-h-screen bg-[#020617]" />;
   }
 
   const nowTotalSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
 
-  // 현재 시간 상태 계산
   let currentPeriod = SCHEDULE.find(p => {
     const s = getSeconds(p.start);
     const e = getSeconds(p.end);
@@ -63,7 +60,6 @@ export default function TimerPage() {
 
   const isStudyTime = currentPeriod?.isStudy ?? false;
 
-  // 종소리 로직
   useEffect(() => {
     if (isMuted || !currentPeriod) return;
     if (lastPlayedRef.current !== currentPeriod.label) {
@@ -74,7 +70,6 @@ export default function TimerPage() {
     }
   }, [currentPeriod?.label, isMuted]);
 
-  // 게이지 오프셋 계산
   const circumference = 2 * Math.PI * 180;
   let offset = circumference;
   if (currentPeriod) {
@@ -94,15 +89,14 @@ export default function TimerPage() {
     accentClass: isStudyTime ? 'text-blue-400' : 'text-amber-400',
   };
 
+  // 시간을 00:00:00 형식으로 직접 변환 (toLocaleTimeString 대신 사용)
+  const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+
   return (
     <main className={`${theme.bg} ${theme.textMain} min-h-screen flex flex-col items-center p-4 py-8`}>
-      <style dangerouslySetInnerHTML={{ __html: `
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@800&display=swap');
-        .timer-font { font-family: 'JetBrains+Mono', monospace; }
-        .circle-progress { transform: rotate(-90deg) scaleY(-1); transform-origin: center; transition: stroke-dashoffset 1s linear; }
-      `}} />
+      {/* 구글 폰트 주입 방식 변경: style 태그 최소화 */}
+      <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@800&display=swap" rel="stylesheet" />
 
-      {/* 상단바 */}
       <div className="w-full max-w-lg flex justify-between items-center mb-10 z-10">
         <Link href="/" className="px-4 py-2 bg-slate-800/50 rounded-xl text-xs font-bold border border-white/10">📊 학습내역</Link>
         <div className="flex gap-2">
@@ -115,36 +109,39 @@ export default function TimerPage() {
         {currentPeriod ? currentPeriod.label : "자율학습"}
       </div>
 
-      {/* 타이머 구역 */}
       <div className="relative flex items-center justify-center mb-10 scale-90 sm:scale-100">
         <svg width="400" height="400" viewBox="0 0 400 400">
           <circle cx="200" cy="200" r="180" fill="none" stroke={isDarkMode ? "#1e293b" : "#e2e8f0"} strokeWidth="12" />
           <circle 
-            cx="200" cy="200" r="180" fill="none" stroke={theme.accent} strokeWidth="12" strokeLinecap="round" className="circle-progress"
-            style={{ strokeDasharray: circumference, strokeDashoffset: offset }} 
+            cx="200" cy="200" r="180" fill="none" stroke={theme.accent} strokeWidth="12" strokeLinecap="round" 
+            style={{ 
+              transform: 'rotate(-90deg) scaleY(-1)', 
+              transformOrigin: 'center',
+              transition: 'stroke-dashoffset 1s linear',
+              strokeDasharray: circumference, 
+              strokeDashoffset: offset 
+            }} 
           />
         </svg>
         <div className="absolute flex flex-col items-center">
-          <div className="timer-font text-8xl leading-none">
+          <div className="text-8xl leading-none font-bold" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
             {currentPeriod ? (() => {
               const diff = Math.max(0, getSeconds(currentPeriod.end) - nowTotalSec);
               return `${Math.floor(diff / 60)}:${(diff % 60).toString().padStart(2, '0')}`;
             })() : "--:--"}
           </div>
-          <div className="text-lg font-bold mt-4 opacity-50 tracking-widest">
-            {now.toLocaleTimeString('ko-KR', { hour12: false })}
+          <div className="text-lg font-bold mt-4 opacity-50 tracking-widest font-mono">
+            {timeString}
           </div>
         </div>
       </div>
 
-      {/* 사운드 활성화 버튼 (모바일 필수) */}
       {isMuted && (
-        <button onClick={() => setIsMuted(false)} className="mb-8 px-6 py-3 bg-blue-600 text-white rounded-full font-bold animate-bounce shadow-lg">
-          🔊 종소리 마법 활성화 (클릭)
+        <button onClick={() => setIsMuted(false)} className="mb-8 px-6 py-3 bg-blue-600 text-white rounded-full font-bold shadow-lg">
+          🔊 종소리 마법 활성화
         </button>
       )}
 
-      {/* 시간표 리스트 */}
       <div className={`w-full max-w-sm ${theme.card} rounded-[2rem] p-6 border border-white/5 shadow-2xl`}>
         <div className="space-y-4">
           {SCHEDULE.map((p, i) => {
