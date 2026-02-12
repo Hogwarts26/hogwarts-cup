@@ -230,7 +230,7 @@ export default function TimerPage() {
       <div className={`w-full max-w-[320px] ${theme.card} rounded-[2rem] p-6 border border-white/5 transition-all overflow-y-auto max-h-[350px]`}>
         <div className="flex flex-col items-center space-y-3">
           {scheduleMode === '50' ? (
-            <div className="text-center opacity-60 font-bold py-4">정각부터 50분 공부, 10분 휴식이 반복됩니다.</div>
+            <div className="text-center opacity-60 font-bold py-4">정각부터 50분 공부, <br/> 10분 휴식이 반복됩니다.</div>
           ) : (
             SCHEDULES[scheduleMode as '100' | '80'].map((p, i) => {
               const isItemCurrent = !isAllDone && current?.label === p.label;
