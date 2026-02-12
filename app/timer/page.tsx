@@ -47,51 +47,68 @@ export default function TimerPage() {
 
     let isGap = false;
     let isAllDone = false;
+    let gapStart = 0;
 
     if (!current) {
-      const nextP = SCHEDULE.find(p => getSeconds(p.start) > nowTotalSec);
-      if (nextP) {
+      // 다음 교시 찾기
+      const nextIdx = SCHEDULE.findIndex(p => getSeconds(p.start) > nowTotalSec);
+      if (nextIdx !== -1) {
         isGap = true;
+        const nextP = SCHEDULE[nextIdx];
+        // 쉬는시간의 시작점은 '이전 교시의 끝' 혹은 '오늘의 시작'
+        gapStart = nextIdx > 0 ? getSeconds(SCHEDULE[nextIdx - 1].end) : 0;
         current = { label: "쉬는시간", start: "", end: nextP.start, isStudy: false };
       } else {
         isAllDone = true;
       }
     }
 
-    return { current, isGap, isAllDone, nowTotalSec };
+    return { current, isGap, isAllDone, nowTotalSec, gapStart };
   }, [now]);
 
+  // 종소리 재생 (current.label이 바뀔 때 실행)
   useEffect(() => {
     if (isMuted || !timerData) return;
     const { current, isAllDone } = timerData;
 
+    const playAudio = (id: string) => {
+      const audio = document.getElementById(id) as HTMLAudioElement;
+      if (audio) {
+        audio.currentTime = 0; // 처음부터 재생
+        audio.play().catch(e => console.log("Audio play failed:", e));
+      }
+    };
+
     if (isAllDone) {
       if (lastPlayedRef.current !== "END") {
-        const audio = document.getElementById("end") as HTMLAudioElement;
-        audio?.play().catch(() => {});
+        playAudio("end");
         lastPlayedRef.current = "END";
       }
       return;
     }
 
     if (current && lastPlayedRef.current !== current.label) {
-      const audioId = (current.label === "쉬는시간" || !current.isStudy) ? "break" : "study";
-      const audio = document.getElementById(audioId) as HTMLAudioElement;
-      audio?.play().catch(() => {});
+      // 공부 시작인지 쉬는시간/식사시간 시작인지 판별
+      const isStudyStart = current.isStudy === true && current.label !== "쉬는시간";
+      playAudio(isStudyStart ? "study" : "break");
       lastPlayedRef.current = current.label;
     }
-  }, [timerData, isMuted]);
+  }, [timerData?.current?.label, timerData?.isAllDone, isMuted]);
 
   if (!mounted || !now || !timerData) return <div className="min-h-screen bg-[#020617]" />;
 
-  const { current, isGap, isAllDone, nowTotalSec } = timerData;
+  const { current, isGap, isAllDone, nowTotalSec, gapStart } = timerData;
   const circumference = 2 * Math.PI * 180;
   let offset = circumference;
+
   if (current) {
     const endSec = getSeconds(current.end);
-    const startSec = isGap ? nowTotalSec - 1 : getSeconds(current.start);
+    // [핵심 수정] 쉬는시간일 때는 이전 교시 종료 시점을 시작점으로 고정하여 게이지 계산
+    const startSec = isGap ? gapStart : getSeconds(current.start);
     const total = endSec - startSec;
     const remaining = Math.max(0, endSec - nowTotalSec);
+    
+    // total이 0이 되는 경우 방지
     const ratio = total > 0 ? Math.min(1, remaining / total) : 0;
     offset = circumference * (1 - ratio);
   }
@@ -105,8 +122,11 @@ export default function TimerPage() {
   };
 
   return (
-    <main className={`${theme.bg} ${theme.textMain} min-h-screen flex flex-col items-center p-4 py-8 transition-colors duration-500`}>
-      <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@800&display=swap" rel="stylesheet" />
+    <main 
+      className={`${theme.bg} ${theme.textMain} min-h-screen flex flex-col items-center p-4 py-8 transition-colors duration-500`}
+      style={{ fontFamily: "'Pretendard Variable', Pretendard, -apple-system, sans-serif" }}
+    >
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css" />
 
       <div className="w-full max-w-lg flex justify-between items-center mb-10 z-10">
         <Link href="/" className="px-4 py-2 bg-slate-800/50 rounded-xl text-xs font-bold border border-white/10">📊 학습내역</Link>
@@ -116,7 +136,7 @@ export default function TimerPage() {
         </div>
       </div>
 
-      <div className={`text-4xl font-black mb-6 ${theme.accentClass}`}>
+      <div className={`text-4xl font-black mb-6 ${theme.accentClass} tracking-tight`}>
         {isAllDone ? "일과 종료" : (current ? current.label : "자율학습")}
       </div>
 
@@ -135,7 +155,7 @@ export default function TimerPage() {
           />
         </svg>
         <div className="absolute flex flex-col items-center">
-          <div className="text-8xl leading-none font-bold font-mono" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+          <div className="text-8xl leading-none font-black tracking-tighter" style={{ fontVariantNumeric: "tabular-nums" }}>
             {!isAllDone && current ? (() => {
               const diff = Math.max(0, getSeconds(current.end) - nowTotalSec);
               return `${Math.floor(diff / 60)}:${(diff % 60).toString().padStart(2, '0')}`;
@@ -160,8 +180,8 @@ export default function TimerPage() {
             const isItemPast = nowTotalSec >= getSeconds(p.end);
             return (
               <div key={i} className={`flex justify-between items-center ${isItemCurrent ? theme.accentClass + ' font-bold' : isItemPast ? 'opacity-20 line-through' : 'opacity-60'}`}>
-                <span className="text-base">{p.label}</span>
-                <span className="text-sm font-mono">{p.start} - {p.end}</span>
+                <span className="text-base font-semibold">{p.label}</span>
+                <span className="text-sm font-medium" style={{ fontVariantNumeric: "tabular-nums" }}>{p.start} - {p.end}</span>
               </div>
             );
           })}
