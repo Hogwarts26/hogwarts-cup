@@ -45,7 +45,6 @@ export default function TimerPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // 아이패드용 강제 잠금 해제 함수 (무음 버전)
   const unlockAudio = () => {
     ["study", "break", "end"].forEach(id => {
       const audio = document.getElementById(id) as HTMLAudioElement;
@@ -55,9 +54,7 @@ export default function TimerPage() {
           audio.pause();
           audio.currentTime = 0;
           audio.muted = false; 
-        }).catch(() => {
-          audio.muted = false;
-        });
+        }).catch(() => { audio.muted = false; });
       }
     });
     setIsMuted(false);
@@ -84,16 +81,20 @@ export default function TimerPage() {
       const currentHour = now.getHours();
       const currentMin = now.getMinutes();
       const isStudyTime = currentMin < 50;
-      
       const current = isStudyTime 
         ? { label: `${currentHour}교시 Study`, start: `${currentHour.toString().padStart(2, '0')}:00`, end: `${currentHour.toString().padStart(2, '0')}:50`, isStudy: true }
         : { label: `${currentHour}교시 Break`, start: `${currentHour.toString().padStart(2, '0')}:50`, end: `${(currentHour + 1).toString().padStart(2, '0')}:00`, isStudy: false };
-      
       return { current, isGap: false, isAllDone: false, nowTotalSec, gapStart: getSeconds(current.start), lastScheduleEndSec: 0 };
     }
 
     const activeList = SCHEDULES[scheduleMode as '100' | '80'];
-    const lastScheduleEndSec = getSeconds(activeList[activeList.length - 1].end);
+    const firstStartSec = getSeconds(activeList[0].start);
+    const lastEndSec = getSeconds(activeList[activeList.length - 1].end);
+
+    // [중요 수정] 첫 교시 시작 전이면 무조건 자율학습 상태(FREE)로 반환
+    if (nowTotalSec < firstStartSec) {
+      return { current: null, isGap: false, isAllDone: true, nowTotalSec, gapStart: 0, lastScheduleEndSec: lastEndSec, isBeforeStart: true };
+    }
 
     let current = activeList.find(p => {
       const s = getSeconds(p.start);
@@ -109,25 +110,26 @@ export default function TimerPage() {
       const nextIdx = activeList.findIndex(p => getSeconds(p.start) > nowTotalSec);
       if (nextIdx !== -1) {
         isGap = true;
-        const nextP = activeList[nextIdx];
         gapStart = nextIdx > 0 ? getSeconds(activeList[nextIdx - 1].end) : 0;
-        current = { label: "Break", start: "", end: nextP.start, isStudy: false };
+        current = { label: "Break", start: "", end: activeList[nextIdx].start, isStudy: false };
       } else {
         isAllDone = true;
       }
     }
-    return { current, isGap, isAllDone, nowTotalSec, gapStart, lastScheduleEndSec };
+    return { current, isGap, isAllDone, nowTotalSec, gapStart, lastScheduleEndSec: lastEndSec, isBeforeStart: false };
   }, [now, scheduleMode]);
 
   useEffect(() => {
     if (!mounted || !timerData || !now) return;
-    const { current, isAllDone } = timerData;
+    const { current, isAllDone, isBeforeStart } = (timerData as any);
     
-    // [핵심 수정] 시간(Hour) 대신 교시 이름(label)을 기준으로 상태를 체크합니다.
-    // 100분 동안 교시 이름이 바뀌지 않으면 정각이 되어도 울리지 않습니다.
-    const currentState = isAllDone 
-      ? "DONE" 
-      : `${current?.label}_${current?.isStudy ? "STUDY" : "BREAK"}`;
+    // 첫 교시 전이면 소리 재생 상태 체크 안 함
+    if (isBeforeStart) {
+      lastPlayedRef.current = "BEFORE_START";
+      return;
+    }
+
+    const currentState = isAllDone ? "DONE" : `${current?.label}_${current?.isStudy ? "STUDY" : "BREAK"}`;
 
     if (lastPlayedRef.current === "" || lastPlayedRef.current === currentState || isMuted) {
       lastPlayedRef.current = currentState;
@@ -152,26 +154,25 @@ export default function TimerPage() {
 
   if (!mounted || !now || !timerData) return <div className="min-h-screen bg-[#020617]" />;
 
-  const { current, isGap, isAllDone, nowTotalSec, gapStart, lastScheduleEndSec } = timerData;
+  const { current, isGap, isAllDone, nowTotalSec, gapStart, lastScheduleEndSec, isBeforeStart } = (timerData as any);
 
   const displayLabel = (() => {
-    if (isAllDone && scheduleMode !== '50') {
-      const secondsSinceEnd = nowTotalSec - lastScheduleEndSec;
-      return secondsSinceEnd < 300 ? "수고하셨습니다.🪄✨" : "자율학습";
+    if (scheduleMode === '50') return current?.label || "자율학습";
+    if (isBeforeStart) return "자율학습"; // 8시 전(80분모드)이면 자율학습
+    if (isAllDone) {
+      return (nowTotalSec - lastScheduleEndSec < 300) ? "수고하셨습니다.🪄✨" : "자율학습";
     }
     return current ? current.label : "자율학습";
   })();
 
   const circumference = 2 * Math.PI * 180;
   let offset = circumference;
-
-  if (current) {
+  if (current && !isBeforeStart) {
     const endSec = getSeconds(current.end);
     const startSec = isGap ? gapStart : getSeconds(current.start);
     const total = endSec - startSec;
     const remaining = Math.max(0, endSec - nowTotalSec);
-    const ratio = total > 0 ? Math.min(1, remaining / total) : 0;
-    offset = circumference * (1 - ratio);
+    offset = circumference * (1 - (total > 0 ? Math.min(1, remaining / total) : 0));
   }
 
   const theme = {
@@ -179,14 +180,13 @@ export default function TimerPage() {
     card: isDarkMode ? 'bg-slate-900/60' : 'bg-white shadow-xl',
     textMain: isDarkMode ? 'text-white' : 'text-slate-900',
     btn: isDarkMode ? 'bg-slate-800/50 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-600 shadow-sm',
-    accent: isAllDone ? '#3b82f6' : (current?.isStudy ? '#3b82f6' : '#f59e0b'),
-    accentClass: isAllDone ? 'text-blue-500' : (current?.isStudy ? 'text-blue-500' : 'text-amber-500'),
+    accent: (isAllDone || isBeforeStart) ? '#3b82f6' : (current?.isStudy ? '#3b82f6' : '#f59e0b'),
+    accentClass: (isAllDone || isBeforeStart) ? 'text-blue-500' : (current?.isStudy ? 'text-blue-500' : 'text-amber-500'),
   };
 
   return (
     <main className={`${theme.bg} ${theme.textMain} min-h-screen flex flex-col items-center p-4 py-8 transition-colors duration-500`} style={{ fontFamily: "'Pretendard Variable', sans-serif" }}>
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css" />
-
       <div className="w-full max-w-lg flex flex-col gap-4 mb-10 z-10">
         <div className="flex justify-between items-center">
           <Link href="/" className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${theme.btn}`}>학습내역</Link>
@@ -195,17 +195,9 @@ export default function TimerPage() {
             <button onClick={() => isMuted ? unlockAudio() : setIsMuted(true)} className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${theme.btn}`}>{isMuted ? '🔇' : '🔊'}</button>
           </div>
         </div>
-
         <div className={`flex p-1 rounded-2xl border ${isDarkMode ? 'bg-slate-900/40 border-white/5' : 'bg-slate-200/50 border-slate-300'}`}>
           {(['100', '80', '50'] as const).map((m) => (
-            <button
-              key={m}
-              onClick={() => {
-                setScheduleMode(m);
-                lastPlayedRef.current = ""; 
-              }}
-              className={`flex-1 py-2 rounded-xl text-[10px] font-black transition-all ${scheduleMode === m ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500'}`}
-            >
+            <button key={m} onClick={() => { setScheduleMode(m); lastPlayedRef.current = ""; }} className={`flex-1 py-2 rounded-xl text-[10px] font-black transition-all ${scheduleMode === m ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500'}`}>
               {m === '100' ? '100/20' : m === '80' ? '80/10' : '50/10'}
             </button>
           ))}
@@ -217,23 +209,11 @@ export default function TimerPage() {
       <div className="relative flex items-center justify-center mb-8 scale-90 sm:scale-100">
         <svg width="400" height="400" viewBox="0 0 400 400">
           <circle cx="200" cy="200" r="180" fill="none" stroke={isDarkMode ? "#1e293b" : "#e2e8f0"} strokeWidth="12" />
-          <circle 
-            cx="200" cy="200" r="180" fill="none" 
-            stroke={theme.accent} 
-            strokeWidth="12" 
-            strokeLinecap="round" 
-            style={{ 
-              transform: 'rotate(-90deg) scaleY(-1)', 
-              transformOrigin: 'center', 
-              transition: 'stroke-dashoffset 1s linear', 
-              strokeDasharray: circumference, 
-              strokeDashoffset: isAllDone ? 0 : offset 
-            }} 
-          />
+          <circle cx="200" cy="200" r="180" fill="none" stroke={theme.accent} strokeWidth="12" strokeLinecap="round" style={{ transform: 'rotate(-90deg) scaleY(-1)', transformOrigin: 'center', transition: 'stroke-dashoffset 1s linear', strokeDasharray: circumference, strokeDashoffset: (isAllDone || isBeforeStart) ? 0 : offset }} />
         </svg>
         <div className="absolute flex flex-col items-center">
           <div className="text-8xl leading-none font-black tracking-tighter" style={{ fontVariantNumeric: "tabular-nums" }}>
-            {!isAllDone && current ? (() => {
+            {(!isAllDone && !isBeforeStart && current) ? (() => {
               const diff = Math.max(0, getSeconds(current.end) - nowTotalSec);
               return `${Math.floor(diff / 60)}:${(diff % 60).toString().padStart(2, '0')}`;
             })() : "FREE"}
@@ -254,7 +234,7 @@ export default function TimerPage() {
             <div className="text-center opacity-60 font-bold py-4">정각부터 50분 공부, <br/> 10분 휴식이 반복됩니다.</div>
           ) : (
             SCHEDULES[scheduleMode as '100' | '80'].map((p, i) => {
-              const isItemCurrent = !isAllDone && current?.label === p.label;
+              const isItemCurrent = !isAllDone && !isBeforeStart && current?.label === p.label;
               const isItemPast = nowTotalSec >= getSeconds(p.end);
               return (
                 <div key={i} className={`flex items-center justify-center w-full gap-4 ${isItemCurrent ? theme.accentClass + ' font-bold' : isItemPast ? 'opacity-20 line-through' : 'opacity-60'}`}>
