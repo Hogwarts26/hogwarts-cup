@@ -77,31 +77,30 @@ export default function TimerPage() {
     if (!now) return null;
     const nowTotalSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
 
+    // 50/10 모드: 사용자님 요청대로 무의미한 교시 숫자를 빼고 깔끔하게 라벨링
     if (scheduleMode === '50') {
-      const currentHour = now.getHours();
       const currentMin = now.getMinutes();
       const isStudyTime = currentMin < 50;
       const current = isStudyTime 
-        ? { label: `${currentHour}교시 Study`, start: `${currentHour.toString().padStart(2, '0')}:00`, end: `${currentHour.toString().padStart(2, '0')}:50`, isStudy: true }
-        : { label: `${currentHour}교시 Break`, start: `${currentHour.toString().padStart(2, '0')}:50`, end: `${(currentHour + 1).toString().padStart(2, '0')}:00`, isStudy: false };
-      return { current, isGap: false, isAllDone: false, nowTotalSec, gapStart: getSeconds(current.start), lastScheduleEndSec: 0 };
+        ? { label: "공부 시간", isStudy: true }
+        : { label: "쉬는 시간", isStudy: false };
+      
+      const currentHourStartSec = now.getHours() * 3600;
+      const startSec = isStudyTime ? currentHourStartSec : currentHourStartSec + 3000;
+      const endSec = isStudyTime ? currentHourStartSec + 3000 : currentHourStartSec + 3600;
+
+      return { current, isGap: false, isAllDone: false, nowTotalSec, gapStart: startSec, customEndSec: endSec, isBeforeStart: false };
     }
 
     const activeList = SCHEDULES[scheduleMode as '100' | '80'];
     const firstStartSec = getSeconds(activeList[0].start);
     const lastEndSec = getSeconds(activeList[activeList.length - 1].end);
 
-    // [중요 수정] 첫 교시 시작 전이면 무조건 자율학습 상태(FREE)로 반환
     if (nowTotalSec < firstStartSec) {
       return { current: null, isGap: false, isAllDone: true, nowTotalSec, gapStart: 0, lastScheduleEndSec: lastEndSec, isBeforeStart: true };
     }
 
-    let current = activeList.find(p => {
-      const s = getSeconds(p.start);
-      const e = getSeconds(p.end);
-      return nowTotalSec >= s && nowTotalSec < e;
-    });
-
+    let current = activeList.find(p => nowTotalSec >= getSeconds(p.start) && nowTotalSec < getSeconds(p.end));
     let isGap = false;
     let isAllDone = false;
     let gapStart = 0;
@@ -123,13 +122,12 @@ export default function TimerPage() {
     if (!mounted || !timerData || !now) return;
     const { current, isAllDone, isBeforeStart } = (timerData as any);
     
-    // 첫 교시 전이면 소리 재생 상태 체크 안 함
-    if (isBeforeStart) {
+    if (isBeforeStart && scheduleMode !== '50') {
       lastPlayedRef.current = "BEFORE_START";
       return;
     }
 
-    const currentState = isAllDone ? "DONE" : `${current?.label}_${current?.isStudy ? "STUDY" : "BREAK"}`;
+    const currentState = isAllDone ? "DONE" : `${current?.label}_${current?.isStudy}`;
 
     if (lastPlayedRef.current === "" || lastPlayedRef.current === currentState || isMuted) {
       lastPlayedRef.current = currentState;
@@ -150,15 +148,15 @@ export default function TimerPage() {
     else playAudio("break");
 
     lastPlayedRef.current = currentState;
-  }, [timerData, isMuted, mounted, now]);
+  }, [timerData, isMuted, mounted, now, scheduleMode]);
 
   if (!mounted || !now || !timerData) return <div className="min-h-screen bg-[#020617]" />;
 
-  const { current, isGap, isAllDone, nowTotalSec, gapStart, lastScheduleEndSec, isBeforeStart } = (timerData as any);
+  const { current, isGap, isAllDone, nowTotalSec, gapStart, lastScheduleEndSec, isBeforeStart, customEndSec } = (timerData as any);
 
   const displayLabel = (() => {
-    if (scheduleMode === '50') return current?.label || "자율학습";
-    if (isBeforeStart) return "자율학습"; // 8시 전(80분모드)이면 자율학습
+    if (scheduleMode === '50') return current?.label;
+    if (isBeforeStart) return "자율학습";
     if (isAllDone) {
       return (nowTotalSec - lastScheduleEndSec < 300) ? "수고하셨습니다.🪄✨" : "자율학습";
     }
@@ -167,7 +165,12 @@ export default function TimerPage() {
 
   const circumference = 2 * Math.PI * 180;
   let offset = circumference;
-  if (current && !isBeforeStart) {
+
+  if (scheduleMode === '50') {
+    const total = customEndSec - gapStart;
+    const remaining = Math.max(0, customEndSec - nowTotalSec);
+    offset = circumference * (1 - (remaining / total));
+  } else if (current && !isBeforeStart) {
     const endSec = getSeconds(current.end);
     const startSec = isGap ? gapStart : getSeconds(current.start);
     const total = endSec - startSec;
@@ -180,8 +183,8 @@ export default function TimerPage() {
     card: isDarkMode ? 'bg-slate-900/60' : 'bg-white shadow-xl',
     textMain: isDarkMode ? 'text-white' : 'text-slate-900',
     btn: isDarkMode ? 'bg-slate-800/50 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-600 shadow-sm',
-    accent: (isAllDone || isBeforeStart) ? '#3b82f6' : (current?.isStudy ? '#3b82f6' : '#f59e0b'),
-    accentClass: (isAllDone || isBeforeStart) ? 'text-blue-500' : (current?.isStudy ? 'text-blue-500' : 'text-amber-500'),
+    accent: (isAllDone || (isBeforeStart && scheduleMode !== '50')) ? '#3b82f6' : (current?.isStudy ? '#3b82f6' : '#f59e0b'),
+    accentClass: (isAllDone || (isBeforeStart && scheduleMode !== '50')) ? 'text-blue-500' : (current?.isStudy ? 'text-blue-500' : 'text-amber-500'),
   };
 
   return (
@@ -209,11 +212,14 @@ export default function TimerPage() {
       <div className="relative flex items-center justify-center mb-8 scale-90 sm:scale-100">
         <svg width="400" height="400" viewBox="0 0 400 400">
           <circle cx="200" cy="200" r="180" fill="none" stroke={isDarkMode ? "#1e293b" : "#e2e8f0"} strokeWidth="12" />
-          <circle cx="200" cy="200" r="180" fill="none" stroke={theme.accent} strokeWidth="12" strokeLinecap="round" style={{ transform: 'rotate(-90deg) scaleY(-1)', transformOrigin: 'center', transition: 'stroke-dashoffset 1s linear', strokeDasharray: circumference, strokeDashoffset: (isAllDone || isBeforeStart) ? 0 : offset }} />
+          <circle cx="200" cy="200" r="180" fill="none" stroke={theme.accent} strokeWidth="12" strokeLinecap="round" style={{ transform: 'rotate(-90deg) scaleY(-1)', transformOrigin: 'center', transition: 'stroke-dashoffset 1s linear', strokeDasharray: circumference, strokeDashoffset: (isAllDone || (isBeforeStart && scheduleMode !== '50')) ? 0 : offset }} />
         </svg>
         <div className="absolute flex flex-col items-center">
           <div className="text-8xl leading-none font-black tracking-tighter" style={{ fontVariantNumeric: "tabular-nums" }}>
-            {(!isAllDone && !isBeforeStart && current) ? (() => {
+            {(scheduleMode === '50') ? (() => {
+              const diff = Math.max(0, customEndSec - nowTotalSec);
+              return `${Math.floor(diff / 60)}:${(diff % 60).toString().padStart(2, '0')}`;
+            })() : (!isAllDone && !isBeforeStart && current) ? (() => {
               const diff = Math.max(0, getSeconds(current.end) - nowTotalSec);
               return `${Math.floor(diff / 60)}:${(diff % 60).toString().padStart(2, '0')}`;
             })() : "FREE"}
