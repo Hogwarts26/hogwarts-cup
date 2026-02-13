@@ -45,16 +45,19 @@ export default function TimerPage() {
     return () => clearInterval(interval);
   }, []);
 
+  // 아이패드용 강제 잠금 해제 함수 (무음 버전)
   const unlockAudio = () => {
     ["study", "break", "end"].forEach(id => {
       const audio = document.getElementById(id) as HTMLAudioElement;
       if (audio) {
-        audio.muted = true;
+        audio.muted = true; 
         audio.play().then(() => {
           audio.pause();
           audio.currentTime = 0;
+          audio.muted = false; 
+        }).catch(() => {
           audio.muted = false;
-        }).catch(() => {});
+        });
       }
     });
     setIsMuted(false);
@@ -83,14 +86,14 @@ export default function TimerPage() {
       const isStudyTime = currentMin < 50;
       
       const current = isStudyTime 
-        ? { label: `Study`, start: `${currentHour.toString().padStart(2, '0')}:00`, end: `${currentHour.toString().padStart(2, '0')}:50`, isStudy: true }
-        : { label: `Break`, start: `${currentHour.toString().padStart(2, '0')}:50`, end: `${(currentHour + 1).toString().padStart(2, '0')}:00`, isStudy: false };
+        ? { label: `${currentHour}교시 Study`, start: `${currentHour.toString().padStart(2, '0')}:00`, end: `${currentHour.toString().padStart(2, '0')}:50`, isStudy: true }
+        : { label: `${currentHour}교시 Break`, start: `${currentHour.toString().padStart(2, '0')}:50`, end: `${(currentHour + 1).toString().padStart(2, '0')}:00`, isStudy: false };
       
       return { current, isGap: false, isAllDone: false, nowTotalSec, gapStart: getSeconds(current.start), lastScheduleEndSec: 0 };
     }
 
     const activeList = SCHEDULES[scheduleMode as '100' | '80'];
-    const lastScheduleEndSec = getSeconds(activeList[activeList.length - 1].end); // 마지막 교시 종료 시간
+    const lastScheduleEndSec = getSeconds(activeList[activeList.length - 1].end);
 
     let current = activeList.find(p => {
       const s = getSeconds(p.start);
@@ -120,19 +123,15 @@ export default function TimerPage() {
     if (!mounted || !timerData || !now) return;
     const { current, isAllDone } = timerData;
     
-    const currentHour = now.getHours();
-    const currentState = isAllDone ? "DONE" : `${current?.isStudy ? "STUDY" : "BREAK"}_${currentHour}`;
+    // [핵심 수정] 시간(Hour) 대신 교시 이름(label)을 기준으로 상태를 체크합니다.
+    // 100분 동안 교시 이름이 바뀌지 않으면 정각이 되어도 울리지 않습니다.
+    const currentState = isAllDone 
+      ? "DONE" 
+      : `${current?.label}_${current?.isStudy ? "STUDY" : "BREAK"}`;
 
-    if (lastPlayedRef.current === "") {
+    if (lastPlayedRef.current === "" || lastPlayedRef.current === currentState || isMuted) {
       lastPlayedRef.current = currentState;
       return; 
-    }
-
-    if (lastPlayedRef.current === currentState) return;
-
-    if (isMuted) {
-      lastPlayedRef.current = currentState;
-      return;
     }
 
     const playAudio = (id: string) => {
@@ -155,7 +154,6 @@ export default function TimerPage() {
 
   const { current, isGap, isAllDone, nowTotalSec, gapStart, lastScheduleEndSec } = timerData;
 
-  // 상단 레이블 결정 로직
   const displayLabel = (() => {
     if (isAllDone && scheduleMode !== '50') {
       const secondsSinceEnd = nowTotalSec - lastScheduleEndSec;
@@ -181,7 +179,6 @@ export default function TimerPage() {
     card: isDarkMode ? 'bg-slate-900/60' : 'bg-white shadow-xl',
     textMain: isDarkMode ? 'text-white' : 'text-slate-900',
     btn: isDarkMode ? 'bg-slate-800/50 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-600 shadow-sm',
-    // 자율학습(isAllDone)일 때 파란색으로 변경
     accent: isAllDone ? '#3b82f6' : (current?.isStudy ? '#3b82f6' : '#f59e0b'),
     accentClass: isAllDone ? 'text-blue-500' : (current?.isStudy ? 'text-blue-500' : 'text-amber-500'),
   };
@@ -215,7 +212,6 @@ export default function TimerPage() {
         </div>
       </div>
 
-      {/* 상단 레이블: 5분 여운 시스템 적용 */}
       <div className={`text-4xl font-black mb-6 ${theme.accentClass}`}>{displayLabel}</div>
 
       <div className="relative flex items-center justify-center mb-8 scale-90 sm:scale-100">
@@ -231,7 +227,6 @@ export default function TimerPage() {
               transformOrigin: 'center', 
               transition: 'stroke-dashoffset 1s linear', 
               strokeDasharray: circumference, 
-              // 완료 시(isAllDone) 원을 꽉 채움
               strokeDashoffset: isAllDone ? 0 : offset 
             }} 
           />
