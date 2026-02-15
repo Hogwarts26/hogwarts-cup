@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo } from 'react';
-import { supabase } from './supabase';
+import { supabase } from '../supabase';
 import Link from 'next/link';
 
 import { 
@@ -13,12 +13,10 @@ import {
   OFF_OPTIONS, 
   HOUSE_LOGOS, 
   sortKorean 
-} from './constants';
+} from '../constants';
 
-// ==========================================
-// [5] 메인 App 컴포넌트 및 상태 관리
-// ==========================================
-export default function HogwartsApp() {
+  // ==========================================================
+  // [1] 메인 App 컴포넌트 및 상태 관리
   // 월요일 18:00 기준 날짜 조정 함수
   const getAdjustedToday = () => {
     const now = new Date();
@@ -33,7 +31,7 @@ export default function HogwartsApp() {
     return now;
   };
 
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(true); 
   const [isAdmin, setIsAdmin] = useState(false);
   const [selectedName, setSelectedName] = useState("");
   const [password, setPassword] = useState("");
@@ -54,7 +52,6 @@ export default function HogwartsApp() {
     return selectedName ? { name: selectedName } : null;
   }, [selectedName]);
 
-  // [추가] Supabase에서 student_master 데이터를 가져와서 studentMasterData 상태를 채우는 로직
   // 새로고침 시 DB에서 selected_egg 값을 가져옴
   useEffect(() => {
     const fetchMasterData = async () => {
@@ -103,12 +100,12 @@ export default function HogwartsApp() {
     }, 300);
   };
 
-  // 알 선택시 팝업 상태
+  // 알 선택시 팝업
   const [eggStep, setEggStep] = useState<number>(0);
   const [tempEgg, setTempEgg] = useState<string | null>(null);
   const [selectedEgg, setSelectedEgg] = useState<string | null>(null);
 
-  // DB에서 저장된 알 정보를 불러옴
+  // DB에서 저장된 알 정보를 불러오기기
   useEffect(() => {
     const targetName = selectedName || currentUser?.name;
     if (targetName && studentMasterData && studentMasterData[targetName]) {
@@ -121,55 +118,54 @@ export default function HogwartsApp() {
     }
   }, [selectedName, currentUser, studentMasterData]);
 
-const [dragonName, setDragonName] = useState("이름 없는 용");
-const [isModalOpen, setIsModalOpen] = useState(false);
-const [tempName, setTempName] = useState("");
+  const [dragonName, setDragonName] = useState("이름 없는 용");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [tempName, setTempName] = useState("");
 
-// DB에서 저장된 알 정보 및 '이름'을 불러오는 useEffect 수정
-useEffect(() => {
-  const targetName = selectedName || currentUser?.name;
-  if (targetName && studentMasterData && studentMasterData[targetName]) {
-    const master = studentMasterData[targetName];
-    
-    // 알 정보 설정
-    if (master.selected_egg) {
-      setSelectedEgg(master.selected_egg);
-    } else {
-      setSelectedEgg(null);
+  // DB에서 저장된 알 정보 및 이름을 불러오기
+  useEffect(() => {
+    const targetName = selectedName || currentUser?.name;
+    if (targetName && studentMasterData && studentMasterData[targetName]) {
+      const master = studentMasterData[targetName];
+      
+      // 알 정보 설정
+      if (master.selected_egg) {
+        setSelectedEgg(master.selected_egg);
+      } else {
+        setSelectedEgg(null);
+      }
+
+      // 용 이름름
+      if (master.dragon_name) {
+        setDragonName(master.dragon_name);
+      } else {
+        setDragonName("이름 없는 용");
+      }
+    }
+  }, [selectedName, currentUser, studentMasterData]);
+
+  const handleSaveName = async () => {
+    if (tempName.trim() === "") {
+      alert("아직 이름을 지어주지 않았습니다.");
+      return;
     }
 
-    // [중요] 이름 정보 설정 (DB에 dragon_name 컬럼이 있다고 가정)
-    if (master.dragon_name) {
-      setDragonName(master.dragon_name);
+    setDragonName(tempName);
+    const targetName = selectedName || currentUser?.name;
+    const { error } = await supabase
+      .from('student_master')
+      .update({ dragon_name: tempName })
+      .eq('student_name', targetName);
+
+    if (error) {
+      console.error("이름 저장 실패:", error);
     } else {
-      setDragonName("이름 없는 용");
+      setIsModalOpen(false);
     }
-  }
-}, [selectedName, currentUser, studentMasterData]);
-
-const handleSaveName = async () => {
-  if (tempName.trim() === "") {
-    alert("아직 이름을 지어주지 않았습니다.");
-    return;
-  }
-
-  setDragonName(tempName);
-  const targetName = selectedName || currentUser?.name;
-  const { error } = await supabase
-    .from('student_master')
-    .update({ dragon_name: tempName }) // DB 테이블에 dragon_name 컬럼이 있어야 함
-    .eq('student_name', targetName);
-
-  if (error) {
-    console.error("이름 저장 실패:", error);
-  } else {
-    setIsModalOpen(false);
-  }
-};
+  };
 
   // ==========================================================
-  // 실시간으로 변하는 게이지 계산
-  // ==========================================================
+  // [2] 용 경험치 계산
   const totalStudyTime = studentMasterData[selectedName]?.total_study_time || 0;
 
   let progress = 0;
@@ -190,16 +186,24 @@ const handleSaveName = async () => {
   }
 
   // ==========================================
-  // [6] 초기 실행 (인증 확인 및 시계)
-  // ==========================================
+  // [3] 초기 실행 (인증 확인 및 시계)
   useEffect(() => {
-    // 월요일 18:00 기준
+    const saved = localStorage.getItem('hg_auth');
+    if (saved) {
+      const { name, admin } = JSON.parse(saved);
+      setSelectedName(name); 
+      setIsAdmin(admin); 
+      setIsLoggedIn(true);
+    } else {
+      // 로그인 정보 없으면 입구로 튕겨내기
+      window.location.href = "/";
+    }
+
     const timer = setInterval(() => {
       const now = new Date();
       const day = now.getDay();
       const hours = now.getHours();
 
-      // 월요일 18시 이전인 경우 하루 전으로 조정
       if (day === 1 && hours < 18) {
         const adjusted = new Date(now);
         adjusted.setDate(now.getDate() - 1);
@@ -209,19 +213,11 @@ const handleSaveName = async () => {
       }
     }, 1000);
 
-    const saved = localStorage.getItem('hg_auth');
-    if (saved) {
-      const { name, admin } = JSON.parse(saved);
-      setSelectedName(name); 
-      setIsAdmin(admin); 
-      setIsLoggedIn(true);
-    }
     return () => clearInterval(timer);
   }, []);
 
   // ==========================================
-  // [7] 데이터 불러오기 (Supabase 연결)
-  // ==========================================
+  // [4] 데이터 불러오기 (Supabase 연결)
   const fetchRecords = async () => {
     const [resRecords, resMaster] = await Promise.all([
       supabase.from('study_records').select('*'),
@@ -236,7 +232,7 @@ const handleSaveName = async () => {
       setDailyGoal(savedGoal);
     }
 
-    // 2. 마스터 데이터 세팅 (student_name 컬럼 사용)
+    // 2. student_name
     if (resMaster.data) {
       const masterObj: any = {};
       resMaster.data.forEach((item: any) => {
@@ -248,27 +244,11 @@ const handleSaveName = async () => {
   };
 
   useEffect(() => { 
-    if (isLoggedIn) fetchRecords(); 
+    if (isLoggedIn && selectedName) fetchRecords(); 
   }, [isLoggedIn, selectedName]);
 
   // ==========================================
-  // [8] 로그인 로직
-  // ==========================================
-  const handleLogin = async () => {
-    if (!selectedName) { alert("학생을 선택해주세요."); return; }
-    let admin = password === "8888";
-    if (!admin) {
-      const { data } = await supabase.from('study_records').select('password').eq('student_name', selectedName);
-      const validPw = data?.find(r => r.password)?.password || "0000";
-      if (password !== validPw) { alert("비밀번호가 틀렸습니다."); return; }
-    }
-    setIsAdmin(admin); setIsLoggedIn(true);
-    localStorage.setItem('hg_auth', JSON.stringify({ name: selectedName, admin }));
-  };
-
-  // ==========================================
-  // [9] 주간 데이터 초기화 및 용 성장 데이터 누적
-  // ==========================================
+  // [5] 주간 데이터 초기화 및 용 성장 데이터 누적
   const resetWeeklyData = async () => {
     if (!confirm("⚠️ 이번 주 기록을 합산하여 용을 성장시키고 표를 초기화하시겠습니까?")) return;
     if (!confirm("정말로 진행하시겠습니까? 합산된 공부 시간은 되돌릴 수 없습니다.")) return;
@@ -348,8 +328,7 @@ const handleSaveName = async () => {
   };
 
   // ==========================================
-  // [10] 월휴 초기화
-  // ==========================================
+  // [6] 월휴 초기화
   const resetMonthlyOff = async () => {
     if (!confirm("모든 학생의 월휴 개수를 초기화하시겠습니까?")) return;
     setIsSaving(true);
@@ -379,15 +358,12 @@ const handleSaveName = async () => {
   };
 
   // ==========================================
-  // [11] 점수 계산 및 리포트 연동 로직
-  // ==========================================
+  // [7] 점수 계산 및 리포트 연동 로직
   const calc = (r: any) => {
-    // 1. 데이터가 없거나, 버튼이 '-' 상태인 경우 점수 계산 안 함 (0점)
     if (!r || !r.off_type || r.off_type === '-' || r.off_type === '') {
       return { penalty: 0, bonus: 0, total: 0, studyH: 0 };
     }
     
-    // 2. 결석 벌점 -5점
     if (r.off_type === '결석') return { penalty: -5, bonus: 0, total: -5, studyH: 0 };
     
     const timeVal = r.study_time || "";
@@ -399,25 +375,19 @@ const handleSaveName = async () => {
     const isHalfOff = ['반휴', '월반휴', '늦반휴', '늦월반휴'].includes(r.off_type);
     const isFullOff = ['주휴', '월휴', '자율', '늦휴', '늦월휴'].includes(r.off_type);
     
-    // A. 늦휴무 벌점 (-1)
     if (['늦반휴', '늦휴', '늦월반휴', '늦월휴'].includes(r.off_type)) {
       penalty -= 1;
     }
     
-    // B. 지각 벌점
     if (r.is_late && !isFullOff && r.off_type !== '자율') {
       penalty -= 1;
     }
     
-    // C. 시간당 상벌점
     if (!isFullOff && r.off_type !== '자율') {
-      
-      // 오전 3시간 체크
       if (!isHalfOff && r.am_3h === false && studyH > 0) {
         penalty -= 1;
       }
 
-      // 기준 시간 미달/초과 체크
       const target = isHalfOff ? 4 : 9;
       
       if (studyH < target) {
@@ -427,7 +397,6 @@ const handleSaveName = async () => {
       }
     }
 
-    // 벌점은 하루 최대 -5점까지
     const finalPenalty = Math.max(penalty, -5);
 
     return { 
@@ -439,9 +408,7 @@ const handleSaveName = async () => {
   };
 
   // ==========================================
-  // [12] 요약 리포트 팝업 데이터 연동 함수
-  // ==========================================
-
+  // [8] 요약 리포트 팝업 데이터 연동
   const calculatePoints = (name: string) => {
     let bonus = 0;
     let penalty = 0;
@@ -453,12 +420,10 @@ const handleSaveName = async () => {
       bonus += res.bonus;
       penalty += res.penalty;
 
-      // 주간 휴무 계산
       if (['반휴', '늦반휴'].includes(r.off_type)) usedWeeklyOff += 0.5;
       if (['주휴', '늦휴'].includes(r.off_type)) usedWeeklyOff += 1.0;
     });
 
-    // 잔여 월휴 연동
     const monRec = studentRecords.find(r => r.day_of_week === '월');
     const offCount = monRec?.monthly_off_count ?? 4;
 
@@ -485,22 +450,16 @@ const handleSaveName = async () => {
     const today = currentTime; 
     const day = today.getDay();
     const diff = today.getDate() - (day === 0 ? 6 : day - 1);
-    
-    // 기준일(today)로부터 계산된 월요일과 일요일 설정
     const monday = new Date(new Date(today).setDate(diff));
     const sunday = new Date(new Date(today).setDate(diff + 6));
-    
-   // 출력 형식: M월 D일 ~ M월 D일
     return `${monday.getMonth() + 1}월 ${monday.getDate()}일 ~ ${sunday.getMonth() + 1}월 ${sunday.getDate()}일`;
   };
 
   const getDayDate = (targetDay: string) => {
     const dayIdx = DAYS.indexOf(targetDay);
-    // 조정된 시간 사용
     const today = currentTime; 
     const currentDay = today.getDay();
     const diff = today.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + dayIdx;
-    
     const target = new Date(new Date(today).setDate(diff));
     return `${target.getMonth() + 1}.${target.getDate()}`;
   };
@@ -508,23 +467,18 @@ const handleSaveName = async () => {
   const getMonthAccumulatedTime = (name: string) => {
     const currentMonth = currentTime.getMonth() + 1; 
     let totalMinutes = 0;
-    
-    // records 배열에 있는 모든 study_time을 합산하여 월 누적치 생성
     records.filter(r => r.student_name === name).forEach(r => {
       const [h, m] = (r.study_time || "0:00").split(':').map(Number);
       totalMinutes += (isNaN(h) ? 0 : h * 60) + (isNaN(m) ? 0 : m);
     });
-
     const hrs = Math.floor(totalMinutes / 60);
     const mins = totalMinutes % 60;
     const accumulatedTime = `${hrs}:${mins.toString().padStart(2, '0')}`;
-
     return [{ month: currentMonth, time: accumulatedTime }];
   };
 
   // ==========================================
-  // [13] 기숙사 랭킹 계산
-  // ==========================================
+  // [9] 기숙사 랭킹 계산산
   const houseRankings = useMemo(() => {
     return HOUSE_ORDER.map(house => {
       const students = Object.keys(studentData).filter(n => studentData[n].house === house);
@@ -540,56 +494,52 @@ const handleSaveName = async () => {
     }).sort((a, b) => b.finalPoint - a.finalPoint);
   }, [records]);
 
- // ==========================================
- // [14] 배경음악(BGM) 로직
- // ==========================================
- const [isPlaying, setIsPlaying] = useState(false);
- const [bgm] = useState(() => typeof Audio !== 'undefined' ? new Audio('/hedwig.mp3') : null);
+  // ==========================================
+  // [10] 배경음악(BGM)
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [bgm] = useState(() => typeof Audio !== 'undefined' ? new Audio('/hedwig.mp3') : null);
 
- const toggleMusic = () => {
-   if (!bgm) return;
-   if (isPlaying) {
-     bgm.pause();
-   } else {
-     bgm.loop = true;
-     bgm.volume = 0.4;
-     bgm.play().catch(e => console.log("음악 재생 실패:", e));
-   }
-   setIsPlaying(!isPlaying);
- };
+  const toggleMusic = () => {
+    if (!bgm) return;
+    if (isPlaying) {
+      bgm.pause();
+    } else {
+      bgm.loop = true;
+      bgm.volume = 0.4;
+      bgm.play().catch(e => console.log("음악 재생 실패:", e));
+    }
+    setIsPlaying(!isPlaying);
+  };
 
- // ✨ [추가할 부분]: 페이지를 떠날 때 음악을 강제로 끄는 로직
- useEffect(() => {
-   // 이 함수는 '학습내역' 페이지가 화면에서 사라질 때 실행됩니다.
-   return () => {
-     if (bgm) {
-       bgm.pause();
-       // 다시 돌아왔을 때 재생 버튼 상태가 '재생 중'으로 보이지 않게 초기화
-       setIsPlaying(false); 
-     }
-   };
- }, [bgm]);
+  useEffect(() => {
+    return () => {
+      if (bgm) {
+        bgm.pause();
+        setIsPlaying(false); 
+      }
+    };
+  }, [bgm]);
 
   // ==========================================
-  // [15] 비밀번호 변경 및 저장
-  // ==========================================
+  // [11] 비밀번호 변경 및 저장
   const handleChange = async (name: string, day: string, field: string, value: any) => {
     if (!isAdmin && field !== 'password' && field !== 'goal') return;
     setIsSaving(true);
 
     if (field === 'password') {
-      // --- 비밀번호 변경 구역 ---
       const { error } = await supabase.from('study_records').upsert(
         DAYS.map(d => ({ student_name: name, day_of_week: d, password: value })),
         { onConflict: 'student_name,day_of_week' }
       );
-      if (!error) { setRecords(prev => prev.map(r => r.student_name === name ? { ...r, password: value } : r)); alert("비밀번호가 성공적으로 변경되었습니다"); }
+      if (!error) { 
+        setRecords(prev => prev.map(r => r.student_name === name ? { ...r, password: value } : r)); 
+        alert("비밀번호가 성공적으로 변경되었습니다"); 
+      }
     } 
     else if (field === 'goal') {
-
-  // ==========================================
-  // [16] 목표 변경 및 저장
-  // ==========================================
+        
+      // ==========================================
+      // [12] 목표 변경 및 저장
       const updatePayload = DAYS.map(d => {
         const existing = records.find(r => r.student_name === name && r.day_of_week === d) || {};
         return { 
@@ -601,21 +551,16 @@ const handleSaveName = async () => {
           monthly_off_count: existing.monthly_off_count ?? 4
         };
       });
-
       const { error } = await supabase.from('study_records').upsert(updatePayload, { onConflict: 'student_name,day_of_week' });
-      
       if (!error) {
         setRecords(prev => prev.map(r => r.student_name === name ? { ...r, goal: value } : r));
-        
         setDailyGoal(value);
         setIsEditingGoal(false);
       }
     }
     else {
-
-  // ==========================================
-  // [17] 일반 학습 기록 수정 구역 (휴무, 지각, 시간 등)
-  // ==========================================
+      // ==========================================
+      // [13] 일반 학습 기록 수정
       const newRecords = [...records];
       const idx = newRecords.findIndex(r => r.student_name === name && r.day_of_week === day);
       const current = newRecords[idx] || {};
@@ -627,49 +572,29 @@ const handleSaveName = async () => {
         password: current.password || '0000', 
         monthly_off_count: field === 'monthly_off_count' ? value : (current.monthly_off_count ?? 4)
       };
-      
-      if (idx > -1) {
-        newRecords[idx] = updatedData;
-      } else {
-        newRecords.push(updatedData);
-      }
+      if (idx > -1) newRecords[idx] = updatedData;
+      else newRecords.push(updatedData);
       setRecords(newRecords);
       await supabase.from('study_records').upsert(updatedData, { onConflict: 'student_name,day_of_week' });
     }
     setIsSaving(false);
   };
 
-// ==========================================
-  // [18] 로그인 화면
   // ==========================================
-  if (!isLoggedIn) {
+  // [14] 로딩 화면
+  if (!isLoggedIn || !selectedName) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <style>{GLOVAL_STYLE}</style>
-        <div className="bg-white p-10 rounded-[2.5rem] w-full max-w-md shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-2 bg-yellow-500"></div>
-          <div className="flex justify-center mb-10">
-            <img 
-              src="https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/Hogwarts.png" 
-              alt="Hogwarts" 
-              className="w-56 h-auto object-contain" 
-            />
-          </div>
-          <div className="space-y-6">
-            <select className="w-full p-5 border-2 rounded-2xl font-bold text-slate-800 bg-slate-50 outline-none text-lg" value={selectedName} onChange={(e)=>setSelectedName(e.target.value)}>
-              <option value="">이름을 선택하세요</option>
-              {Object.keys(studentData).sort(sortKorean).map(n => <option key={n} value={n}>{n}</option>)}
-            </select>
-            <input type="password" placeholder="PASSWORD" className="w-full p-5 border-2 rounded-2xl font-bold text-slate-800 bg-slate-50 outline-none text-lg" value={password} onChange={(e)=>setPassword(e.target.value)} onKeyDown={(e)=>e.key==='Enter' && handleLogin()} />
-            <button onClick={handleLogin} className="w-full bg-slate-900 text-yellow-500 py-5 rounded-2xl font-black shadow-lg uppercase text-xl active:scale-95 transition-transform">Enter Castle</button>
-          </div>
+        <div className="text-amber-200 font-serif animate-pulse text-2xl">
+          🧙‍♂️ 성으로 입장하는 중...
         </div>
       </div>
     );
   }
 
   // ==========================================
-  // [19] 메인 화면 데이터 준비
+  // [15] 메인 화면 데이터 준비
   // ==========================================
   const displayList = isAdmin 
     ? Object.keys(studentData).sort((a, b) => {
@@ -678,8 +603,9 @@ const handleSaveName = async () => {
       })
     : [selectedName];
 
+
   // ==========================================
-  // [20] 이름 추출 함수
+  // [16] 이름 추출
   // ==========================================
   const formatDisplayName = (name: any): string => {
     if (!name || typeof name !== 'string') return "";
@@ -718,8 +644,9 @@ const handleSaveName = async () => {
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
       `}</style>
       
-      
-{/*[21] 기숙사별 공지사항 팝업 */}
+// ==========================================     
+{/*[17] 기숙사별 공지사항 팝업 */}
+// ==========================================
       {selectedHouseNotice && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setSelectedHouseNotice(null)}>
           <div className="relative bg-[#f4e4bc] p-6 md:p-12 w-full max-w-2xl rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.3)] overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()} style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.05) 100%)' }}>
@@ -739,7 +666,9 @@ const handleSaveName = async () => {
         </div>
       )}
 
- {/*[22] 관리자 화면 전체 기숙사 요약 */}
+        // ==========================================
+        {/*[18] 관리자 화면 전체 기숙사 요약 */}
+        // ==========================================
       {showSummary && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowSummary(false)}>
           <div className="bg-white rounded-[2rem] p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative" onClick={e => e.stopPropagation()}>
@@ -778,13 +707,15 @@ const handleSaveName = async () => {
         </div>
       )}
 
-     {/* [23] 상단 헤더 및 기숙사 점수판 구역 */}
+        // ==========================================
+       {/* [19] 상단 헤더 및 기숙사 점수판 구역 */}
+        // ==========================================
       <div className="max-w-[1100px] mx-auto mb-8 px-4"> 
         <div className="flex flex-col gap-y-4 mb-6">
           
-          {/* 1열: 버튼 그룹 (우측 정렬) */}
+          {/* 1열: 버튼 */}
           <div className="flex gap-2 flex-wrap justify-end items-center">
-            {/* [24] 음악 및 관리자 버튼들 */}
+            {/* 음악 및 관리자 버튼 */}
             <button 
               onClick={toggleMusic} 
               className={`text-[10px] font-black px-3 py-1.5 rounded-full shadow-sm transition-all border-2 whitespace-nowrap ${
@@ -809,24 +740,28 @@ const handleSaveName = async () => {
               <button onClick={resetMonthlyOff} className="text-[10px] font-black text-white bg-orange-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-orange-700 whitespace-nowrap">월휴 리셋</button>
             )}
             
+            {/* window.location.reload() 대신 router.push('/')를 사용하여 로그인 페이지로 이동합니다. */}
             <button 
-              onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} 
+              onClick={() => { 
+                localStorage.removeItem('hg_auth'); 
+                router.push('/'); 
+              }} 
               className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full shadow-sm whitespace-nowrap"
             >
               Logout
             </button>
           </div>
 
-          {/* 2열: 로고 (가운데 정렬) */}
+          {/* 2열: 로고 */}
           <div className="flex justify-center">
             <h2 className="text-3xl font-serif font-black text-slate-800 italic tracking-tight whitespace-nowrap">
               Hogwarts School
             </h2>
           </div>
-        </div> {/* <- flex-col 닫기 */}
-      </div> {/* <- max-w-[1100px] 닫기 */}
+        </div>
+      </div>
 
-      {/* [25] 학습 기록 메인 테이블 및 목표 */}
+      {/* [20] 학습 기록 메인 테이블 및 목표 */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
         <div className="bg-slate-900 p-4 px-6 md:px-8 flex flex-col gap-2 text-white min-h-[60px]">
           <div className="flex justify-between items-center w-full">
@@ -1396,7 +1331,7 @@ const handleSaveName = async () => {
                 {getWeeklyDateRange()}
               </div>
               <div className="grid grid-cols-4 gap-2.5 mb-2">
-                {DAYS.map(day => {
+                {DAYS.map((day: any) => {
                   const rec = records.find(r => r.student_name === selectedStudentReport && r.day_of_week === day) || {};
                   const isGreen = ['반휴','월반휴','늦반휴','늦월반휴'].includes(rec.off_type);
                   const isBlue = ['주휴','월휴','늦휴','늦월휴'].includes(rec.off_type);
@@ -1432,4 +1367,4 @@ const handleSaveName = async () => {
       </div>
     </div>
   );
-};
+
