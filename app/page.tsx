@@ -976,23 +976,23 @@ const handleSaveName = async () => {
             <button 
               onClick={toggleMusic} 
               className={`text-[10px] font-black px-3 py-1.5 rounded-full shadow-sm transition-all border-2 whitespace-nowrap ${
-                isPlaying ? 'bg-white border-yellow-400 text-yellow-500 animate-pulse' : 'bg-slate-100 border-slate-200 text-slate-500'
+                isPlaying ? 'bg-white border-yellow-400 text-yellow-500 animate-pulse' : 'bg-slate-50 border-slate-300 text-slate-500'
               }`}
             >
               {isPlaying ? '🎵' : '🔇'}
             </button>
 
-               {/* 2. ✅ 플래너 버튼 (로그아웃보다 조금 더 진한 회색으로 강조) */}
+               {/* 2. ✅ 플래너 버튼 (진한 테두리로 강조) */}
                <Link 
                  href="/planner" 
-                 className="text-[10px] font-black text-slate-600 bg-slate-200 border-slate-300 border-2 px-3 py-1.5 rounded-full shadow-sm hover:bg-slate-300 transition-all active:scale-95 flex items-center gap-1 whitespace-nowrap"
+                 className="text-[10px] font-black text-slate-700 bg-slate-100 border-slate-400 border-2 px-3 py-1.5 rounded-full shadow-sm hover:bg-slate-200 transition-all active:scale-95 flex items-center gap-1 whitespace-nowrap"
                >
                  플래너
                </Link>
                            {!isAdmin && (
                   <Link 
     href="/timer" 
-    className="text-[10px] font-black text-slate-600 bg-slate-200 border-slate-300 border-2 px-3 py-1.5 rounded-full shadow-sm hover:bg-slate-300 transition-all active:scale-95 flex items-center gap-1 whitespace-nowrap"
+    className="text-[10px] font-black text-slate-700 bg-slate-100 border-slate-400 border-2 px-3 py-1.5 rounded-full shadow-sm hover:bg-slate-200 transition-all active:scale-95 flex items-center gap-1 whitespace-nowrap"
   >
     교시제
                   </Link>
@@ -1004,15 +1004,15 @@ const handleSaveName = async () => {
               <button onClick={resetMonthlyOff} className="text-[10px] font-black text-white bg-orange-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-orange-700 whitespace-nowrap">월휴 리셋</button>
             )}
             
-            {/* 로그아웃 버튼 (색을 죽여서 존재감을 낮춤) */}
+            {/* 로그아웃 버튼 (테두리를 가장 흐리게 하여 존재감을 낮춤) */}
             <button 
               onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} 
-              className="text-[10px] font-black text-slate-400 bg-slate-50 border-slate-100 border-2 px-3 py-1.5 rounded-full shadow-sm whitespace-nowrap"
+              className="text-[10px] font-black text-slate-400 bg-white border-slate-100 border-2 px-3 py-1.5 rounded-full shadow-sm whitespace-nowrap"
             >
               Logout
             </button>
           </div>
-
+          
           {/* 2열: 로고 (가운데 정렬) */}
           <div className="flex justify-center">
             <h2 className="text-3xl font-serif font-black text-slate-800 italic tracking-tight whitespace-nowrap">
