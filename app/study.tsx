@@ -1,9 +1,8 @@
 "use client";
-import React, { useState, useEffect, useMemo } from 'react';
-import { supabase } from './supabase';
+import React, { useState, useEffect } from 'react';
 
-// [1] 제공해주신 학생 명단 데이터 (정확히 반영)
-export const studentData: { [key: string]: { house: string; emoji: string; color: string; accent: string, text: string } } = {
+// [1] 학생 스타일 데이터 (기존 유지)
+export const studentStyleMap: { [key: string]: { house: string; emoji: string; color: string; accent: string, text: string } } = {
   "🤖로봇": { house: "슬리데린", emoji: "🤖", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🐾발자국": { house: "슬리데린", emoji: "🐾", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🐆표범": { house: "슬리데린", emoji: "🐆", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
@@ -38,7 +37,6 @@ export const studentData: { [key: string]: { house: string; emoji: string; color
   "🐿️다람": { house: "후플푸프", emoji: "🐿️", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" }
 };
 
-// [2] 공통 상수 및 스타일
 const HOUSE_ORDER = ["그리핀도르", "슬리데린", "래번클로", "후플푸프"];
 const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
 const OFF_OPTIONS = ['-', '출석', '반휴', '주휴', '월휴', '월반휴', '자율', '결석', '늦반휴', '늦휴', '늦월반휴', '늦월휴'];
@@ -49,19 +47,14 @@ const HOUSE_LOGOS: Record<string, string> = {
   "후플푸프": "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/huf.png"
 };
 
-const GLOVAL_STYLE = `
-  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap');
-  @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-  body { font-family: 'Cinzel', 'Pretendard', sans-serif; }
-  .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-  .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
-`;
+// [2] Props 타입 정의
+interface StudyProps {
+  supabase: any;
+  selectedName: string;
+  isAdmin: boolean;
+}
 
-export default function HogwartsApp() {
-  // [3] 상태 관리
-  const [isLoggedIn, setIsLoggedIn] = useState(true); // 편의상 true
-  const [isAdmin, setIsAdmin] = useState(true);     // 편의상 true
-  const [selectedName, setSelectedName] = useState("🤖로봇");
+export default function Study({ supabase, selectedName, isAdmin }: StudyProps) {
   const [records, setRecords] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -69,41 +62,30 @@ export default function HogwartsApp() {
   const [dailyGoal, setDailyGoal] = useState("");
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      const now = new Date();
-      if (now.getDay() === 1 && now.getHours() < 18) {
-        now.setDate(now.getDate() - 1);
-      }
-      setCurrentTime(now);
-    }, 1000);
-    if (isLoggedIn) fetchRecords();
+    fetchRecords();
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000 * 60);
     return () => clearInterval(timer);
-  }, [isLoggedIn]);
+  }, [selectedName]);
 
   const fetchRecords = async () => {
     const { data } = await supabase.from('study_records').select('*');
     if (data) {
       setRecords(data);
-      const myGoal = data.find(r => r.student_name === selectedName && r.goal)?.goal || "";
+      const myGoal = data.find((r: any) => r.student_name === selectedName && r.goal)?.goal || "";
       setDailyGoal(myGoal);
     }
   };
 
-  // [4] 계산 로직
   const calc = (r: any) => {
     if (!r || !r.off_type || r.off_type === '-' || r.off_type === '') return { penalty: 0, bonus: 0, total: 0 };
     if (r.off_type === '결석') return { penalty: -5, bonus: 0, total: -5 };
-    
-    const [h, m] = (r.study_time || "").split(':').map(Number);
+    const [h, m] = (r.study_time || "0:0").split(':').map(Number);
     const studyH = (isNaN(h) ? 0 : h) + (isNaN(m) ? 0 : m / 60);
     let penalty = 0, bonus = 0;
-
     const isHalfOff = ['반휴', '월반휴', '늦반휴', '늦월반휴'].includes(r.off_type);
     const isFullOff = ['주휴', '월휴', '자율', '늦휴', '늦월휴'].includes(r.off_type);
-    
     if (['늦반휴', '늦휴', '늦월반휴', '늦월휴'].includes(r.off_type)) penalty -= 1;
     if (r.is_late && !isFullOff && r.off_type !== '자율') penalty -= 1;
-    
     if (!isFullOff && r.off_type !== '자율') {
       if (!isHalfOff && r.am_3h === false && studyH > 0) penalty -= 1;
       const target = isHalfOff ? 4 : 9;
@@ -128,43 +110,46 @@ export default function HogwartsApp() {
   };
 
   const handleChange = async (name: string, day: string, field: string, value: any) => {
+    // 본인이 아니면 수정 불가 (관리자는 가능)
+    if (!isAdmin && name !== selectedName) return;
+
     setIsSaving(true);
     const existing = records.find(r => r.student_name === name && r.day_of_week === day) || {};
     let payload: any = { ...existing, student_name: name, day_of_week: day, [field]: value };
 
     if (field === 'goal') {
-      const goalPayload = DAYS.map(d => ({ ...existing, student_name: name, day_of_week: d, goal: value }));
+      const goalPayload = DAYS.map(d => ({ student_name: name, day_of_week: d, goal: value }));
       await supabase.from('study_records').upsert(goalPayload, { onConflict: 'student_name,day_of_week' });
     } else {
       await supabase.from('study_records').upsert(payload, { onConflict: 'student_name,day_of_week' });
     }
-    
     fetchRecords();
     setIsSaving(false);
   };
 
-  const displayList = isAdmin ? Object.keys(studentData).sort((a, b) => {
-    const houseDiff = HOUSE_ORDER.indexOf(studentData[a].house) - HOUSE_ORDER.indexOf(studentData[b].house);
-    return houseDiff !== 0 ? houseDiff : a.localeCompare(b, 'ko');
-  }) : [selectedName];
+  // [중요] 관리자면 전체 리스트, 학생이면 자기 이름만 리스트에 넣음
+  const displayList = isAdmin 
+    ? Object.keys(studentStyleMap).sort((a, b) => {
+        const houseDiff = HOUSE_ORDER.indexOf(studentStyleMap[a].house) - HOUSE_ORDER.indexOf(studentStyleMap[b].house);
+        return houseDiff !== 0 ? houseDiff : a.localeCompare(b, 'ko');
+      }) 
+    : [selectedName];
 
   return (
     <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 relative">
-      <style>{GLOVAL_STYLE}</style>
-      
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] shadow-2xl overflow-hidden border border-slate-200">
         <div className="bg-slate-900 p-4 px-6 text-white">
           <div className="flex justify-between items-center">
             <span className="text-xs font-black text-yellow-500 tracking-widest flex items-center gap-2">
               <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-              {isAdmin ? "Headmaster Console" : currentTime.toLocaleDateString()}
+              {isAdmin ? "Headmaster Console" : `${selectedName} 학생의 기록부`}
             </span>
             {isSaving && <div className="text-[10px] text-yellow-500 animate-bounce">Saving...</div>}
           </div>
           {!isAdmin && (
             <div className="mt-2 pt-2 border-t border-white/10 flex items-center gap-3">
               <span className="text-[9px] font-black opacity-40 uppercase">Goal</span>
-              <input type="text" value={dailyGoal} onChange={(e) => setDailyGoal(e.target.value)} onBlur={() => handleChange(selectedName, '월', 'goal', dailyGoal)} className="bg-transparent italic text-xs w-full outline-none" />
+              <input type="text" value={dailyGoal} onChange={(e) => setDailyGoal(e.target.value)} onBlur={() => handleChange(selectedName, '월', 'goal', dailyGoal)} className="bg-transparent italic text-xs w-full outline-none" placeholder="목표를 입력하세요" />
             </div>
           )}
         </div>
@@ -181,7 +166,8 @@ export default function HogwartsApp() {
             </thead>
             <tbody>
               {displayList.map(name => {
-                const info = studentData[name];
+                const info = studentStyleMap[name];
+                if (!info) return null; // 데이터 매칭 안될 경우 방지
                 const studentRecords = records.filter(r => r.student_name === name);
                 const monRec = studentRecords.find(r => r.day_of_week === '월') || {};
                 const offCount = monRec.monthly_off_count ?? 4;
@@ -210,7 +196,7 @@ export default function HogwartsApp() {
                               ) : rowField === 'is_late' || rowField === 'am_3h' ? (
                                 <input type="checkbox" checked={!!rec[rowField]} onChange={(e) => handleChange(name, day, rowField, e.target.checked)} className="w-3.5 h-3.5 accent-slate-800" />
                               ) : rowField === 'study_time' ? (
-                                <input type="text" className="w-full text-center text-xs font-black outline-none" value={rec.study_time || ''} onBlur={(e) => handleChange(name, day, 'study_time', e.target.value)} onChange={(e) => setRecords(prev => prev.map(r => (r.student_name === name && r.day_of_week === day) ? {...r, study_time: e.target.value} : r))} />
+                                <input type="text" className="w-full text-center text-xs font-black outline-none" value={rec.study_time || ''} onBlur={(e) => handleChange(name, day, 'study_time', e.target.value)} onChange={(e) => setRecords(prev => prev.map(r => (r.student_name === name && r.day_of_week === day) ? {...r, study_time: e.target.value} : r))} placeholder="0:0" />
                               ) : (
                                 <span className={`font-black text-xs ${rowField === 'penalty' && res.penalty < 0 ? 'text-red-500' : 'text-slate-900'}`}>
                                   {rowField === 'total' ? res.total : (res[rowField as keyof typeof res] || '')}
@@ -239,16 +225,16 @@ export default function HogwartsApp() {
         </div>
       </div>
 
-      {/* 리포트 팝업 */}
+      {/* 리포트 팝업 (기존 유지) */}
       {selectedStudentReport && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedStudentReport(null)}>
           <div className="bg-white p-8 w-full max-w-md rounded-[2rem] shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-6 mb-6">
-              <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} className="w-24 h-24 object-contain" alt="crest" />
+              <img src={HOUSE_LOGOS[studentStyleMap[selectedStudentReport]?.house]} className="w-24 h-24 object-contain" alt="crest" />
               <div>
-                <div className="text-5xl">{studentData[selectedStudentReport].emoji}</div>
+                <div className="text-5xl">{studentStyleMap[selectedStudentReport]?.emoji}</div>
                 <div className="text-xl font-black">{selectedStudentReport}</div>
-                <div className="text-sm opacity-50">{studentData[selectedStudentReport].house} 기스크</div>
+                <div className="text-sm opacity-50">{studentStyleMap[selectedStudentReport]?.house} 기숙사</div>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
