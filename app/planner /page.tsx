@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 
-// 1. Supabase 클라이언트 직접 선언 (외부 파일 참조 제거)
+// Supabase 설정
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -14,42 +14,13 @@ export default function PlannerPage() {
   const [plannerData, setPlannerData] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [mounted, setMounted] = useState(false); // ✅ Hydration 방지용 추가
 
-  // ==========================================
-  // 🎵 배경음악(BGM) 로직
-  // ==========================================
+  // BGM 로직
   const [isPlaying, setIsPlaying] = useState(false);
-  const [bgm] = useState(() => typeof Audio !== 'undefined' ? new Audio('/hedwig.mp3') : null);
+  const [bgm, setBgm] = useState<HTMLAudioElement | null>(null);
 
-  const toggleMusic = () => {
-    if (!bgm) return;
-    if (isPlaying) {
-      bgm.pause();
-    } else {
-      bgm.loop = true;
-      bgm.volume = 0.4;
-      bgm.play().catch(e => console.log("음악 재생 실패:", e));
-    }
-    setIsPlaying(!isPlaying);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (bgm) {
-        bgm.pause();
-        setIsPlaying(false);
-      }
-    };
-  }, [bgm]);
-  // ==========================================
-
-  const timeSlots = [];
-  for (let h = 6; h < 24; h++) {
-    const hour = String(h).padStart(2, '0');
-    timeSlots.push(`${hour}:00`, `${hour}:30`);
-  }
-  timeSlots.push("00:00", "00:30", "01:00");
-
+  // 날짜 계산 함수
   const getPlannerDate = () => {
     const now = new Date();
     if (now.getHours() < 4) {
@@ -58,7 +29,16 @@ export default function PlannerPage() {
     return now.toLocaleDateString('en-CA');
   };
 
+  // ✅ 초기 마운트 설정
   useEffect(() => {
+    setMounted(true);
+    if (typeof Audio !== 'undefined') {
+      const audio = new Audio('/hedwig.mp3');
+      audio.loop = true;
+      audio.volume = 0.4;
+      setBgm(audio);
+    }
+
     const savedTheme = localStorage.getItem('planner_theme');
     if (savedTheme === 'light') setIsDarkMode(false);
 
@@ -111,11 +91,28 @@ export default function PlannerPage() {
     }, { onConflict: 'student_name,plan_date' });
   };
 
+  const toggleMusic = () => {
+    if (!bgm) return;
+    if (isPlaying) {
+      bgm.pause();
+    } else {
+      bgm.play().catch(e => console.log("음악 재생 실패:", e));
+    }
+    setIsPlaying(!isPlaying);
+  };
+
   const toggleTheme = () => {
     const newMode = !isDarkMode;
     setIsDarkMode(newMode);
     localStorage.setItem('planner_theme', newMode ? 'dark' : 'light');
   };
+
+  const timeSlots = [];
+  for (let h = 6; h < 24; h++) {
+    const hour = String(h).padStart(2, '0');
+    timeSlots.push(`${hour}:00`, `${hour}:30`);
+  }
+  timeSlots.push("00:00", "00:30", "01:00");
 
   const theme = {
     bg: isDarkMode ? 'bg-[#020617]' : 'bg-slate-50',
@@ -125,6 +122,9 @@ export default function PlannerPage() {
     accent: isDarkMode ? 'text-blue-400' : 'text-blue-600',
     divider: isDarkMode ? 'divide-white/5' : 'divide-slate-100'
   };
+
+  // ✅ 마운트되기 전에는 아무것도 그리지 않음 (흰 화면 방지)
+  if (!mounted) return null;
 
   if (loading) return (
     <div className={`min-h-screen flex items-center justify-center ${theme.bg}`}>
