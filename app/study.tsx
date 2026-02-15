@@ -2,15 +2,13 @@
 import React, { useState, useEffect } from 'react';
 
 // ==========================================
-// [1] 기숙사컵 스타일 및 애니메이션 설정
+// [1] 스타일 및 애니메이션 설정
 // ==========================================
 const GLOBAL_STYLE = `
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap');
   @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
-  .font-magic { 
-    font-family: 'Cinzel', 'Pretendard', serif; 
-  }
+  .font-magic { font-family: 'Cinzel', 'Pretendard', serif; }
 
   body { 
     font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
@@ -29,7 +27,7 @@ const GLOBAL_STYLE = `
 `;
 
 // ==========================================
-// [2] 공통 상수 및 데이터
+// [2] 데이터 및 상수
 // ==========================================
 export const studentStyleMap: { [key: string]: { house: string; emoji: string; color: string; accent: string, text: string } } = {
   "🐱냥이": { house: "그리핀도르", emoji: "🐱", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
@@ -76,6 +74,14 @@ const HOUSE_LOGOS: Record<string, string> = {
   "후플푸프": "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/huf.png"
 };
 
+// [도움 함수] 휴무 상태에 따른 배경색 반환
+const getOffBgColor = (offType: string) => {
+  if (['주휴', '월휴', '자율', '늦휴', '늦월휴'].includes(offType)) return 'bg-blue-100/60';
+  if (['반휴', '월반휴', '늦반휴', '늦월반휴'].includes(offType)) return 'bg-green-100/60';
+  if (offType === '결석') return 'bg-red-100/60';
+  return '';
+};
+
 interface StudyProps {
   supabase: any;
   selectedName: string;
@@ -87,32 +93,26 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
   const [records, setRecords] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [realClock, setRealClock] = useState(new Date());
   const [selectedStudentReport, setSelectedStudentReport] = useState<string | null>(null);
   const [dailyGoal, setDailyGoal] = useState("");
 
   const studentData = studentMasterData || studentStyleMap;
 
-  // ==========================================
-  // [6] 초기 실행 (인증 확인 및 시계 - 월요일 18:00 로직 포함)
-  // ==========================================
+  // 시계 및 데이터 갱신 로직
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
-      const day = now.getDay(); // 0(일) ~ 6(토)
+      setRealClock(now);
+      const day = now.getDay();
       const hours = now.getHours();
 
-      // 월요일(1) 18시 이전이거나 일요일(0)인 경우 지난주 상태 유지
+      // 월요일 18:00 이전 또는 일요일은 지난주 상태 유지
       if ((day === 1 && hours < 18) || day === 0) {
         const adjusted = new Date(now);
-        // 월요일이면 1일 전(일요일), 일요일이면 그대로 또는 필요에 따라 조정
-        // getDayDate 및 getWeeklyDateRange 함수들이 currentTime 기준으로 월~일을 계산하므로
-        // 월요일 18시 전에는 기준일을 지난주로 밀어버림
-        const offset = day === 1 ? 1 : 0; 
+        const offset = day === 1 ? 1 : 0;
         adjusted.setDate(now.getDate() - offset);
-        // 여기서 핵심은 '지난주 일요일' 근처로 보내서 주간 계산이 지난주를 보게 하는 것
-        if (day === 1 && hours < 18) {
-             adjusted.setDate(now.getDate() - 1);
-        }
+        if (day === 1 && hours < 18) adjusted.setDate(now.getDate() - 1);
         setCurrentTime(adjusted);
       } else {
         setCurrentTime(now);
@@ -120,10 +120,8 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
     };
 
     updateTime();
-    const timer = setInterval(updateTime, 60000); // 1분마다 체크
-
+    const timer = setInterval(updateTime, 1000);
     fetchRecords();
-
     return () => clearInterval(timer);
   }, [selectedName]);
 
@@ -144,8 +142,10 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
     let penalty = 0, bonus = 0;
     const isHalfOff = ['반휴', '월반휴', '늦반휴', '늦월반휴'].includes(r.off_type);
     const isFullOff = ['주휴', '월휴', '자율', '늦휴', '늦월휴'].includes(r.off_type);
+    
     if (['늦반휴', '늦휴', '늦월반휴', '늦월휴'].includes(r.off_type)) penalty -= 1;
     if (r.is_late && !isFullOff && r.off_type !== '자율') penalty -= 1;
+    
     if (!isFullOff && r.off_type !== '자율') {
       if (!isHalfOff && r.am_3h === false && studyH > 0) penalty -= 1;
       const target = isHalfOff ? 4 : 9;
@@ -167,7 +167,11 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
     });
     const monRec = studentRecords.find(r => r.day_of_week === '월');
     const offCount = monRec?.monthly_off_count ?? 4;
-    return { bonus, penalty, remainingWeeklyOff: (1.5 - usedWeeklyOff).toFixed(1).replace('.0', ''), remainingMonthlyOff: (offCount * 0.5).toFixed(1).replace('.0', '') };
+    return { 
+      bonus, penalty, total: bonus + penalty, 
+      remainingWeeklyOff: (1.5 - usedWeeklyOff).toFixed(1).replace('.0', ''),
+      remainingMonthlyOff: (offCount * 0.5).toFixed(1).replace('.0', '') 
+    };
   };
 
   const calculateWeeklyTotal = (name: string) => {
@@ -199,15 +203,25 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
   };
 
   const handleChange = async (name: string, day: string, field: string, value: any) => {
-    if (!isAdmin && name !== selectedName) return;
+    if (!isAdmin && field !== 'password' && field !== 'goal' && name !== selectedName) return;
     setIsSaving(true);
-    const existing = records.find(r => r.student_name === name && r.day_of_week === day) || {};
-    let payload = { ...existing, student_name: name, day_of_week: day, [field]: value };
-    if (field === 'goal') {
+    
+    if (field === 'password') {
+      const { error } = await supabase.from('study_records').upsert(
+        DAYS.map(d => ({ student_name: name, day_of_week: d, password: value })),
+        { onConflict: 'student_name,day_of_week' }
+      );
+      if (!error) alert("비밀번호가 성공적으로 변경되었습니다.");
+    } else if (field === 'goal') {
       const goalPayload = DAYS.map(d => ({ student_name: name, day_of_week: d, goal: value }));
       await supabase.from('study_records').upsert(goalPayload, { onConflict: 'student_name,day_of_week' });
+      setDailyGoal(value);
     } else {
-      await supabase.from('study_records').upsert(payload, { onConflict: 'student_name,day_of_week' });
+      const existing = records.find(r => r.student_name === name && r.day_of_week === day) || {};
+      await supabase.from('study_records').upsert(
+        { ...existing, student_name: name, day_of_week: day, [field]: value },
+        { onConflict: 'student_name,day_of_week' }
+      );
     }
     fetchRecords();
     setIsSaving(false);
@@ -226,30 +240,30 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
       <style>{GLOBAL_STYLE}</style>
       
       <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] shadow-2xl overflow-hidden border border-slate-200">
+        {/* 헤더 */}
         <div className="bg-slate-900 p-4 px-6 text-white">
           <div className="flex justify-between items-center">
             <span className="text-xs font-black text-yellow-500 tracking-widest flex items-center gap-2 uppercase">
               <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-              {isAdmin ? "Headmaster Console" : `${selectedName.replace(/[^\uAC00-\uD7A3]/g, '')} Daily Report`}
+              {realClock.toLocaleDateString('ko-KR')} {realClock.toLocaleTimeString('ko-KR', { hour12: false })}
             </span>
             {isSaving && <div className="text-[10px] text-yellow-500 animate-bounce font-magic">Saving...</div>}
           </div>
-          {!isAdmin && (
-            <div className="mt-2 pt-2 border-t border-white/10 flex items-center gap-3">
-              <span className="text-[9px] font-bold opacity-40 uppercase tracking-tighter">Current Goal</span>
-              <input type="text" value={dailyGoal} onChange={(e) => setDailyGoal(e.target.value)} onBlur={() => handleChange(selectedName, '월', 'goal', dailyGoal)} className="bg-transparent italic text-xs w-full outline-none text-yellow-100/80" placeholder="목표를 입력하세요" />
-            </div>
-          )}
+          <div className="mt-2 pt-2 border-t border-white/10 flex items-center gap-3">
+            <span className="text-[9px] font-bold opacity-40 uppercase tracking-tighter">Current Goal</span>
+            <input type="text" value={dailyGoal} onChange={(e) => setDailyGoal(e.target.value)} onBlur={() => handleChange(selectedName, '월', 'goal', dailyGoal)} className="bg-transparent italic text-xs w-full outline-none text-yellow-100/80 font-bold" placeholder="목표 입력" />
+          </div>
         </div>
 
+        {/* 테이블 메인 */}
         <div className="w-full overflow-x-auto custom-scrollbar">
           <table className="min-w-[850px] w-full table-fixed border-collapse">
             <thead>
               <tr className="bg-slate-50 text-slate-500 font-bold text-[11px] border-b-2 uppercase tracking-tighter">
                 <th className="w-28 p-2 sticky left-0 bg-slate-50 z-20 border-r">Student</th>
-                {DAYS.map(d => <th key={d} className="w-16 p-2 text-slate-900">{d}</th>)}
-                <th className="w-24 p-2 bg-slate-100">Weekly</th>
-                <th className="w-16 p-2 bg-slate-100 border-l">Off</th>
+                {DAYS.map(d => <th key={d} className="w-16 p-2 text-slate-900 border-r">{d}</th>)}
+                <th className="w-24 p-2 bg-slate-100 border-r">Weekly</th>
+                <th className="w-16 p-2 bg-slate-100">Off</th>
               </tr>
             </thead>
             <tbody>
@@ -264,19 +278,22 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
                 return (
                   <React.Fragment key={name}>
                     {rows.map((rowField, rIdx) => (
-                      <tr key={rowField} className={rIdx === 6 ? "border-b-[6px] border-slate-100" : "border-b border-slate-50"}>
+                      <tr key={rowField} className={rIdx === 6 ? "border-b-[6px] border-slate-200" : "border-b border-slate-50"}>
+                        {/* 기숙사별 학생 배경색 적용 */}
                         {rIdx === 0 && (
                           <td rowSpan={7} className={`p-4 text-center sticky left-0 z-20 border-r-[3px] ${info.color} ${info.text} cursor-pointer hover:brightness-95 transition-all`} onClick={() => setSelectedStudentReport(name)}>
                             <div className="text-3xl mb-1 drop-shadow-sm">{info.emoji}</div>
                             <div className="text-[11px] font-black leading-tight break-keep">{name.replace(/[^\uAC00-\uD7A3]/g, '')}</div>
-                            <div className="text-[8px] opacity-60 font-bold uppercase tracking-tighter mt-1 font-magic">{info.house}</div>
+                            <div className="text-[8px] opacity-60 font-bold uppercase tracking-tighter mt-1 mb-2">{info.house}</div>
+                            <button onClick={(e) => { e.stopPropagation(); const p = prompt("New PW?"); if(p) handleChange(name, '월', 'password', p); }} className="text-[8px] opacity-40 border-b border-dotted hover:opacity-100">PW 변경</button>
                           </td>
                         )}
                         {DAYS.map(day => {
-                          const rec = studentRecords.find(r => r.student_name === name && r.day_of_week === day) || {};
+                          const rec = studentRecords.find(r => r.day_of_week === day) || {};
                           const res = calc(rec);
+                          const cellBg = getOffBgColor(rec.off_type || '-');
                           return (
-                            <td key={day} className="p-1 text-center border-r border-slate-50">
+                            <td key={day} className={`p-1 text-center border-r border-slate-50 transition-colors ${cellBg}`}>
                               {rowField === 'off_type' ? (
                                 <select className="w-full text-center bg-transparent text-[10px] font-bold outline-none cursor-pointer" value={rec.off_type || '-'} onChange={(e) => handleChange(name, day, 'off_type', e.target.value)}>
                                   {OFF_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
@@ -284,7 +301,7 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
                               ) : rowField === 'is_late' || rowField === 'am_3h' ? (
                                 <input type="checkbox" checked={!!rec[rowField]} onChange={(e) => handleChange(name, day, rowField, e.target.checked)} className="w-3.5 h-3.5 accent-slate-800 rounded shadow-sm" />
                               ) : rowField === 'study_time' ? (
-                                <input type="text" className="w-full text-center text-[11px] font-bold outline-none bg-transparent font-magic" value={rec.study_time || ''} onBlur={(e) => handleChange(name, day, 'study_time', e.target.value)} onChange={(e) => setRecords(prev => prev.map(r => (r.student_name === name && r.day_of_week === day) ? {...r, study_time: e.target.value} : r))} />
+                                <input type="text" className="w-full text-center text-[11px] font-bold outline-none bg-transparent font-magic" value={rec.study_time || ''} onBlur={(e) => handleChange(name, day, 'study_time', e.target.value)} />
                               ) : (
                                 <span className={`font-black text-[11px] font-magic ${rowField === 'penalty' && res.penalty < 0 ? 'text-red-500' : rowField === 'bonus' && res.bonus > 0 ? 'text-blue-600' : 'text-slate-800'}`}>
                                   {rowField === 'total' ? res.total : (res[rowField as keyof typeof res] || '')}
@@ -293,9 +310,16 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
                             </td>
                           );
                         })}
-                        <td className="bg-slate-50 text-center border-l">
-                          {rIdx === 6 && <div className="text-[10px] font-black text-blue-700 tracking-tighter font-magic">P: {calculatePoints(name).bonus + calculatePoints(name).penalty}</div>}
+                        {/* Weekly 공부시간 및 하단 합계 상점 표시 */}
+                        <td className="bg-slate-50/50 text-center border-r relative align-middle">
+                          {rIdx === 3 && <div className="text-[14px] font-black text-slate-800 font-magic">{calculateWeeklyTotal(name)}</div>}
+                          {rIdx === 6 && (
+                            <div className="absolute inset-x-0 bottom-0 bg-blue-600 py-1 border-t border-blue-700">
+                               <span className="text-[9px] font-bold text-white uppercase tracking-tighter">합계: {calculatePoints(name).total}</span>
+                            </div>
+                          )}
                         </td>
+                        {/* Off 인디케이터 */}
                         {rIdx === 0 && (
                           <td rowSpan={7} className="p-1 bg-white border-l text-center">
                             <div className="flex flex-col items-center gap-1">
@@ -313,17 +337,13 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
         </div>
       </div>
 
-      {/* [학생 개인 요약 팝업] */}
+      {/* 학생 개인 요약 팝업 */}
       {selectedStudentReport && studentData[selectedStudentReport] && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
           <div className="bg-white p-6 md:px-10 md:py-10 w-full max-w-lg shadow-[0_30px_70px_-12px_rgba(0,0,0,0.5)] relative rounded-[3rem] animate-in zoom-in-95 duration-200 border border-white/20" onClick={e => e.stopPropagation()}>
             <div className="flex flex-row items-center justify-center mb-8 w-full gap-2">
               <div className="w-[40%] flex justify-end pr-2">
-                <img 
-                  src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} 
-                  alt="House Crest" 
-                  className="w-32 h-32 md:w-40 md:h-40 object-contain drop-shadow-xl" 
-                />
+                <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="House Crest" className="w-32 h-32 md:w-40 md:h-40 object-contain drop-shadow-xl" />
               </div>
               <div className="w-[60%] flex flex-col justify-center items-start pl-2">
                 <div className="flex items-center gap-2 mb-1">
