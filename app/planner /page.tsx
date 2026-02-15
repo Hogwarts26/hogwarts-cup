@@ -1,17 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase 선언 - 안전 장치 추가
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
+// 1. Supabase 설정 (안전한 초기화)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default function PlannerPage() {
-  // 1. 상태 선언
   const [mounted, setMounted] = useState(false);
   const [selectedName, setSelectedName] = useState("");
   const [plannerData, setPlannerData] = useState<{ [key: string]: string }>({});
@@ -20,7 +18,7 @@ export default function PlannerPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [bgm, setBgm] = useState<HTMLAudioElement | null>(null);
 
-  // 2. 날짜 계산 (함수를 useEffect 밖에서 호출하지 않도록 주의)
+  // 2. 날짜 계산 함수
   const getPlannerDate = () => {
     const now = new Date();
     if (now.getHours() < 4) {
@@ -29,23 +27,24 @@ export default function PlannerPage() {
     return now.toLocaleDateString('en-CA');
   };
 
-  // 3. 마운트 시점에 모든 설정 몰아넣기 (Hydration 에러 해결 핵심)
+  // 3. 초기 마운트 및 데이터 로드 (Hydration 에러 해결 핵심)
   useEffect(() => {
-    setMounted(true); // 이제 브라우저에서 렌더링을 시작해도 좋다는 신호
+    setMounted(true);
 
-    // BGM 초기화
+    // BGM 객체 생성
+    let audio: HTMLAudioElement | null = null;
     if (typeof Audio !== 'undefined') {
-      const audio = new Audio('/hedwig.mp3');
+      audio = new Audio('/hedwig.mp3');
       audio.loop = true;
       audio.volume = 0.4;
       setBgm(audio);
     }
 
-    // 테마 설정
+    // 테마 설정 복구
     const savedTheme = localStorage.getItem('planner_theme');
     if (savedTheme === 'light') setIsDarkMode(false);
 
-    // 인증 데이터 로드
+    // 인증 데이터 확인 및 데이터 페치
     const authData = localStorage.getItem('hg_auth');
     if (authData) {
       try {
@@ -53,43 +52,50 @@ export default function PlannerPage() {
         if (parsed.name) {
           setSelectedName(parsed.name);
           
-          // 데이터 페치 함수 실행
-          const planDate = getPlannerDate(); 
-          supabase
-            .from('daily_planner')
-            .select('content_json')
-            .eq('student_name', parsed.name)
-            .eq('plan_date', planDate)
-            .maybeSingle()
-            .then(({ data }) => {
-              if (data?.content_json) setPlannerData(data.content_json);
+          // 비동기 데이터 로드 (빌드 에러 방지용 async 함수)
+          const loadInitialData = async () => {
+            try {
+              const planDate = getPlannerDate(); 
+              const { data } = await supabase
+                .from('daily_planner')
+                .select('content_json')
+                .eq('student_name', parsed.name)
+                .eq('plan_date', planDate)
+                .maybeSingle();
+              
+              if (data?.content_json) {
+                setPlannerData(data.content_json);
+              }
+            } catch (err) {
+              console.error("데이터 로드 실패:", err);
+            } finally {
               setLoading(false);
-            })
-            .catch(() => setLoading(false));
-          return;
+            }
+          };
+          loadInitialData();
+          return () => { if (audio) audio.pause(); };
         }
       } catch (e) {
-        console.error("Auth error:", e);
+        console.error("인증 에러:", e);
       }
     }
     setLoading(false);
-  }, []);
 
-  // BGM 종료 로직 별도 관리
-  useEffect(() => {
+    // 페이지 떠날 때 음악 끄기
     return () => {
-      if (bgm) {
-        bgm.pause();
-        bgm.src = ""; 
+      if (audio) {
+        audio.pause();
+        audio.src = "";
       }
     };
-  }, [bgm]);
+  }, []);
 
-  // 저장 로직
+  // 4. 저장 로직
   const saveEntry = async (time: string, text: string) => {
     const updatedData = { ...plannerData, [time]: text };
     setPlannerData(updatedData);
     if (!selectedName) return;
+    
     await supabase.from('daily_planner').upsert({
       student_name: selectedName,
       plan_date: getPlannerDate(),
@@ -108,13 +114,16 @@ export default function PlannerPage() {
     setIsPlaying(!isPlaying);
   };
 
-  // 4. 시간 슬롯
-  const timeSlots = [];
-  for (let h = 6; h < 24; h++) {
-    const hour = String(h).padStart(2, '0');
-    timeSlots.push(`${hour}:00`, `${hour}:30`);
-  }
-  timeSlots.push("00:00", "00:30", "01:00");
+  // 5. 시간 슬롯 생성
+  const timeSlots = useMemo(() => {
+    const slots = [];
+    for (let h = 6; h < 24; h++) {
+      const hour = String(h).padStart(2, '0');
+      slots.push(`${hour}:00`, `${hour}:30`);
+    }
+    slots.push("00:00", "00:30", "01:00");
+    return slots;
+  }, []);
 
   const theme = {
     bg: isDarkMode ? 'bg-[#020617]' : 'bg-slate-50',
@@ -125,7 +134,7 @@ export default function PlannerPage() {
     divider: isDarkMode ? 'divide-white/5' : 'divide-slate-100'
   };
 
-  // ⚠️ 중요: 마운트되기 전에는 절대 아무것도 렌더링하지 않음 (Hydration 에러 방지용)
+  // ✅ 중요: 마운트 전(서버 렌더링)에는 아무것도 그리지 않음 (흰 화면 방지)
   if (!mounted) return <div className="min-h-screen bg-[#020617]" />;
 
   if (loading) return (
@@ -136,7 +145,6 @@ export default function PlannerPage() {
 
   return (
     <div className={`min-h-screen transition-colors duration-500 p-4 md:p-8 font-sans ${theme.bg} ${theme.textMain}`}>
-      {/* 폰트 링크에서 불필요한 따옴표 제거 */}
       <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet" />
       
       <div className="max-w-3xl mx-auto">
@@ -182,7 +190,7 @@ export default function PlannerPage() {
                     defaultValue={plannerData[time] || ""}
                     onBlur={(e) => saveEntry(time, e.target.value)}
                     placeholder="무엇을 학습했나요?"
-                    className="w-full bg-transparent px-6 py-4 text-sm font-medium outline-none"
+                    className="w-full bg-transparent px-6 py-4 text-sm font-medium outline-none text-inherit"
                   />
                 </div>
               </div>
