@@ -14,34 +14,51 @@ export default function PlannerPage() {
     const hour = String(h).padStart(2, '0');
     timeSlots.push(`${hour}:00`, `${hour}:30`);
   }
-  // 00:00 ~ 01:00 (익일)
   timeSlots.push("00:00", "00:30", "01:00");
 
   useEffect(() => {
+    // 로비에서 저장한 이름을 가져옵니다. 
+    // 만약 로비에서 'hg_auth' 같은 다른 키를 쓴다면 그 이름을 넣어야 합니다.
     const saved = localStorage.getItem('selectedName') || "";
     setSelectedName(saved);
-    if (saved) fetchPlannerData(saved);
+    
+    if (saved) {
+      fetchPlannerData(saved);
+    } else {
+      // 이름이 없으면 기다리지 않고 로딩 해제
+      setLoading(false);
+    }
   }, []);
 
   // 2. 오늘 날짜의 플래너 데이터 가져오기
   const fetchPlannerData = async (name: string) => {
-    const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
-    const { data, error } = await supabase
-      .from('daily_planner')
-      .select('content_json')
-      .eq('student_name', name)
-      .eq('plan_date', today)
-      .single();
+    try {
+      const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+      const { data, error } = await supabase
+        .from('daily_planner')
+        .select('content_json')
+        .eq('student_name', name)
+        .eq('plan_date', today)
+        .maybeSingle(); // single() 대신 maybeSingle()을 써야 데이터가 없을 때 에러가 안 납니다.
 
-    if (data && data.content_json) {
-      setPlannerData(data.content_json);
+      if (data && data.content_json) {
+        setPlannerData(data.content_json);
+      }
+    } catch (error) {
+      console.error("데이터 로드 실패:", error);
+    } finally {
+      // 성공/실패 여부와 상관없이 로딩 화면을 닫습니다.
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   // 3. 입력 시 실시간 DB 저장 (Upsert)
   const saveEntry = async (time: string, text: string) => {
-    // 로컬 상태 먼저 업데이트
+    if (!selectedName) {
+      alert("로그인 정보가 없습니다. 로비에서 이름을 먼저 선택해주세요.");
+      return;
+    }
+
     const updatedData = { ...plannerData, [time]: text };
     setPlannerData(updatedData);
 
@@ -54,7 +71,7 @@ export default function PlannerPage() {
         plan_date: today,
         content_json: updatedData,
         updated_at: new Date().toISOString()
-      }, { onConflict: 'student_name, plan_date' });
+      }, { onConflict: 'student_name,plan_date' }); // 주의: Supabase에서 두 컬럼을 유니크 제약으로 묶어야 합니다.
 
     if (error) console.error("플래너 저장 실패:", error);
   };
@@ -80,8 +97,10 @@ export default function PlannerPage() {
             </h1>
           </div>
           <div className="text-right">
-            <p className="text-[11px] font-bold text-emerald-400 uppercase tracking-tighter">Wizard: {selectedName}</p>
-            <p className="text-[10px] font-medium text-white/20 uppercase">{new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}</p>
+            <p className="text-[11px] font-bold text-emerald-400 uppercase tracking-tighter">Wizard: {selectedName || "Unknown"}</p>
+            <p className="text-[10px] font-medium text-white/20 uppercase">
+              {new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}
+            </p>
           </div>
         </div>
 
