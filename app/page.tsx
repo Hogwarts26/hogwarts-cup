@@ -982,21 +982,21 @@ const handleSaveName = async () => {
               {isPlaying ? '🎵' : '🔇'}
             </button>
 
-                {/* 2. ✅ 플래너 버튼 (이 위치에 있어야 함!) */}
-                <Link 
-                  href="/planner" 
-                  className="text-[10px] font-black text-white bg-emerald-500 px-3 py-1.5 rounded-full shadow-md hover:bg-emerald-600 transition-all active:scale-95 flex items-center gap-1 whitespace-nowrap"
-                >
-                  플래너
-                </Link>
-            {!isAdmin && (
-              <Link 
-                href="/timer" 
-                className="text-[10px] font-black text-white bg-blue-500 px-3 py-1.5 rounded-full shadow-md hover:bg-blue-600 transition-all active:scale-95 flex items-center gap-1 whitespace-nowrap"
-              >
-                교시제
-              </Link>
-            )}
+               {/* 2. ✅ 플래너 버튼 (로그아웃 버튼과 같은 스타일) */}
+<Link 
+  href="/planner" 
+  className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full shadow-sm hover:bg-slate-50 transition-all active:scale-95 flex items-center gap-1 whitespace-nowrap"
+>
+  플래너
+</Link>
+           {!isAdmin && (
+  <Link 
+    href="/timer" 
+    className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full shadow-sm hover:bg-slate-50 transition-all active:scale-95 flex items-center gap-1 whitespace-nowrap"
+  >
+    교시제
+  </Link>
+)}
 
             {isAdmin && <button onClick={() => setShowSummary(true)} className="text-[10px] font-black text-white bg-indigo-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-indigo-700 whitespace-nowrap">요약</button>}
             {isAdmin && <button onClick={resetWeeklyData} className="text-[10px] font-black text-white bg-red-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-red-700 whitespace-nowrap">주간 리셋</button>}
