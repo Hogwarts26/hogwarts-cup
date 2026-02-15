@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
-const DragonCave = ({ studentMasterData, selectedName, setStudentMasterData, currentUser, supabase, handleResetImage: parentReset }: any) => {
+// export default 추가 및 컴포넌트명을 Dragon으로 변경 (page.tsx와 매칭)
+export default function Dragon({ studentMasterData, selectedName, setStudentMasterData, currentUser, supabase, handleResetImage: parentReset }: any) {
   // 데이터 및 기본 변수 설정
   const targetName = selectedName || currentUser?.name;
   const userData = studentMasterData[targetName] || {};
