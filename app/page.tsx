@@ -967,50 +967,51 @@ const handleSaveName = async () => {
       )}
 
 {/* [23] 상단 헤더 및 기숙사 점수판 구역 */}
-      <div className="max-w-[1100px] mx-auto mb-8 px-4">
-        <div className="flex flex-col gap-y-6">
-          
-          {/* 1열: 버튼 그룹 (우상단 정렬) */}
-          <div className="flex gap-2 flex-wrap justify-end items-center">
-            {/* [24] 음악 및 관리자 버튼들 */}
-            <button 
-              onClick={toggleMusic} 
-              className={`text-[10px] font-black px-3 py-1.5 rounded-full shadow-sm transition-all border-2 whitespace-nowrap ${
-                isPlaying ? 'bg-white border-yellow-400 text-yellow-500 animate-pulse' : 'bg-white border-slate-200 text-slate-400'
-              }`}
-            >
-              {isPlaying ? '🎵' : '🔇'}
-            </button>
+<div className="max-w-[1100px] mx-auto mb-8 px-4">
+  <div className="flex flex-col gap-y-6">
+    
+    {/* 1열: 버튼 그룹 (우상단 정렬) */}
+    <div className="flex gap-2 flex-wrap justify-end items-center">
+      {/* [24] 음악 및 관리자 버튼들 */}
+      <button 
+        onClick={toggleMusic} 
+        className={`text-[10px] font-black px-3 py-1.5 rounded-full shadow-sm transition-all border-2 whitespace-nowrap ${
+          isPlaying ? 'bg-white border-yellow-400 text-yellow-500 animate-pulse' : 'bg-white border-slate-200 text-slate-400'
+        }`}
+      >
+        {isPlaying ? '🎵' : '🔇'}
+      </button>
 
-                {/* 2. ✅ 플래너 버튼 (이 위치에 있어야 함!) */}
-                <Link 
-                  href="/planner" 
-                  className="text-[10px] font-black text-white bg-emerald-500 px-3 py-1.5 rounded-full shadow-md hover:bg-emerald-600 transition-all active:scale-95 flex items-center gap-1 whitespace-nowrap"
-                >
-                  플래너
-                </Link>
-            {!isAdmin && (
-              <Link 
-                href="/timer" 
-                className="text-[10px] font-black text-white bg-blue-500 px-3 py-1.5 rounded-full shadow-md hover:bg-blue-600 transition-all active:scale-95 flex items-center gap-1 whitespace-nowrap"
-              >
-                교시제
-              </Link>
-            )}
+      {/* 2. ✅ 플래너 버튼 */}
+      <Link 
+        href="/planner" 
+        className="text-[10px] font-black text-slate-400 bg-white border-2 border-slate-200 px-3 py-1.5 rounded-full shadow-sm hover:text-slate-600 transition-all active:scale-95 flex items-center gap-1 whitespace-nowrap"
+      >
+        플래너
+      </Link>
 
-            {isAdmin && <button onClick={() => setShowSummary(true)} className="text-[10px] font-black text-white bg-indigo-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-indigo-700 whitespace-nowrap">요약</button>}
-            {isAdmin && <button onClick={resetWeeklyData} className="text-[10px] font-black text-white bg-red-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-red-700 whitespace-nowrap">주간 리셋</button>}
-            {isAdmin && (
-              <button onClick={resetMonthlyOff} className="text-[10px] font-black text-white bg-orange-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-orange-700 whitespace-nowrap">월휴 리셋</button>
-            )}
-            
-            <button 
-              onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} 
-              className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full shadow-sm whitespace-nowrap"
-            >
-              Logout
-            </button>
-          </div>
+      {!isAdmin && (
+        <Link 
+          href="/timer" 
+          className="text-[10px] font-black text-slate-400 bg-white border-2 border-slate-200 px-3 py-1.5 rounded-full shadow-sm hover:text-slate-600 transition-all active:scale-95 flex items-center gap-1 whitespace-nowrap"
+        >
+          교시제
+        </Link>
+      )}
+
+      {isAdmin && <button onClick={() => setShowSummary(true)} className="text-[10px] font-black text-slate-400 bg-white border-2 border-slate-200 px-3 py-1.5 rounded-full shadow-sm hover:text-slate-600 whitespace-nowrap">요약</button>}
+      {isAdmin && <button onClick={resetWeeklyData} className="text-[10px] font-black text-slate-400 bg-white border-2 border-slate-200 px-3 py-1.5 rounded-full shadow-sm hover:text-slate-600 whitespace-nowrap">주간 리셋</button>}
+      {isAdmin && (
+        <button onClick={resetMonthlyOff} className="text-[10px] font-black text-slate-400 bg-white border-2 border-slate-200 px-3 py-1.5 rounded-full shadow-sm hover:text-slate-600 whitespace-nowrap">월휴 리셋</button>
+      )}
+      
+      <button 
+        onClick={() => { localStorage.removeItem('hg_auth'); window.location.reload(); }} 
+        className="text-[10px] font-black text-slate-400 bg-white border-2 border-slate-200 px-3 py-1.5 rounded-full shadow-sm whitespace-nowrap"
+      >
+        Logout
+      </button>
+    </div>
 
           {/* 2열: 로고 (가운데 정렬) */}
           <div className="flex justify-center">
