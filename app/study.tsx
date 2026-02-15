@@ -47,26 +47,28 @@ const HOUSE_LOGOS: Record<string, string> = {
   "후플푸프": "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/huf.png"
 };
 
+// [수정 포인트] 인터페이스에 studentMasterData 추가 (에러 해결)
 interface StudyProps {
   supabase: any;
   selectedName: string;
   isAdmin: boolean;
+  studentMasterData?: any; 
 }
 
-export default function Study({ supabase, selectedName, isAdmin }: StudyProps) {
+export default function Study({ supabase, selectedName, isAdmin, studentMasterData }: StudyProps) {
   const [records, setRecords] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedStudentReport, setSelectedStudentReport] = useState<string | null>(null);
   const [dailyGoal, setDailyGoal] = useState("");
 
-  const studentData = studentStyleMap;
+  // props로 전달된 데이터가 있으면 그것을 사용하고, 없으면 내부 styleMap 사용
+  const studentData = studentMasterData || studentStyleMap;
 
   useEffect(() => {
     fetchRecords();
     const timer = setInterval(() => {
       const now = new Date();
-      // 매주 월요일 오전 18시 이전에는 지난주 데이터를 보여주는 등의 로직이 필요하다면 여기에 추가
       setCurrentTime(now);
     }, 1000 * 60);
     return () => clearInterval(timer);
@@ -81,9 +83,6 @@ export default function Study({ supabase, selectedName, isAdmin }: StudyProps) {
     }
   };
 
-  // ==========================================
-  // [계산 로직 함수]
-  // ==========================================
   const calc = (r: any) => {
     if (!r || !r.off_type || r.off_type === '-' || r.off_type === '') return { penalty: 0, bonus: 0, total: 0 };
     if (r.off_type === '결석') return { penalty: -5, bonus: 0, total: -5 };
@@ -103,9 +102,6 @@ export default function Study({ supabase, selectedName, isAdmin }: StudyProps) {
     return { penalty: Math.max(penalty, -5), bonus, total: Math.max(penalty, -5) + bonus };
   };
 
-  // ==========================================
-  // [12] 요약 리포트 팝업 데이터 연동 함수
-  // ==========================================
   const calculatePoints = (name: string) => {
     let bonus = 0; let penalty = 0; let usedWeeklyOff = 0; 
     const studentRecords = records.filter(r => r.student_name === name);
