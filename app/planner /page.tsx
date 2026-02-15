@@ -4,44 +4,23 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 
-// 1. Supabase 클라이언트를 함수 밖에서 선언 (lib/supabase.ts 역할 대체)
+// Supabase 선언 - 안전 장치 추가
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 );
 
 export default function PlannerPage() {
+  // 1. 상태 선언
+  const [mounted, setMounted] = useState(false);
   const [selectedName, setSelectedName] = useState("");
   const [plannerData, setPlannerData] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
-  
-  // 🎵 BGM 객체 (이전 방식 그대로 복구)
-  const [bgm] = useState(() => typeof Audio !== 'undefined' ? new Audio('/hedwig.mp3') : null);
+  const [bgm, setBgm] = useState<HTMLAudioElement | null>(null);
 
-  const toggleMusic = () => {
-    if (!bgm) return;
-    if (isPlaying) {
-      bgm.pause();
-    } else {
-      bgm.loop = true;
-      bgm.volume = 0.4;
-      bgm.play().catch(e => console.log("음악 재생 실패:", e));
-    }
-    setIsPlaying(!isPlaying);
-  };
-
-  // 페이지 떠날 때 음악 끄기 (이전 로직 복구)
-  useEffect(() => {
-    return () => {
-      if (bgm) {
-        bgm.pause();
-        setIsPlaying(false);
-      }
-    };
-  }, [bgm]);
-
+  // 2. 날짜 계산 (함수를 useEffect 밖에서 호출하지 않도록 주의)
   const getPlannerDate = () => {
     const now = new Date();
     if (now.getHours() < 4) {
@@ -50,60 +29,86 @@ export default function PlannerPage() {
     return now.toLocaleDateString('en-CA');
   };
 
-  // 데이터 불러오기 함수
-  const fetchPlannerData = async (name: string) => {
-    try {
-      const planDate = getPlannerDate(); 
-      const { data } = await supabase
-        .from('daily_planner')
-        .select('content_json')
-        .eq('student_name', name)
-        .eq('plan_date', planDate)
-        .maybeSingle();
-
-      if (data && data.content_json) {
-        setPlannerData(data.content_json);
-      }
-    } catch (err) {
-      console.error("플래너 로드 실패:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // 3. 마운트 시점에 모든 설정 몰아넣기 (Hydration 에러 해결 핵심)
   useEffect(() => {
+    setMounted(true); // 이제 브라우저에서 렌더링을 시작해도 좋다는 신호
+
+    // BGM 초기화
+    if (typeof Audio !== 'undefined') {
+      const audio = new Audio('/hedwig.mp3');
+      audio.loop = true;
+      audio.volume = 0.4;
+      setBgm(audio);
+    }
+
+    // 테마 설정
     const savedTheme = localStorage.getItem('planner_theme');
     if (savedTheme === 'light') setIsDarkMode(false);
 
+    // 인증 데이터 로드
     const authData = localStorage.getItem('hg_auth');
     if (authData) {
       try {
         const parsed = JSON.parse(authData);
         if (parsed.name) {
           setSelectedName(parsed.name);
-          fetchPlannerData(parsed.name);
+          
+          // 데이터 페치 함수 실행
+          const planDate = getPlannerDate(); 
+          supabase
+            .from('daily_planner')
+            .select('content_json')
+            .eq('student_name', parsed.name)
+            .eq('plan_date', planDate)
+            .maybeSingle()
+            .then(({ data }) => {
+              if (data?.content_json) setPlannerData(data.content_json);
+              setLoading(false);
+            })
+            .catch(() => setLoading(false));
           return;
         }
       } catch (e) {
-        console.error("인증 데이터 파싱 에러:", e);
+        console.error("Auth error:", e);
       }
     }
     setLoading(false);
   }, []);
 
+  // BGM 종료 로직 별도 관리
+  useEffect(() => {
+    return () => {
+      if (bgm) {
+        bgm.pause();
+        bgm.src = ""; 
+      }
+    };
+  }, [bgm]);
+
+  // 저장 로직
   const saveEntry = async (time: string, text: string) => {
     const updatedData = { ...plannerData, [time]: text };
     setPlannerData(updatedData);
     if (!selectedName) return;
-    const planDate = getPlannerDate();
     await supabase.from('daily_planner').upsert({
       student_name: selectedName,
-      plan_date: planDate,
+      plan_date: getPlannerDate(),
       content_json: updatedData,
       updated_at: new Date().toISOString()
     }, { onConflict: 'student_name,plan_date' });
   };
 
+  const toggleMusic = () => {
+    if (!bgm) return;
+    if (isPlaying) {
+      bgm.pause();
+    } else {
+      bgm.play().catch(e => console.log("음악 재생 실패:", e));
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  // 4. 시간 슬롯
   const timeSlots = [];
   for (let h = 6; h < 24; h++) {
     const hour = String(h).padStart(2, '0');
@@ -120,7 +125,9 @@ export default function PlannerPage() {
     divider: isDarkMode ? 'divide-white/5' : 'divide-slate-100'
   };
 
-  // ✅ 흰 화면 방지를 위해 로딩 중일 때 '최소한의 구조'라도 보여주기
+  // ⚠️ 중요: 마운트되기 전에는 절대 아무것도 렌더링하지 않음 (Hydration 에러 방지용)
+  if (!mounted) return <div className="min-h-screen bg-[#020617]" />;
+
   if (loading) return (
     <div className={`min-h-screen flex items-center justify-center ${theme.bg}`}>
       <div className={`${theme.textMain} font-serif animate-pulse uppercase tracking-[0.3em]`}>Opening Your Scroll...</div>
@@ -128,12 +135,11 @@ export default function PlannerPage() {
   );
 
   return (
-    <div className={`min-h-screen transition-colors duration-500 p-4 md:p-8 font-sans ${theme.bg} ${theme.textMain}`} style={{ fontFamily: "'Pretendard Variable', sans-serif" }}>
-      <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css" />
+    <div className={`min-h-screen transition-colors duration-500 p-4 md:p-8 font-sans ${theme.bg} ${theme.textMain}`}>
+      {/* 폰트 링크에서 불필요한 따옴표 제거 */}
       <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet" />
       
       <div className="max-w-3xl mx-auto">
-        {/* 상단 헤더 부분 */}
         <div className="flex justify-between items-start mb-10">
           <div className="flex flex-col gap-4">
             <Link href="/" className={`inline-block px-4 py-2 rounded-xl text-xs font-bold border transition-all w-fit ${theme.btn}`}>
@@ -158,14 +164,11 @@ export default function PlannerPage() {
             </div>
             <div className="text-right">
               <p className={`text-[11px] font-bold uppercase tracking-tighter ${theme.accent}`}>Wizard: {selectedName || "Unknown"}</p>
-              <p className="text-[10px] font-medium opacity-40 uppercase">
-                {new Date(getPlannerDate()).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}
-              </p>
+              <p className="text-[10px] font-medium opacity-40 uppercase">{new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}</p>
             </div>
           </div>
         </div>
 
-        {/* 플래너 본문 */}
         <div className={`border rounded-[2rem] overflow-hidden backdrop-blur-md shadow-2xl ${theme.card}`}>
           <div className={`grid grid-cols-1 divide-y ${theme.divider}`}>
             {timeSlots.map((time) => (
@@ -179,7 +182,7 @@ export default function PlannerPage() {
                     defaultValue={plannerData[time] || ""}
                     onBlur={(e) => saveEntry(time, e.target.value)}
                     placeholder="무엇을 학습했나요?"
-                    className="w-full bg-transparent px-6 py-4 text-sm font-medium outline-none text-inherit"
+                    className="w-full bg-transparent px-6 py-4 text-sm font-medium outline-none"
                   />
                 </div>
               </div>
