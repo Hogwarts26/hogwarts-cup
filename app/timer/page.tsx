@@ -77,7 +77,7 @@ export default function TimerPage() {
     if (!now) return null;
     const nowTotalSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
 
-    // 50/10 모드: 사용자님 요청대로 무의미한 교시 숫자를 빼고 깔끔하게 라벨링
+    // 50/10 모드
     if (scheduleMode === '50') {
       const currentMin = now.getMinutes();
       const isStudyTime = currentMin < 50;
@@ -192,7 +192,7 @@ export default function TimerPage() {
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css" />
       <div className="w-full max-w-lg flex flex-col gap-4 mb-10 z-10">
         <div className="flex justify-between items-center">
-          <Link href="/" className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${theme.btn}`}>학습내역</Link>
+          <Link href="/" className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${theme.btn}`}>← Back to Lobby</Link>
           <div className="flex gap-2">
             <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${theme.btn}`}>{isDarkMode ? '🌝' : '🌞'}</button>
             <button onClick={() => isMuted ? unlockAudio() : setIsMuted(true)} className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${theme.btn}`}>{isMuted ? '🔇' : '🔊'}</button>
