@@ -16,8 +16,17 @@ export default function PlannerPage() {
   }
   timeSlots.push("00:00", "00:30", "01:00");
 
+  // [추가] 새벽 4시 이전까지는 '전날'로 간주하는 날짜 계산 함수
+  const getPlannerDate = () => {
+    const now = new Date();
+    // 새벽 4시 미만이면 날짜를 하루 뒤로 밀어 '전날'로 처리
+    if (now.getHours() < 4) {
+      now.setDate(now.getDate() - 1);
+    }
+    return now.toLocaleDateString('en-CA'); // YYYY-MM-DD 형식
+  };
+
   useEffect(() => {
-    // [수정] 로비의 hg_auth 키에서 이름을 파싱해서 가져옵니다.
     const authData = localStorage.getItem('hg_auth');
     if (authData) {
       try {
@@ -25,27 +34,25 @@ export default function PlannerPage() {
         if (parsed.name) {
           setSelectedName(parsed.name);
           fetchPlannerData(parsed.name);
-          return; // 데이터를 찾았으므로 여기서 종료
+          return;
         }
       } catch (e) {
         console.error("인증 데이터 파싱 에러:", e);
       }
     }
-    
-    // 인증 데이터가 없으면 로딩만 해제
     setLoading(false);
   }, []);
 
-  // 2. 오늘 날짜의 플래너 데이터 가져오기
+  // 2. 플래너 데이터 가져오기 (새벽 4시 로직 적용)
   const fetchPlannerData = async (name: string) => {
     try {
-      const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+      const planDate = getPlannerDate(); 
       const { data, error } = await supabase
         .from('daily_planner')
         .select('content_json')
         .eq('student_name', name)
-        .eq('plan_date', today)
-        .maybeSingle(); // single() 대신 maybeSingle()을 써야 데이터가 없을 때 에러가 안 납니다.
+        .eq('plan_date', planDate)
+        .maybeSingle();
 
       if (data && data.content_json) {
         setPlannerData(data.content_json);
@@ -57,24 +64,20 @@ export default function PlannerPage() {
     }
   };
 
-  // 3. 입력 시 실시간 DB 저장 (Upsert)
+  // 3. 실시간 DB 저장 (새벽 4시 로직 적용)
   const saveEntry = async (time: string, text: string) => {
-    // 로컬 상태 먼저 업데이트
     const updatedData = { ...plannerData, [time]: text };
     setPlannerData(updatedData);
 
-    if (!selectedName) {
-      console.error("저장 실패: 로그인된 사용자 이름이 없습니다.");
-      return;
-    }
+    if (!selectedName) return;
 
-    const today = new Date().toLocaleDateString('en-CA');
+    const planDate = getPlannerDate();
     
     const { error } = await supabase
       .from('daily_planner')
       .upsert({
         student_name: selectedName,
-        plan_date: today,
+        plan_date: planDate,
         content_json: updatedData,
         updated_at: new Date().toISOString()
       }, { onConflict: 'student_name,plan_date' });
@@ -92,7 +95,6 @@ export default function PlannerPage() {
     <div className="min-h-screen bg-[#0a0a0c] text-white p-4 md:p-8 font-sans">
       <div className="max-w-3xl mx-auto">
         
-        {/* 헤더 부분 */}
         <div className="flex justify-between items-center mb-10">
           <div>
             <Link href="/" className="text-[10px] font-black text-white/30 hover:text-white transition-colors uppercase tracking-widest">
@@ -104,22 +106,22 @@ export default function PlannerPage() {
           </div>
           <div className="text-right">
             <p className="text-[11px] font-bold text-emerald-400 uppercase tracking-tighter">Wizard: {selectedName || "Unknown"}</p>
-            <p className="text-[10px] font-medium text-white/20 uppercase">{new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}</p>
+            {/* 상단 날짜 표시도 플래너 기준 날짜로 보여주기 */}
+            <p className="text-[10px] font-medium text-white/20 uppercase">
+              {new Date(getPlannerDate()).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}
+            </p>
           </div>
         </div>
 
-        {/* 플래너 본문 */}
         <div className="bg-white/5 border border-white/10 rounded-[2.5rem] overflow-hidden backdrop-blur-md">
           <div className="grid grid-cols-1 divide-y divide-white/5">
             {timeSlots.map((time) => (
               <div key={time} className="flex items-center group hover:bg-white/[0.02] transition-colors">
-                {/* 시간 라벨 */}
                 <div className={`w-20 md:w-24 py-4 px-6 text-[11px] font-black border-r border-white/5 text-center
                   ${time.endsWith(':00') ? 'text-white/60' : 'text-white/20'}`}>
                   {time}
                 </div>
                 
-                {/* 입력창 */}
                 <div className="flex-1">
                   <input 
                     type="text"
@@ -130,7 +132,6 @@ export default function PlannerPage() {
                   />
                 </div>
 
-                {/* 상태 인디케이터 */}
                 <div className="px-4 opacity-0 group-focus-within:opacity-100 transition-opacity">
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
                 </div>
@@ -139,10 +140,9 @@ export default function PlannerPage() {
           </div>
         </div>
 
-        {/* 하단 팁 */}
         <div className="mt-8 text-center">
           <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">
-            입력 후 창을 벗어나면 마법처럼 자동 저장됩니다
+            입력 후 창을 벗어나면 마법처럼 자동 저장됩니다 (새벽 4시 갱신)
           </p>
         </div>
       </div>
