@@ -52,7 +52,7 @@ export default function HogwartsPage() {
       <Login 
         onLoginSuccess={handleLoginSuccess} 
         supabase={supabase} 
-        globalStyle={{}} // Login 컴포넌트가 요구하는 필수 속성
+        globalStyle=""
       />
     );
   }
