@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 
 // ==========================================
-// [1] 기숙사컵 스타일 및 애니메이션 설정 (폰트 추가)
+// [1] 기숙사컵 스타일 및 애니메이션 설정
 // ==========================================
 const GLOBAL_STYLE = `
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap');
@@ -17,7 +17,6 @@ const GLOBAL_STYLE = `
     background-color: #f5f5f4;
   }
 
-  /* 테이블 내 드롭다운 정렬 */
   table select {
     appearance: none;
     -webkit-appearance: none;
@@ -33,6 +32,14 @@ const GLOBAL_STYLE = `
 // [2] 공통 상수 및 데이터
 // ==========================================
 export const studentStyleMap: { [key: string]: { house: string; emoji: string; color: string; accent: string, text: string } } = {
+  "🐱냥이": { house: "그리핀도르", emoji: "🐱", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
+  "🐺늑대": { house: "그리핀도르", emoji: "🐺", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
+  "🦉올뺌": { house: "그리핀도르", emoji: "🦉", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
+  "🦦수달": { house: "그리핀도르", emoji: "🦦", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
+  "🦄유니콘": { house: "그리핀도르", emoji: "🦄", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
+  "🦋나비": { house: "그리핀도르", emoji: "🦋", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
+  "🔥불꽃": { house: "그리핀도르", emoji: "🔥", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
+  "🍋레몬": { house: "그리핀도르", emoji: "🍋", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
   "🤖로봇": { house: "슬리데린", emoji: "🤖", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🐾발자국": { house: "슬리데린", emoji: "🐾", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🐆표범": { house: "슬리데린", emoji: "🐆", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
@@ -48,15 +55,7 @@ export const studentStyleMap: { [key: string]: { house: string; emoji: string; c
   "🌳나무": { house: "래번클로", emoji: "🌳", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
   "👑왕관": { house: "래번클로", emoji: "👑", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
   "🐬돌고래": { house: "래번클로", emoji: "🐬", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
-  "🐱냥이": { house: "그리핀도르", emoji: "🐱", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
   "🪶깃털": { house: "래번클로", emoji: "🪶", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
-  "🐺늑대": { house: "그리핀도르", emoji: "🐺", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
-  "🦉올뺌": { house: "그리핀도르", emoji: "🦉", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
-  "🦦수달": { house: "그리핀도르", emoji: "🦦", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
-  "🦄유니콘": { house: "그리핀도르", emoji: "🦄", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
-  "🦋나비": { house: "그리핀도르", emoji: "🦋", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
-  "🔥불꽃": { house: "그리핀도르", emoji: "🔥", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
-  "🍋레몬": { house: "그리핀도르", emoji: "🍋", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
   "🫧거품": { house: "후플푸프", emoji: "🫧", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🐎말": { house: "후플푸프", emoji: "🐎", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🐈‍⬛깜냥": { house: "후플푸프", emoji: "🐈‍⬛", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
@@ -93,9 +92,38 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
 
   const studentData = studentMasterData || studentStyleMap;
 
+  // ==========================================
+  // [6] 초기 실행 (인증 확인 및 시계 - 월요일 18:00 로직 포함)
+  // ==========================================
   useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const day = now.getDay(); // 0(일) ~ 6(토)
+      const hours = now.getHours();
+
+      // 월요일(1) 18시 이전이거나 일요일(0)인 경우 지난주 상태 유지
+      if ((day === 1 && hours < 18) || day === 0) {
+        const adjusted = new Date(now);
+        // 월요일이면 1일 전(일요일), 일요일이면 그대로 또는 필요에 따라 조정
+        // getDayDate 및 getWeeklyDateRange 함수들이 currentTime 기준으로 월~일을 계산하므로
+        // 월요일 18시 전에는 기준일을 지난주로 밀어버림
+        const offset = day === 1 ? 1 : 0; 
+        adjusted.setDate(now.getDate() - offset);
+        // 여기서 핵심은 '지난주 일요일' 근처로 보내서 주간 계산이 지난주를 보게 하는 것
+        if (day === 1 && hours < 18) {
+             adjusted.setDate(now.getDate() - 1);
+        }
+        setCurrentTime(adjusted);
+      } else {
+        setCurrentTime(now);
+      }
+    };
+
+    updateTime();
+    const timer = setInterval(updateTime, 60000); // 1분마다 체크
+
     fetchRecords();
-    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+
     return () => clearInterval(timer);
   }, [selectedName]);
 
@@ -154,19 +182,19 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
   };
 
   const getWeeklyDateRange = () => {
-    const today = currentTime;
-    const day = today.getDay();
-    const diff = today.getDate() - (day === 0 ? 6 : day - 1);
-    const monday = new Date(new Date(today).setDate(diff));
-    const sunday = new Date(new Date(today).setDate(diff + 6));
+    const baseDate = new Date(currentTime);
+    const day = baseDate.getDay();
+    const diff = baseDate.getDate() - (day === 0 ? 6 : day - 1);
+    const monday = new Date(new Date(baseDate).setDate(diff));
+    const sunday = new Date(new Date(baseDate).setDate(diff + 6));
     return `${monday.getMonth() + 1}월 ${monday.getDate()}일 ~ ${sunday.getMonth() + 1}월 ${sunday.getDate()}일`;
   };
 
   const getDayDate = (targetDay: string) => {
     const dayIdx = DAYS.indexOf(targetDay);
-    const today = currentTime;
-    const diff = today.getDate() - (today.getDay() === 0 ? 6 : today.getDay() - 1) + dayIdx;
-    const target = new Date(new Date(today).setDate(diff));
+    const baseDate = new Date(currentTime);
+    const diff = baseDate.getDate() - (baseDate.getDay() === 0 ? 6 : baseDate.getDay() - 1) + dayIdx;
+    const target = new Date(new Date(baseDate).setDate(diff));
     return `${target.getMonth() + 1}.${target.getDate()}`;
   };
 
@@ -204,7 +232,7 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
               <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
               {isAdmin ? "Headmaster Console" : `${selectedName.replace(/[^\uAC00-\uD7A3]/g, '')} Daily Report`}
             </span>
-            {isSaving && <div className="text-[10px] text-yellow-500 animate-bounce">Updating Magic...</div>}
+            {isSaving && <div className="text-[10px] text-yellow-500 animate-bounce font-magic">Saving...</div>}
           </div>
           {!isAdmin && (
             <div className="mt-2 pt-2 border-t border-white/10 flex items-center gap-3">
@@ -241,7 +269,7 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
                           <td rowSpan={7} className={`p-4 text-center sticky left-0 z-20 border-r-[3px] ${info.color} ${info.text} cursor-pointer hover:brightness-95 transition-all`} onClick={() => setSelectedStudentReport(name)}>
                             <div className="text-3xl mb-1 drop-shadow-sm">{info.emoji}</div>
                             <div className="text-[11px] font-black leading-tight break-keep">{name.replace(/[^\uAC00-\uD7A3]/g, '')}</div>
-                            <div className="text-[8px] opacity-60 font-bold uppercase tracking-tighter mt-1">{info.house}</div>
+                            <div className="text-[8px] opacity-60 font-bold uppercase tracking-tighter mt-1 font-magic">{info.house}</div>
                           </td>
                         )}
                         {DAYS.map(day => {
@@ -256,9 +284,9 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
                               ) : rowField === 'is_late' || rowField === 'am_3h' ? (
                                 <input type="checkbox" checked={!!rec[rowField]} onChange={(e) => handleChange(name, day, rowField, e.target.checked)} className="w-3.5 h-3.5 accent-slate-800 rounded shadow-sm" />
                               ) : rowField === 'study_time' ? (
-                                <input type="text" className="w-full text-center text-[11px] font-bold outline-none bg-transparent" value={rec.study_time || ''} onBlur={(e) => handleChange(name, day, 'study_time', e.target.value)} onChange={(e) => setRecords(prev => prev.map(r => (r.student_name === name && r.day_of_week === day) ? {...r, study_time: e.target.value} : r))} />
+                                <input type="text" className="w-full text-center text-[11px] font-bold outline-none bg-transparent font-magic" value={rec.study_time || ''} onBlur={(e) => handleChange(name, day, 'study_time', e.target.value)} onChange={(e) => setRecords(prev => prev.map(r => (r.student_name === name && r.day_of_week === day) ? {...r, study_time: e.target.value} : r))} />
                               ) : (
-                                <span className={`font-black text-[11px] ${rowField === 'penalty' && res.penalty < 0 ? 'text-red-500' : rowField === 'bonus' && res.bonus > 0 ? 'text-blue-600' : 'text-slate-800'}`}>
+                                <span className={`font-black text-[11px] font-magic ${rowField === 'penalty' && res.penalty < 0 ? 'text-red-500' : rowField === 'bonus' && res.bonus > 0 ? 'text-blue-600' : 'text-slate-800'}`}>
                                   {rowField === 'total' ? res.total : (res[rowField as keyof typeof res] || '')}
                                 </span>
                               )}
@@ -266,7 +294,7 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
                           );
                         })}
                         <td className="bg-slate-50 text-center border-l">
-                          {rIdx === 6 && <div className="text-[10px] font-black text-blue-700 tracking-tighter">P: {calculatePoints(name).bonus + calculatePoints(name).penalty}</div>}
+                          {rIdx === 6 && <div className="text-[10px] font-black text-blue-700 tracking-tighter font-magic">P: {calculatePoints(name).bonus + calculatePoints(name).penalty}</div>}
                         </td>
                         {rIdx === 0 && (
                           <td rowSpan={7} className="p-1 bg-white border-l text-center">
@@ -285,7 +313,7 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
         </div>
       </div>
 
-      {/* [학생 개인 요약 팝업] - 폰트 및 로고 수정 완료 */}
+      {/* [학생 개인 요약 팝업] */}
       {selectedStudentReport && studentData[selectedStudentReport] && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
           <div className="bg-white p-6 md:px-10 md:py-10 w-full max-w-lg shadow-[0_30px_70px_-12px_rgba(0,0,0,0.5)] relative rounded-[3rem] animate-in zoom-in-95 duration-200 border border-white/20" onClick={e => e.stopPropagation()}>
@@ -295,13 +323,12 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
                   src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} 
                   alt="House Crest" 
                   className="w-32 h-32 md:w-40 md:h-40 object-contain drop-shadow-xl" 
-                  onError={(e) => (e.currentTarget.style.opacity = '0')}
                 />
               </div>
               <div className="w-[60%] flex flex-col justify-center items-start pl-2">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-4xl md:text-5xl drop-shadow-sm">{studentData[selectedStudentReport].emoji}</span>
-                  <span className="font-bold text-xs md:text-sm text-slate-400 tracking-widest uppercase">{studentData[selectedStudentReport].house}</span>
+                  <span className="font-bold text-xs md:text-sm text-slate-400 tracking-widest uppercase font-magic">{studentData[selectedStudentReport].house}</span>
                 </div>
                 <div className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter leading-none italic font-magic">
                   {calculateWeeklyTotal(selectedStudentReport)}
@@ -334,7 +361,7 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
                 );
               })}
               
-              <div className="p-3 text-[10px] font-bold leading-relaxed flex flex-col justify-center gap-1 bg-slate-900 text-white rounded-2xl shadow-lg border border-slate-700">
+              <div className="p-3 text-[10px] font-bold leading-relaxed flex flex-col justify-center gap-1 bg-slate-900 text-white rounded-2xl shadow-lg border border-slate-700 font-magic">
                 <div className="flex justify-between border-b border-white/10 pb-1"><span>BONUS</span><span className="text-blue-400">+{calculatePoints(selectedStudentReport).bonus}</span></div>
                 <div className="flex justify-between border-b border-white/10 pb-1"><span>PENALTY</span><span className="text-red-400">{calculatePoints(selectedStudentReport).penalty}</span></div>
                 <div className="flex justify-between text-yellow-400"><span>OFF</span><span>{calculatePoints(selectedStudentReport).remainingWeeklyOff}</span></div>
