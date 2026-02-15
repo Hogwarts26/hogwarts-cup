@@ -10,7 +10,6 @@ export default function PlannerPage() {
 
   // 1. 시간 슬롯 생성: 06:00 ~ 익일 01:00 (30분 단위)
   const timeSlots = [];
-  // 06:00 ~ 23:30
   for (let h = 6; h < 24; h++) {
     const hour = String(h).padStart(2, '0');
     timeSlots.push(`${hour}:00`, `${hour}:30`);
