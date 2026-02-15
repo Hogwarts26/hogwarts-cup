@@ -1,37 +1,35 @@
-import "./globals.css";
-import BgmPlayer from "@/components/BgmPlayer"; // 🔊/🔇 이모지 버전
-import LogoutButton from "@/components/LogoutButton";
+"use client";
+import React, { useState, useRef } from 'react';
 
-export const metadata = { title: "Hogwarts Study Cup" };
+export default function BgmPlayer() {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const toggleMusic = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play().catch(() => {
+        alert("브라우저 설정에서 오디오 자동 재생을 허용하거나 화면을 한 번 클릭해주세요!");
+      });
+    }
+    setIsPlaying(!isPlaying);
+  };
+
   return (
-    <html lang="ko">
-      <head>
-        <style>{`
-          @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap');
-          @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-          body { 
-            font-family: 'Cinzel', 'Pretendard', sans-serif;
-            background-color: #0f172a; /* 호그와트 분위기 어두운 배경 */
-            color: white;
-          }
-          .font-magic { font-family: 'Cinzel', serif; }
-        `}</style>
-      </head>
-      <body>
-        {/* 상단 공통 UI: BGM과 로그아웃 */}
-        <nav className="fixed top-6 left-0 w-full px-8 flex justify-between items-center z-[100] pointer-events-none">
-          <div className="pointer-events-auto">
-            <BgmPlayer />
-          </div>
-          <div className="pointer-events-auto">
-            <LogoutButton />
-          </div>
-        </nav>
-
-        <main>{children}</main>
-      </body>
-    </html>
+    <div className="flex items-center gap-2">
+      <audio 
+        ref={audioRef} 
+        loop 
+        src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" // 실제 BGM URL로 교체 가능
+      />
+      <button 
+        onClick={toggleMusic}
+        className="bg-white/10 hover:bg-white/20 backdrop-blur-md p-2 rounded-full transition-all border border-white/20 shadow-lg text-lg"
+      >
+        {isPlaying ? '🔊' : '🔇'}
+      </button>
+    </div>
   );
 }
