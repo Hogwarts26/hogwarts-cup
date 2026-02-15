@@ -982,6 +982,13 @@ const handleSaveName = async () => {
               {isPlaying ? '🎵' : '🔇'}
             </button>
 
+                {/* 2. ✅ 플래너 버튼 (이 위치에 있어야 함!) */}
+                <Link 
+                  href="/planner" 
+                  className="text-[10px] font-black text-white bg-emerald-500 px-3 py-1.5 rounded-full shadow-md hover:bg-emerald-600 transition-all active:scale-95 flex items-center gap-1 whitespace-nowrap"
+                >
+                  플래너
+                </Link>
             {!isAdmin && (
               <Link 
                 href="/timer" 
