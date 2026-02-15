@@ -1,7 +1,13 @@
 "use client";
+
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
 import Link from 'next/link';
+import { createClient } from '@supabase/supabase-js';
+
+// 1. Supabase 클라이언트 직접 선언 (외부 파일 참조 제거)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default function PlannerPage() {
   const [selectedName, setSelectedName] = useState("");
@@ -27,7 +33,6 @@ export default function PlannerPage() {
     setIsPlaying(!isPlaying);
   };
 
-  // 페이지를 떠날 때 음악 정지
   useEffect(() => {
     return () => {
       if (bgm) {
@@ -143,7 +148,6 @@ export default function PlannerPage() {
           </div>
           <div className="flex flex-col items-end gap-3">
             <div className="flex gap-2">
-              {/* 🎵 음악 토글 버튼 */}
               <button 
                 onClick={toggleMusic} 
                 className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${
@@ -152,7 +156,6 @@ export default function PlannerPage() {
               >
                 {isPlaying ? '🎵' : '🔇'}
               </button>
-              {/* 🌓 테마 토글 버튼 */}
               <button onClick={toggleTheme} className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${theme.btn}`}>
                 {isDarkMode ? '🌝' : '🌞'}
               </button>
