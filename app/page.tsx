@@ -4,7 +4,7 @@ import { supabase } from './supabase';
 
 import Login from './login';
 import Study from './study';
-import Game from './game'; // HouseCup 컴포넌트
+import Game from './game'; 
 import Dragon from './dragon';
 import HeaderSection from './headersection';
 
@@ -16,16 +16,13 @@ export default function HogwartsPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // [추가] 기숙사 컵 계산을 위한 상태
   const [studyRecords, setStudyRecords] = useState<any[]>([]);
   const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
 
   const toggleMusic = () => setIsPlaying(!isPlaying);
 
-  // 마스터 데이터 + 공부 기록 로딩
   const fetchData = async () => {
     try {
-      // 1. 학생 마스터 데이터 가져오기
       const { data: masterData } = await supabase.from('student_master').select('*');
       if (masterData) {
         const formatted = masterData.reduce((acc: any, cur: any) => {
@@ -35,7 +32,6 @@ export default function HogwartsPage() {
         setStudentMasterData(formatted);
       }
 
-      // 2. 기숙사 점수 계산을 위한 공부 기록(records) 가져오기
       const { data: recordsData } = await supabase.from('study_records').select('*');
       if (recordsData) {
         setStudyRecords(recordsData);
@@ -96,10 +92,16 @@ export default function HogwartsPage() {
           </button>
         )}
 
-        {/* [페이지 전환] */}
-        {view === 'study' && <Study />}
+        {/* [중요] Study 컴포넌트에 로그인 정보를 넘겨줍니다 */}
+        {view === 'study' && (
+          <Study 
+            supabase={supabase}
+            selectedName={selectedName}
+            isAdmin={isAdmin}
+            studentMasterData={studentMasterData}
+          />
+        )}
         
-        {/* 기숙사컵(게임) - 수파베이스 데이터 연결 */}
         {view === 'game' && (
           <Game 
             records={studyRecords} 
