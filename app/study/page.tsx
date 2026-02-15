@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo } from 'react';
-import { supabase } from '@/lib/supabase'; // 설정된 경로에 맞게 수정하세요
+import { supabase } from '@/lib/supabase'; // 본인의 설정에 맞게 유지하세요
 
 // ==========================================
 // [1] 기숙사컵 스타일 및 애니메이션 설정 (원본 그대로)
@@ -9,9 +9,21 @@ const STUDY_STYLE = `
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap');
   @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
+  body { 
+    font-family: 'Cinzel', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif; 
+  }
   .font-serif { font-family: 'Cinzel', serif; }
 
-  /* 체크박스 커스텀 */
+  .winner-sparkle {
+    position: relative;
+    overflow: hidden;
+    animation: winner-glow 2s infinite alternate;
+  }
+  @keyframes winner-glow {
+    from { box-shadow: 0 0 10px rgba(234, 179, 8, 0.2); }
+    to { box-shadow: 0 0 30px rgba(234, 179, 8, 0.5); }
+  }
+
   .late-checkbox {
     width: 14px;
     height: 14px;
@@ -20,7 +32,6 @@ const STUDY_STYLE = `
     display: block;
   }
 
-  /* 스크롤바 커스텀 */
   .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
   .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
   .custom-scrollbar::-webkit-scrollbar-thumb {
@@ -28,7 +39,6 @@ const STUDY_STYLE = `
     border-radius: 10px;
   }
 
-  /* 셀렉트 박스 중앙 정렬 */
   select {
     appearance: none;
     -webkit-appearance: none;
@@ -37,7 +47,7 @@ const STUDY_STYLE = `
 `;
 
 // ==========================================
-// [2] 학생 명단 데이터 (원본 그대로)
+// [2] 학생 명단 데이터 (원본 그대로 전량 수록)
 // ==========================================
 export const studentStyleMap: { [key: string]: { house: string; emoji: string; color: string; accent: string, text: string } } = {
   "🐱냥이": { house: "그리핀도르", emoji: "🐱", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
@@ -77,7 +87,6 @@ export const studentStyleMap: { [key: string]: { house: string; emoji: string; c
 const HOUSE_ORDER = ["그리핀도르", "슬리데린", "래번클로", "후플푸프"];
 const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
 const OFF_OPTIONS = ['-', '출석', '반휴', '주휴', '월휴', '월반휴', '자율', '결석', '늦반휴', '늦휴', '늦월반휴', '늦월휴'];
-
 const HOUSE_LOGOS: Record<string, string> = {
   "그리핀도르": "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/gry.png",
   "슬리데린": "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/sly.png",
@@ -93,15 +102,14 @@ export default function StudyPage() {
   const [selectedStudentReport, setSelectedStudentReport] = useState<string | null>(null);
   const [dailyGoal, setDailyGoal] = useState("");
   
-  // 로그인 정보 (임시 - 실제 환경에선 세션/컨텍스트에서 가져와야 함)
+  // 로그인 정보 (세션 유지용)
   const [selectedName, setSelectedName] = useState<string>("");
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   useEffect(() => {
-    // 초기 로드 시 로컬스토리지 등에서 세션 확인
-    const savedName = localStorage.getItem('selectedName');
+    const savedName = localStorage.getItem('selectedName') || "";
     const savedAdmin = localStorage.getItem('isAdmin') === 'true';
-    if (savedName) setSelectedName(savedName);
+    setSelectedName(savedName);
     setIsAdmin(savedAdmin);
 
     const updateTime = () => {
@@ -129,18 +137,19 @@ export default function StudyPage() {
     const { data } = await supabase.from('study_records').select('*');
     if (data) {
       setRecords(data);
-      if (selectedName) {
-        const myGoal = data.find((r: any) => r.student_name === selectedName && r.goal)?.goal || "";
-        setDailyGoal(myGoal);
-      }
     }
   };
 
-  // 점수 계산 로직 (요청하신 자율 상점 적용 버전)
-  const calc = (r: any) => {
-    if (!r || !r.off_type || r.off_type === '-' || r.off_type === '') {
-      return { penalty: 0, bonus: 0, total: 0, studyH: 0 };
+  useEffect(() => {
+    if (selectedName && records.length > 0) {
+      const myGoal = records.find((r: any) => r.student_name === selectedName && r.goal)?.goal || "";
+      setDailyGoal(myGoal);
     }
+  }, [selectedName, records]);
+
+  // 점수 계산 로직 (자율 시 상점 적용 버전)
+  const calc = (r: any) => {
+    if (!r || !r.off_type || r.off_type === '-' || r.off_type === '') return { penalty: 0, bonus: 0, total: 0, studyH: 0 };
     if (r.off_type === '결석') return { penalty: -5, bonus: 0, total: -5, studyH: 0 };
     
     const timeVal = r.study_time || "";
@@ -191,7 +200,7 @@ export default function StudyPage() {
   const calculateWeeklyTotal = (name: string) => {
     let totalMinutes = 0;
     records.filter(r => r.student_name === name).forEach(r => {
-      const [h, m] = (r.study_time || \"0:00\").split(':').map(Number);
+      const [h, m] = (r.study_time || "0:00").split(':').map(Number);
       totalMinutes += (isNaN(h) ? 0 : h * 60) + (isNaN(m) ? 0 : m);
     });
     const hrs = Math.floor(totalMinutes / 60);
@@ -221,7 +230,7 @@ export default function StudyPage() {
     setIsSaving(true);
     if (field === 'password') {
       await supabase.from('study_records').upsert(DAYS.map(d => ({ student_name: name, day_of_week: d, password: value })), { onConflict: 'student_name,day_of_week' });
-      alert("비밀번호 변경 완료");
+      alert("비밀번호가 변경되었습니다.");
     } else if (field === 'goal') {
       await supabase.from('study_records').upsert(DAYS.map(d => ({ student_name: name, day_of_week: d, goal: value })), { onConflict: 'student_name,day_of_week' });
       setDailyGoal(value);
@@ -233,27 +242,26 @@ export default function StudyPage() {
     setIsSaving(false);
   };
 
-  const sortedStudents = useMemo(() => {
-    return Object.keys(studentStyleMap).sort((a, b) => {
-      const hA = HOUSE_ORDER.indexOf(studentStyleMap[a].house);
-      const hB = HOUSE_ORDER.indexOf(studentStyleMap[b].house);
-      return hA !== hB ? hA - hB : a.localeCompare(b, 'ko');
-    });
-  }, []);
-
-  const displayList = isAdmin ? sortedStudents : (selectedName ? [selectedName] : []);
+  const displayList = isAdmin 
+    ? Object.keys(studentStyleMap).sort((a, b) => {
+        const hA = HOUSE_ORDER.indexOf(studentStyleMap[a].house);
+        const hB = HOUSE_ORDER.indexOf(studentStyleMap[b].house);
+        return hA !== hB ? hA - hB : a.localeCompare(b, 'ko');
+      }) 
+    : (selectedName ? [selectedName] : []);
 
   return (
     <div className="w-full pb-20">
       <style>{STUDY_STYLE}</style>
       
+      {/* 메인 테이블 디자인 (원본 그대로) */}
       <div className="max-w-[1100px] mx-auto bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] overflow-hidden border border-slate-100">
         <div className="bg-slate-900 p-5 px-10 flex flex-col gap-3 text-white">
           <div className="flex justify-between items-center w-full">
             <span className="text-xs font-black text-yellow-500 tracking-[0.2em] flex items-center gap-2 uppercase font-serif">
               <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
               {isAdmin ? "Headmaster Console" : realClock.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}
-              {!isAdmin && <span className="text-white ml-2">{realClock.toLocaleTimeString('ko-KR', { hour12: false })}</span>}
+              {!isAdmin && <span className="text-white ml-2 font-serif">{realClock.toLocaleTimeString('ko-KR', { hour12: false })}</span>}
             </span>
             {isSaving && <div className="text-[10px] text-yellow-500 font-bold animate-pulse font-serif">Casting Spells...</div>}
           </div>
@@ -268,7 +276,7 @@ export default function StudyPage() {
                   placeholder="목표를 입력하세요." 
                   className="bg-transparent italic text-sm w-full focus:outline-none border-b border-transparent focus:border-white/20 pb-0.5 transition-all text-white/90 font-serif"
                 />
-                <button onClick={() => handleChange(selectedName, '월', 'goal', dailyGoal)} className="text-[10px] font-bold text-yellow-500 opacity-0 group-hover:opacity-100">[SAVE]</button>
+                <button onClick={() => handleChange(selectedName, '월', 'goal', dailyGoal)} className="text-[10px] font-bold text-yellow-500 opacity-0 group-hover:opacity-100 transition-opacity">[SAVE]</button>
               </div>
             </div>
           )}
@@ -301,6 +309,7 @@ export default function StudyPage() {
                             <div className="text-4xl mb-2 drop-shadow-md">{info.emoji}</div>
                             <div className="leading-tight text-sm font-black mb-1">{name.replace(/[^\uAC00-\uD7A3]/g, '')}</div>
                             <div className="text-[8px] font-black opacity-40 uppercase tracking-widest font-serif mb-3">{info.house}</div>
+                            <button onClick={(e) => { e.stopPropagation(); const p = prompt("4자리 숫자"); if(p) handleChange(name, '월', 'password', p); }} className="text-[7px] underline opacity-40 block mx-auto">PW CHANGE</button>
                           </td>
                         )}
                         {DAYS.map(day => {
@@ -349,32 +358,60 @@ export default function StudyPage() {
         </div>
       </div>
 
-      {/* 학생 개인 요약 팝업 (원본 디자인) */}
-      {selectedStudentReport && studentStyleMap[selectedStudentReport] && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
-          <div className="bg-white p-8 w-full max-w-lg shadow-2xl relative rounded-[3rem] animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
-            <div className="flex items-end justify-center mb-6">
-               <img src={HOUSE_LOGOS[studentStyleMap[selectedStudentReport].house]} alt="Logo" className="w-32 h-32 object-contain mr-4" />
-               <div className="flex flex-col">
-                 <span className="text-5xl">{studentStyleMap[selectedStudentReport].emoji}</span>
-                 <div className="text-4xl font-black font-serif italic">{calculateWeeklyTotal(selectedStudentReport)}</div>
-               </div>
-            </div>
-            <div className="text-xl font-black text-center mb-4 font-serif">{getWeeklyDateRange()}</div>
-            <div className="grid grid-cols-4 gap-2">
-              {DAYS.map(day => {
-                const rec = records.find(r => r.student_name === selectedStudentReport && r.day_of_week === day) || {};
-                return (
-                  <div key={day} className="p-2 flex flex-col items-center bg-slate-50 rounded-xl border border-slate-100">
-                    <span className="text-[10px] text-slate-400">{day}</span>
-                    <span className="font-black font-serif">{rec.study_time || \"0:00\"}</span>
+      {/* 개인 요약 팝업 (1560번 라인 로직 완벽 복구) */}
+      {selectedStudentReport && studentStyleMap[selectedStudentReport] && (() => {
+        const info = studentStyleMap[selectedStudentReport];
+        const pts = calculatePoints(selectedStudentReport);
+        return (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
+            <div className="bg-white p-5 md:px-10 md:py-8 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+              <div className="flex items-end justify-center mb-6 w-full">
+                <div className="w-[45%] flex justify-end">
+                  <img src={HOUSE_LOGOS[info.house]} alt="Logo" className="w-36 h-36 md:w-44 md:h-44 object-contain drop-shadow-md" />
+                </div>
+                <div className="w-[55%] flex flex-col justify-end items-start pl-4">
+                  <div className="flex items-baseline gap-1.5 mb-0 font-serif">
+                    <span className="text-5xl md:text-6xl">{info.emoji}</span>
+                    <span className="font-bold text-xs md:text-sm text-slate-400 tracking-tight leading-none uppercase">{info.house}</span>
                   </div>
-                );
-              })}
+                  <div className="flex flex-col items-start font-serif">
+                    <div className="text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-tight italic">{calculateWeeklyTotal(selectedStudentReport)}</div>
+                    <div className="text-sm md:text-base font-bold text-slate-500 tracking-tight mt-1">
+                      {records.find(r => r.student_name === selectedStudentReport && r.goal)?.goal || "목표가 없습니다."}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="text-xl md:text-2xl font-black text-black mb-4 text-center tracking-tight font-serif">{getWeeklyDateRange()}</div>
+              <div className="grid grid-cols-4 gap-2.5">
+                {DAYS.map(day => {
+                  const rec = records.find(r => r.student_name === selectedStudentReport && r.day_of_week === day) || {};
+                  const isGreen = ['반휴','월반휴','늦반휴','늦월반휴'].includes(rec.off_type);
+                  const isBlue = ['주휴','월휴','늦휴','늦월휴','자율'].includes(rec.off_type);
+                  const isRed = rec.off_type === '결석';
+                  const cellClass = isGreen ? 'bg-green-100/60 border-green-200' : isBlue ? 'bg-blue-100/60 border-blue-200' : isRed ? 'bg-red-100/60 border-red-200' : 'bg-slate-50 border-slate-100';
+                  const textClass = isGreen ? 'text-green-700' : isBlue ? 'text-blue-700' : isRed ? 'text-red-700' : 'text-slate-400';
+                  return (
+                    <div key={day} className={`p-2.5 flex flex-col items-center justify-between h-24 rounded-2xl border shadow-sm transition-all ${cellClass}`}>
+                      <div className={`text-[10px] font-bold ${textClass}`}>{getDayDate(day)} {day}</div>
+                      <div className="text-[18px] font-black text-slate-800 font-serif">{rec.study_time || "0:00"}</div>
+                      <div className={`text-[9px] font-black h-3 leading-none uppercase ${textClass}`}>
+                        {['반휴','월반휴','주휴','결석','자율'].includes(rec.off_type) ? rec.off_type : ""}
+                      </div>
+                    </div>
+                  );
+                })}
+                <div className="p-3 text-[10px] font-black leading-relaxed flex flex-col justify-center gap-1 bg-slate-900 text-white rounded-2xl shadow-lg font-serif">
+                  <div className="flex justify-between"><span>상점</span><span className="text-blue-400">+{pts.bonus}</span></div>
+                  <div className="flex justify-between"><span>벌점</span><span className="text-red-400">{pts.penalty}</span></div>
+                  <div className="flex justify-between text-yellow-400 mt-0.5"><span>휴무</span><span>{pts.remainingWeeklyOff}</span></div>
+                  <div className="flex justify-between text-cyan-400"><span>월휴</span><span>{pts.remainingMonthlyOff}</span></div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
