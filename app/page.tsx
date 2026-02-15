@@ -976,27 +976,27 @@ const handleSaveName = async () => {
             <button 
               onClick={toggleMusic} 
               className={`text-[10px] font-black px-3 py-1.5 rounded-full shadow-sm transition-all border-2 whitespace-nowrap ${
-                isPlaying ? 'bg-white border-yellow-400 text-yellow-500 animate-pulse' : 'bg-white border-slate-200 text-slate-400'
+                isPlaying ? 'bg-white border-yellow-400 text-yellow-500 animate-pulse' : 'bg-slate-50 border-slate-100 text-slate-400'
               }`}
             >
               {isPlaying ? '🎵' : '🔇'}
             </button>
 
-               {/* 2. ✅ 플래너 버튼 (로그아웃 버튼과 같은 스타일) */}
-<Link 
-  href="/planner" 
-  className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full shadow-sm hover:bg-slate-50 transition-all active:scale-95 flex items-center gap-1 whitespace-nowrap"
->
-  플래너
-</Link>
-           {!isAdmin && (
-  <Link 
+               {/* 2. ✅ 플래너 버튼 (아주 연한 회색 스타일) */}
+               <Link 
+                 href="/planner" 
+                 className="text-[10px] font-black text-slate-400 bg-slate-50 border-slate-100 border-2 px-3 py-1.5 rounded-full shadow-sm hover:bg-slate-100 transition-all active:scale-95 flex items-center gap-1 whitespace-nowrap"
+               >
+                 플래너
+               </Link>
+                          {!isAdmin && (
+                 <Link 
     href="/timer" 
-    className="text-[10px] font-black text-slate-400 bg-white border-2 px-3 py-1.5 rounded-full shadow-sm hover:bg-slate-50 transition-all active:scale-95 flex items-center gap-1 whitespace-nowrap"
+    className="text-[10px] font-black text-slate-400 bg-slate-50 border-slate-100 border-2 px-3 py-1.5 rounded-full shadow-sm hover:bg-slate-100 transition-all active:scale-95 flex items-center gap-1 whitespace-nowrap"
   >
     교시제
-  </Link>
-)}
+                 </Link>
+               )}
 
             {isAdmin && <button onClick={() => setShowSummary(true)} className="text-[10px] font-black text-white bg-indigo-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-indigo-700 whitespace-nowrap">요약</button>}
             {isAdmin && <button onClick={resetWeeklyData} className="text-[10px] font-black text-white bg-red-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-red-700 whitespace-nowrap">주간 리셋</button>}
