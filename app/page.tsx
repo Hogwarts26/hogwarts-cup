@@ -1,7 +1,8 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from './supabase'; // Supabase 불러오기 확인!
 
-// 1. 모아둔 파일들 불러오기
+// 1. 컴포넌트들
 import Login from './login';
 import Study from './study';
 import Game from './game';
@@ -9,58 +10,84 @@ import Dragon from './dragon';
 import HeaderSection from './headersection';
 
 export default function HogwartsPage() {
-  // [상태 1] 로그인 여부
+  // [상태 관리]
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  
-  // [상태 2] 현재 화면 (lobby, study, game, dragon)
   const [view, setView] = useState('lobby');
+  const [selectedName, setSelectedName] = useState(""); // 로그인한 학생 이름
+  const [studentMasterData, setStudentMasterData] = useState<any>({}); // 드래곤용 마스터 데이터
 
-  // 로그인 안 된 경우 로그인 컴포넌트만 띄움
-  // (로그인 성공 시 setIsLoggedIn(true)를 호출하도록 설정되어 있어야 함)
+  // [데이터 불러오기] 드래곤 성장에 필요한 마스터 데이터를 가져옵니다.
+  const fetchMasterData = async () => {
+    const { data, error } = await supabase.from('student_master').select('*');
+    if (data) {
+      // 배열을 객체 형태로 변환하여 저장
+      const formatted = data.reduce((acc: any, cur: any) => {
+        acc[cur.student_name] = cur;
+        return acc;
+      }, {});
+      setStudentMasterData(formatted);
+    }
+  };
+
+  useEffect(() => {
+    if (isLoggedIn) fetchMasterData();
+  }, [isLoggedIn]);
+
+  // 로그인 성공 시 처리
+  const handleLoginSuccess = (name: string) => {
+    setSelectedName(name);
+    setIsLoggedIn(true);
+  };
+
+  // 로그인 안 된 경우
   if (!isLoggedIn) {
-    return <Login onLoginSuccess={() => setIsLoggedIn(true)} />;
+    return <Login onLoginSuccess={handleLoginSuccess} />;
   }
 
   return (
     <div className="min-h-screen bg-stone-100">
-      {/* 2. 공통 헤더 (모든 화면 상단에 고정) */}
-      {/* setView를 전달하여 헤더에서도 메뉴 이동이 가능하게 할 수 있습니다 */}
+      {/* 2. 공통 헤더 */}
       <HeaderSection setView={setView} currentView={view} />
 
       <main className="max-w-[1100px] mx-auto py-6 px-4">
-        {/* 3. 로비(GIF 메뉴) 화면 */}
+        {/* 3. 로비(GIF 메뉴) */}
         {view === 'lobby' && (
           <div className="flex flex-col md:flex-row gap-8 items-center justify-center min-h-[70vh]">
-            {/* 스터디 */}
             <div onClick={() => setView('study')} className="cursor-pointer group text-center">
               <div className="overflow-hidden rounded-2xl shadow-xl border-4 border-white group-hover:border-yellow-500 transition-all">
                 <img src="/study.gif" alt="Study" className="w-64 h-64 object-cover transition-transform group-hover:scale-110" />
               </div>
-              <p className="mt-4 font-black text-slate-800 text-lg">STUDY ROOM</p>
+              <p className="mt-4 font-black text-slate-800 text-lg uppercase">Study Room</p>
             </div>
 
-            {/* 기숙사컵 */}
             <div onClick={() => setView('game')} className="cursor-pointer group text-center">
               <div className="overflow-hidden rounded-2xl shadow-xl border-4 border-white group-hover:border-yellow-500 transition-all">
                 <img src="/game.gif" alt="Game" className="w-64 h-64 object-cover transition-transform group-hover:scale-110" />
               </div>
-              <p className="mt-4 font-black text-slate-800 text-lg">HOUSE CUP</p>
+              <p className="mt-4 font-black text-slate-800 text-lg uppercase">House Cup</p>
             </div>
 
-            {/* 드래곤 */}
             <div onClick={() => setView('dragon')} className="cursor-pointer group text-center">
               <div className="overflow-hidden rounded-2xl shadow-xl border-4 border-white group-hover:border-yellow-500 transition-all">
                 <img src="/dragoncave.gif" alt="Dragon" className="w-64 h-64 object-cover transition-transform group-hover:scale-110" />
               </div>
-              <p className="mt-4 font-black text-slate-800 text-lg">DRAGON CAVE</p>
+              <p className="mt-4 font-black text-slate-800 text-lg uppercase">Dragon Cave</p>
             </div>
           </div>
         )}
 
-        {/* 4. 각 기능 페이지 렌더링 */}
+        {/* 4. 각 페이지 렌더링 (데이터 전달 필수!) */}
         {view === 'study' && <Study />}
         {view === 'game' && <Game />}
-        {view === 'dragon' && <Dragon />}
+        {view === 'dragon' && (
+          <Dragon 
+            studentMasterData={studentMasterData}
+            selectedName={selectedName}
+            setStudentMasterData={setStudentMasterData}
+            supabase={supabase}
+            currentUser={{ name: selectedName }}
+          />
+        )}
       </main>
     </div>
   );
