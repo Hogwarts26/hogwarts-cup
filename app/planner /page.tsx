@@ -1,35 +1,47 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 
-// 1. Supabase 설정
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// 1. Supabase 클라이언트를 함수 밖에서 선언 (lib/supabase.ts 역할 대체)
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+);
 
 export default function PlannerPage() {
   const [selectedName, setSelectedName] = useState("");
   const [plannerData, setPlannerData] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const [mounted, setMounted] = useState(false); // ✅ Hydration 에러 방지 핵심
   const [isPlaying, setIsPlaying] = useState(false);
-  const [bgm, setBgm] = useState<HTMLAudioElement | null>(null);
+  
+  // 🎵 BGM 객체 (이전 방식 그대로 복구)
+  const [bgm] = useState(() => typeof Audio !== 'undefined' ? new Audio('/hedwig.mp3') : null);
 
-  // 2. 시간 슬롯 생성 (useMemo로 고정시켜 불일치 방지)
-  const timeSlots = useMemo(() => {
-    const slots = [];
-    for (let h = 6; h < 24; h++) {
-      const hour = String(h).padStart(2, '0');
-      slots.push(`${hour}:00`, `${hour}:30`);
+  const toggleMusic = () => {
+    if (!bgm) return;
+    if (isPlaying) {
+      bgm.pause();
+    } else {
+      bgm.loop = true;
+      bgm.volume = 0.4;
+      bgm.play().catch(e => console.log("음악 재생 실패:", e));
     }
-    slots.push("00:00", "00:30", "01:00");
-    return slots;
-  }, []);
+    setIsPlaying(!isPlaying);
+  };
 
-  // 3. 날짜 계산 함수
+  // 페이지 떠날 때 음악 끄기 (이전 로직 복구)
+  useEffect(() => {
+    return () => {
+      if (bgm) {
+        bgm.pause();
+        setIsPlaying(false);
+      }
+    };
+  }, [bgm]);
+
   const getPlannerDate = () => {
     const now = new Date();
     if (now.getHours() < 4) {
@@ -38,76 +50,66 @@ export default function PlannerPage() {
     return now.toLocaleDateString('en-CA');
   };
 
-  // 4. 초기 마운트 및 데이터 로드
-  useEffect(() => {
-    setMounted(true); // ✅ 브라우저 로드 완료 표시
-    
-    // BGM 초기화
-    let audio: HTMLAudioElement | null = null;
-    if (typeof Audio !== 'undefined') {
-      audio = new Audio('/hedwig.mp3');
-      audio.loop = true;
-      audio.volume = 0.4;
-      setBgm(audio);
-    }
+  // 데이터 불러오기 함수
+  const fetchPlannerData = async (name: string) => {
+    try {
+      const planDate = getPlannerDate(); 
+      const { data } = await supabase
+        .from('daily_planner')
+        .select('content_json')
+        .eq('student_name', name)
+        .eq('plan_date', planDate)
+        .maybeSingle();
 
-    // 테마 설정
+      if (data && data.content_json) {
+        setPlannerData(data.content_json);
+      }
+    } catch (err) {
+      console.error("플래너 로드 실패:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     const savedTheme = localStorage.getItem('planner_theme');
     if (savedTheme === 'light') setIsDarkMode(false);
 
-    // 유저 정보 확인 및 데이터 페치
     const authData = localStorage.getItem('hg_auth');
     if (authData) {
       try {
         const parsed = JSON.parse(authData);
         if (parsed.name) {
           setSelectedName(parsed.name);
-          // fetchPlannerData를 여기서 직접 호출하지 않고 함수 정의 후 실행
-          const loadData = async (name: string) => {
-            try {
-              const planDate = getPlannerDate(); 
-              const { data } = await supabase
-                .from('daily_planner')
-                .select('content_json')
-                .eq('student_name', name)
-                .eq('plan_date', planDate)
-                .maybeSingle();
-              if (data?.content_json) setPlannerData(data.content_json);
-            } catch (err) {
-              console.error("데이터 로드 실패:", err);
-            } finally {
-              setLoading(false);
-            }
-          };
-          loadData(parsed.name);
-          return () => { if (audio) audio.pause(); }; // ✅ 언마운트 시 음악 정지
+          fetchPlannerData(parsed.name);
+          return;
         }
       } catch (e) {
-        console.error("인증 에러:", e);
+        console.error("인증 데이터 파싱 에러:", e);
       }
     }
     setLoading(false);
-    
-    return () => { if (audio) audio.pause(); }; // ✅ 인증 데이터 없을 때도 정지 로직 포함
   }, []);
 
   const saveEntry = async (time: string, text: string) => {
     const updatedData = { ...plannerData, [time]: text };
     setPlannerData(updatedData);
     if (!selectedName) return;
+    const planDate = getPlannerDate();
     await supabase.from('daily_planner').upsert({
       student_name: selectedName,
-      plan_date: getPlannerDate(),
+      plan_date: planDate,
       content_json: updatedData,
       updated_at: new Date().toISOString()
     }, { onConflict: 'student_name,plan_date' });
   };
 
-  const toggleMusic = () => {
-    if (!bgm) return;
-    isPlaying ? bgm.pause() : bgm.play().catch(() => {});
-    setIsPlaying(!isPlaying);
-  };
+  const timeSlots = [];
+  for (let h = 6; h < 24; h++) {
+    const hour = String(h).padStart(2, '0');
+    timeSlots.push(`${hour}:00`, `${hour}:30`);
+  }
+  timeSlots.push("00:00", "00:30", "01:00");
 
   const theme = {
     bg: isDarkMode ? 'bg-[#020617]' : 'bg-slate-50',
@@ -118,9 +120,7 @@ export default function PlannerPage() {
     divider: isDarkMode ? 'divide-white/5' : 'divide-slate-100'
   };
 
-  // ✅ Hydration 에러 차단: 마운트 전엔 아무것도 안 그림
-  if (!mounted) return null;
-
+  // ✅ 흰 화면 방지를 위해 로딩 중일 때 '최소한의 구조'라도 보여주기
   if (loading) return (
     <div className={`min-h-screen flex items-center justify-center ${theme.bg}`}>
       <div className={`${theme.textMain} font-serif animate-pulse uppercase tracking-[0.3em]`}>Opening Your Scroll...</div>
@@ -128,11 +128,12 @@ export default function PlannerPage() {
   );
 
   return (
-    <div className={`min-h-screen transition-colors duration-500 p-4 md:p-8 font-sans ${theme.bg} ${theme.textMain}`}>
-      {/* 폰트 에러 방지를 위해 외부 링크 수정 */}
+    <div className={`min-h-screen transition-colors duration-500 p-4 md:p-8 font-sans ${theme.bg} ${theme.textMain}`} style={{ fontFamily: "'Pretendard Variable', sans-serif" }}>
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css" />
       <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet" />
       
       <div className="max-w-3xl mx-auto">
+        {/* 상단 헤더 부분 */}
         <div className="flex justify-between items-start mb-10">
           <div className="flex flex-col gap-4">
             <Link href="/" className={`inline-block px-4 py-2 rounded-xl text-xs font-bold border transition-all w-fit ${theme.btn}`}>
@@ -157,11 +158,14 @@ export default function PlannerPage() {
             </div>
             <div className="text-right">
               <p className={`text-[11px] font-bold uppercase tracking-tighter ${theme.accent}`}>Wizard: {selectedName || "Unknown"}</p>
-              <p className="text-[10px] font-medium opacity-40 uppercase">{new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}</p>
+              <p className="text-[10px] font-medium opacity-40 uppercase">
+                {new Date(getPlannerDate()).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}
+              </p>
             </div>
           </div>
         </div>
 
+        {/* 플래너 본문 */}
         <div className={`border rounded-[2rem] overflow-hidden backdrop-blur-md shadow-2xl ${theme.card}`}>
           <div className={`grid grid-cols-1 divide-y ${theme.divider}`}>
             {timeSlots.map((time) => (
@@ -175,7 +179,7 @@ export default function PlannerPage() {
                     defaultValue={plannerData[time] || ""}
                     onBlur={(e) => saveEntry(time, e.target.value)}
                     placeholder="무엇을 학습했나요?"
-                    className="w-full bg-transparent px-6 py-4 text-sm font-medium outline-none"
+                    className="w-full bg-transparent px-6 py-4 text-sm font-medium outline-none text-inherit"
                   />
                 </div>
               </div>
