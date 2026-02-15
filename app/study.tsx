@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 
 // ==========================================
-// [1] 스타일 및 애니메이션 설정 (완벽한 디자인 복구)
+// [1] 스타일 및 애니메이션 설정 (완벽 디자인 복구)
 // ==========================================
 const GLOBAL_STYLE = `
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap');
@@ -12,11 +12,19 @@ const GLOBAL_STYLE = `
   body { font-family: 'Pretendard', sans-serif; background-color: #f5f5f4; }
   
   .late-checkbox { width: 14px; height: 14px; accent-color: #1e293b; margin: 0 auto; display: block; }
-  .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+  .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
   .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
   .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
 
   select { appearance: none; -webkit-appearance: none; text-align-last: center; }
+  
+  .winner-sparkle { position: relative; overflow: hidden; }
+  .winner-sparkle::after {
+    content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+    transform: rotate(45deg); animation: sparkle 3s infinite;
+  }
+  @keyframes sparkle { 0% { transform: translateX(-100%) rotate(45deg); } 100% { transform: translateX(100%) rotate(45deg); } }
 `;
 
 // ==========================================
@@ -88,6 +96,7 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
     const updateTime = () => {
       const now = new Date();
       setRealClock(now);
+      // 요일/시간 계산 로직 (기존 유지)
       const day = now.getDay();
       const hours = now.getHours();
       if ((day === 1 && hours < 18) || day === 0) {
@@ -185,11 +194,8 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
     if (!isAdmin && field !== 'password' && field !== 'goal' && name !== selectedName) return;
     setIsSaving(true);
     if (field === 'password') {
-      const { error } = await supabase.from('study_records').upsert(
-        DAYS.map(d => ({ student_name: name, day_of_week: d, password: value })),
-        { onConflict: 'student_name,day_of_week' }
-      );
-      if (!error) alert("비밀번호가 변경되었습니다.");
+      await supabase.from('study_records').upsert(DAYS.map(d => ({ student_name: name, day_of_week: d, password: value })), { onConflict: 'student_name,day_of_week' });
+      alert("비밀번호가 변경되었습니다.");
     } else if (field === 'goal') {
       await supabase.from('study_records').upsert(DAYS.map(d => ({ student_name: name, day_of_week: d, goal: value })), { onConflict: 'student_name,day_of_week' });
       setDailyGoal(value);
@@ -210,34 +216,33 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
     : [selectedName];
 
   return (
-    <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 font-magic">
+    <div className="w-full font-pretendard">
       <style>{GLOBAL_STYLE}</style>
       
-      {/* [25] 학습 기록 메인 테이블 및 목표 */}
-      <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
-        <div className="bg-slate-900 p-4 px-6 md:px-8 flex flex-col gap-2 text-white min-h-[60px]">
+      {/* [25] 학습 기록 메인 테이블 */}
+      <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] overflow-hidden border border-slate-100 mb-20">
+        <div className="bg-slate-900 p-5 px-7 md:px-10 flex flex-col gap-3 text-white">
           <div className="flex justify-between items-center w-full">
-            <span className="text-[10px] md:text-xs font-black text-yellow-500 tracking-widest flex items-center gap-2">
+            <span className="text-[10px] md:text-xs font-black text-yellow-500 tracking-[0.2em] flex items-center gap-2 uppercase">
               <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
               {isAdmin ? "Headmaster Console" : realClock.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}
-              {!isAdmin && <span className="text-white ml-2">{realClock.toLocaleTimeString('ko-KR', { hour12: false })}</span>}
+              {!isAdmin && <span className="text-white ml-2 font-magic">{realClock.toLocaleTimeString('ko-KR', { hour12: false })}</span>}
             </span>
-            {isSaving && <div className="text-[9px] text-yellow-500 font-bold animate-bounce">Magic occurring...</div>}
+            {isSaving && <div className="text-[10px] text-yellow-500 font-bold animate-pulse font-magic">Casting Spells...</div>}
           </div>
           {!isAdmin && (
-            <div className="flex items-center gap-3 pt-1 border-t border-white/10 mt-1">
-              <span className="text-[9px] font-black text-white/40 shrink-0 uppercase tracking-tighter">Goal</span>
-              <div className="flex items-center gap-2 flex-1 overflow-hidden group">
+            <div className="flex items-center gap-4 pt-2 border-t border-white/10 mt-1">
+              <span className="text-[10px] font-black text-white/30 shrink-0 uppercase tracking-widest font-magic">Weekly Goal</span>
+              <div className="flex items-center gap-3 flex-1 group">
                 <input 
-                  type="text"
-                  value={dailyGoal || ""}
+                  type="text" 
+                  value={dailyGoal || ""} 
                   onChange={(e) => setDailyGoal(e.target.value)}
-                  placeholder="목표를 입력하세요."
-                  className="bg-transparent italic text-xs w-full focus:outline-none border-b border-transparent focus:border-white/20 pb-0.5 transition-all text-white/90"
+                  placeholder="목표를 입력하세요." 
+                  className="bg-transparent italic text-sm w-full focus:outline-none border-b border-transparent focus:border-white/20 pb-0.5 transition-all text-white/90 font-magic"
                 />
                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                  <button onClick={() => handleChange(selectedName, '월', 'goal', dailyGoal)} className="text-[10px] font-bold text-yellow-500">[저장]</button>
-                  <button onClick={() => { if(confirm("삭제하시겠습니까?")) { setDailyGoal(""); handleChange(selectedName, '월', 'goal', ""); }}} className="text-[10px] font-bold text-red-400">[삭제]</button>
+                  <button onClick={() => handleChange(selectedName, '월', 'goal', dailyGoal)} className="text-[10px] font-bold text-yellow-500">[SAVE]</button>
                 </div>
               </div>
             </div>
@@ -245,13 +250,13 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
         </div>
 
         <div className="w-full overflow-x-auto custom-scrollbar">
-          <table className="min-w-[850px] w-full table-fixed border-collapse">
+          <table className="min-w-[900px] w-full border-collapse">
             <thead>
-              <tr className="bg-slate-50 text-slate-500 font-black text-[11px] border-b-2 uppercase">
-                <th className="w-28 p-2 sticky left-0 bg-slate-50 z-20 border-r">Student</th>
-                {DAYS.map(d => <th key={d} className="w-16 p-2 text-slate-900 border-r">{d}</th>)}
-                <th className="w-24 p-2 bg-slate-100 border-r text-[10px]">Weekly</th>
-                <th className="w-16 p-2 bg-slate-100 text-[10px]">Off</th>
+              <tr className="bg-slate-50/80 text-slate-400 font-black text-[10px] border-b uppercase">
+                <th className="w-32 p-4 sticky left-0 bg-slate-50 z-20 border-r shadow-[2px_0_5px_rgba(0,0,0,0.02)]">Student</th>
+                {DAYS.map(d => <th key={d} className="p-3 border-r text-slate-800 font-magic">{d}</th>)}
+                <th className="w-24 p-3 bg-slate-100/50 border-r">Weekly</th>
+                <th className="w-20 p-3 bg-slate-100/50">Monthly</th>
               </tr>
             </thead>
             <tbody>
@@ -266,21 +271,21 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
                 return (
                   <React.Fragment key={name}>
                     {rows.map((field, rIdx) => (
-                      <tr key={field} className={rIdx === 6 ? "border-b-[6px] border-slate-100" : "border-b border-slate-50"}>
+                      <tr key={field} className={rIdx === 6 ? "border-b-[8px] border-slate-100/50" : "border-b border-slate-50"}>
                         {rIdx === 0 && (
-                          <td rowSpan={7} className={`p-4 text-center sticky left-0 z-20 font-bold border-r-[3px] ${info.color} ${info.text} cursor-pointer hover:brightness-95 transition-all`} onClick={() => setSelectedStudentReport(name)}>
-                            <div className="text-3xl mb-1 drop-shadow-sm">{info.emoji}</div>
+                          <td rowSpan={7} className={`p-5 text-center sticky left-0 z-20 font-bold border-r-[4px] ${info.color} ${info.text} cursor-pointer transition-all hover:brightness-95`} onClick={() => setSelectedStudentReport(name)}>
+                            <div className="text-4xl mb-2 drop-shadow-md">{info.emoji}</div>
                             <div className="leading-tight text-sm font-black mb-1">{name.replace(/[^\uAC00-\uD7A3]/g, '')}</div>
-                            <div className="text-[9px] font-black opacity-70 mb-2">{info.house}</div>
-                            <button onClick={(e) => { e.stopPropagation(); const p = prompt("4자리 숫자"); if(p) handleChange(name, '월', 'password', p); }} className="text-[8px] underline opacity-40 block mx-auto">PW 변경</button>
+                            <div className="text-[8px] font-black opacity-40 uppercase tracking-widest font-magic mb-3">{info.house}</div>
+                            <button onClick={(e) => { e.stopPropagation(); const p = prompt("4자리 숫자"); if(p) handleChange(name, '월', 'password', p); }} className="text-[7px] underline opacity-40 block mx-auto">PW CHANGE</button>
                           </td>
                         )}
                         {DAYS.map(day => {
                           const rec = studentRecords.find(r => r.day_of_week === day) || {};
                           const res = calc(rec);
-                          const cellColor = ['반휴','월반휴','늦반휴','늦월반휴'].includes(rec.off_type) ? 'bg-green-100/60' : ['주휴','월휴','늦휴','늦월휴','자율'].includes(rec.off_type) ? 'bg-blue-100/60' : rec.off_type === '결석' ? 'bg-red-100/60' : '';
+                          const cellColor = ['반휴','월반휴','늦반휴','늦월반휴'].includes(rec.off_type) ? 'bg-green-100/40' : ['주휴','월휴','늦휴','늦월휴','자율'].includes(rec.off_type) ? 'bg-blue-100/40' : rec.off_type === '결석' ? 'bg-red-100/40' : '';
                           return (
-                            <td key={day} className={`p-1 text-center border-r border-slate-50 ${field === 'off_type' ? cellColor : ''}`}>
+                            <td key={day} className={`p-1.5 text-center border-r border-slate-50/50 ${field === 'off_type' ? cellColor : ''}`}>
                               {field === 'off_type' ? (
                                 <select className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-[10px]" value={rec.off_type || '-'} onChange={(e) => handleChange(name, day, 'off_type', e.target.value)} disabled={!isAdmin && name !== selectedName}>
                                   {OFF_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
@@ -288,25 +293,21 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
                               ) : field === 'is_late' || field === 'am_3h' ? (
                                 <input type="checkbox" className={field === 'is_late' ? "late-checkbox" : "w-3.5 h-3.5 accent-slate-800 mx-auto block"} checked={!!rec[field]} onChange={(e) => handleChange(name, day, field, e.target.checked)} disabled={!isAdmin && name !== selectedName} />
                               ) : field === 'study_time' ? (
-                                <input type="text" className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-sm font-magic" placeholder="-" value={rec.study_time || ''} onBlur={(e) => handleChange(name, day, 'study_time', e.target.value)} disabled={!isAdmin && name !== selectedName} />
+                                <input type="text" className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-xs font-magic" placeholder="-" value={rec.study_time || ''} onBlur={(e) => handleChange(name, day, 'study_time', e.target.value)} disabled={!isAdmin && name !== selectedName} />
                               ) : (
-                                <span className={`font-black text-sm font-magic ${field === 'penalty' && res.penalty < 0 ? 'text-red-500' : field === 'bonus' && res.bonus > 0 ? 'text-blue-600' : 'text-slate-900'}`}>
-                                  {field === 'total' ? res.total : (res[field as keyof typeof res] || (field === 'penalty' || field === 'bonus' ? '0' : ''))}
+                                <span className={`font-black text-xs font-magic ${field === 'penalty' && res.penalty < 0 ? 'text-red-500' : field === 'bonus' && res.bonus > 0 ? 'text-blue-600' : 'text-slate-900'}`}>
+                                  {field === 'total' ? res.total : (res[field as keyof typeof res] || '0')}
                                 </span>
                               )}
                             </td>
                           );
                         })}
-                        <td className="bg-slate-50/50 text-center font-black border-r relative">
-                          {field === 'study_time' && <div className="text-sm font-black text-slate-800 font-magic">{calculateWeeklyTotal(name)}</div>}
-                          {field === 'total' && (
-                            <div className="absolute inset-x-0 bottom-0 bg-blue-600 py-1 border-t border-blue-700">
-                               <span className="text-[9px] font-bold text-white uppercase tracking-tighter">합계: {calculatePoints(name).total}</span>
-                            </div>
-                          )}
+                        <td className="bg-slate-50/30 text-center border-r border-slate-100">
+                          {field === 'study_time' && <div className="text-[11px] font-black text-slate-800 font-magic">{calculateWeeklyTotal(name)}</div>}
+                          {field === 'total' && <div className="text-[11px] font-black text-blue-700 font-magic">{calculatePoints(name).total}</div>}
                         </td>
                         {rIdx === 0 && (
-                          <td rowSpan={7} className="p-2 bg-white border-l text-center">
+                          <td rowSpan={7} className="p-2 bg-white text-center">
                             <div className="flex flex-col items-center gap-1.5">
                               {[1, 2, 3, 4].map((n) => (
                                 <div key={n} onClick={() => isAdmin && handleChange(name, '월', 'monthly_off_count', 5-n)} 
@@ -325,7 +326,7 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
         </div>
       </div>
 
-      {/* [27] 학생 개인 요약 팝업 (완벽한 디자인 복구) */}
+      {/* [27] 학생 개인 요약 팝업 (완벽 디자인 복구) */}
       {selectedStudentReport && studentData[selectedStudentReport] && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
           <div className="bg-white p-5 md:px-10 md:py-8 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
@@ -334,23 +335,25 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
                 <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="Logo" className="w-36 h-36 md:w-44 md:h-44 object-contain drop-shadow-md" />
               </div>
               <div className="w-[55%] flex flex-col justify-end items-start pl-4">
-                <div className="flex items-baseline gap-1.5 mb-0">
+                <div className="flex items-baseline gap-1.5 mb-0 font-magic">
                   <span className="text-5xl md:text-6xl">{studentData[selectedStudentReport].emoji}</span>
-                  <span className="font-bold text-xs md:text-sm text-slate-400 tracking-tight leading-none uppercase font-magic">{studentData[selectedStudentReport].house}</span>
+                  <span className="font-bold text-xs md:text-sm text-slate-400 tracking-tight leading-none uppercase">{studentData[selectedStudentReport].house}</span>
                 </div>
                 <div className="flex flex-col items-start font-magic">
                   <div className="text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-tight italic">
                     {calculateWeeklyTotal(selectedStudentReport)}
                   </div>
                   <div className="text-sm md:text-base font-bold text-slate-500 tracking-tight mt-1">
-                    {records.find(r => r.student_name === selectedStudentReport && r.goal)?.goal || ""}
+                    {records.find(r => r.student_name === selectedStudentReport && r.goal)?.goal || "Set your goal!"}
                   </div>
                 </div>
               </div>
             </div>
+            
             <div className="text-xl md:text-2xl font-black text-black mb-4 text-center tracking-tight font-magic">
               {getWeeklyDateRange()}
             </div>
+            
             <div className="grid grid-cols-4 gap-2.5 mb-2">
               {DAYS.map(day => {
                 const rec = records.find(r => r.student_name === selectedStudentReport && r.day_of_week === day) || {};
@@ -362,11 +365,12 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
                     <div className={`text-[10px] font-bold ${isGreen ? 'text-green-700' : isBlue ? 'text-blue-700' : isRed ? 'text-red-700' : 'text-slate-400'}`}>{getDayDate(day)} {day}</div>
                     <div className="text-[18px] font-black text-slate-800 font-magic">{rec.study_time || "0:00"}</div>
                     <div className={`text-[9px] font-black h-3 leading-none uppercase ${isGreen ? 'text-green-700' : isBlue ? 'text-blue-700' : isRed ? 'text-red-700' : 'text-slate-400'}`}>
-                      {['반휴','월반휴','주휴','결석'].includes(rec.off_type) ? rec.off_type : ""}
+                      {['반휴','월반휴','주휴','결석','자율'].includes(rec.off_type) ? rec.off_type : ""}
                     </div>
                   </div>
                 );
               })}
+              
               <div className="p-3 text-[10px] font-black leading-relaxed flex flex-col justify-center gap-1 bg-slate-900 text-white rounded-2xl shadow-lg font-magic">
                 <div className="flex justify-between"><span>상점</span><span className="text-blue-400">+{calculatePoints(selectedStudentReport).bonus}</span></div>
                 <div className="flex justify-between"><span>벌점</span><span className="text-red-400">{calculatePoints(selectedStudentReport).penalty}</span></div>
