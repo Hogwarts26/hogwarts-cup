@@ -9,6 +9,35 @@ export default function PlannerPage() {
   const [loading, setLoading] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(true);
 
+  // ==========================================
+  // 🎵 배경음악(BGM) 로직
+  // ==========================================
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [bgm] = useState(() => typeof Audio !== 'undefined' ? new Audio('/hedwig.mp3') : null);
+
+  const toggleMusic = () => {
+    if (!bgm) return;
+    if (isPlaying) {
+      bgm.pause();
+    } else {
+      bgm.loop = true;
+      bgm.volume = 0.4;
+      bgm.play().catch(e => console.log("음악 재생 실패:", e));
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  // 페이지를 떠날 때 음악 정지
+  useEffect(() => {
+    return () => {
+      if (bgm) {
+        bgm.pause();
+        setIsPlaying(false);
+      }
+    };
+  }, [bgm]);
+  // ==========================================
+
   const timeSlots = [];
   for (let h = 6; h < 24; h++) {
     const hour = String(h).padStart(2, '0');
@@ -83,14 +112,12 @@ export default function PlannerPage() {
     localStorage.setItem('planner_theme', newMode ? 'dark' : 'light');
   };
 
-  // 타이머 페이지와 동일한 테마 색상 정의
   const theme = {
     bg: isDarkMode ? 'bg-[#020617]' : 'bg-slate-50',
     card: isDarkMode ? 'bg-slate-900/60 border-white/5 shadow-black' : 'bg-white border-slate-200 shadow-slate-200/50',
     textMain: isDarkMode ? 'text-white' : 'text-slate-900',
     btn: isDarkMode ? 'bg-slate-800/50 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-600 shadow-sm',
     accent: isDarkMode ? 'text-blue-400' : 'text-blue-600',
-    inputFocus: isDarkMode ? 'focus:bg-white/[0.05]' : 'focus:bg-slate-50/50',
     divider: isDarkMode ? 'divide-white/5' : 'divide-slate-100'
   };
 
@@ -116,6 +143,16 @@ export default function PlannerPage() {
           </div>
           <div className="flex flex-col items-end gap-3">
             <div className="flex gap-2">
+              {/* 🎵 음악 토글 버튼 */}
+              <button 
+                onClick={toggleMusic} 
+                className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${
+                  isPlaying ? 'border-yellow-400 bg-yellow-400/10 animate-pulse' : theme.btn
+                }`}
+              >
+                {isPlaying ? '🎵' : '🔇'}
+              </button>
+              {/* 🌓 테마 토글 버튼 */}
               <button onClick={toggleTheme} className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${theme.btn}`}>
                 {isDarkMode ? '🌝' : '🌞'}
               </button>
@@ -151,8 +188,8 @@ export default function PlannerPage() {
                     placeholder="무엇을 학습했나요?"
                     className={`w-full bg-transparent px-6 py-4 text-sm font-medium outline-none transition-all ${
                       isDarkMode 
-                        ? 'text-white/80 placeholder:text-white/5 ' + theme.inputFocus
-                        : 'text-slate-700 placeholder:text-slate-200 ' + theme.inputFocus
+                        ? 'text-white/80 placeholder:text-white/5 focus:bg-white/[0.05]'
+                        : 'text-slate-700 placeholder:text-slate-200 focus:bg-slate-50/50'
                     }`}
                   />
                 </div>
