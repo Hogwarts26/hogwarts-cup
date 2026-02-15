@@ -2,28 +2,21 @@
 import React, { useState, useEffect } from 'react';
 
 // ==========================================
-// [1] 스타일 및 애니메이션 설정
+// [1] 스타일 및 애니메이션 설정 (완벽한 디자인 복구)
 // ==========================================
 const GLOBAL_STYLE = `
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap');
   @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
   .font-magic { font-family: 'Cinzel', 'Pretendard', serif; }
-
-  body { 
-    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
-    background-color: #f5f5f4;
-  }
-
-  table select {
-    appearance: none;
-    -webkit-appearance: none;
-    text-align-last: center;
-  }
-
+  body { font-family: 'Pretendard', sans-serif; background-color: #f5f5f4; }
+  
+  .late-checkbox { width: 14px; height: 14px; accent-color: #1e293b; margin: 0 auto; display: block; }
   .custom-scrollbar::-webkit-scrollbar { width: 4px; }
   .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
   .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+
+  select { appearance: none; -webkit-appearance: none; text-align-last: center; }
 `;
 
 // ==========================================
@@ -74,14 +67,6 @@ const HOUSE_LOGOS: Record<string, string> = {
   "후플푸프": "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/huf.png"
 };
 
-// [도움 함수] 휴무 상태에 따른 배경색 반환
-const getOffBgColor = (offType: string) => {
-  if (['주휴', '월휴', '자율', '늦휴', '늦월휴'].includes(offType)) return 'bg-blue-100/60';
-  if (['반휴', '월반휴', '늦반휴', '늦월반휴'].includes(offType)) return 'bg-green-100/60';
-  if (offType === '결석') return 'bg-red-100/60';
-  return '';
-};
-
 interface StudyProps {
   supabase: any;
   selectedName: string;
@@ -99,15 +84,12 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
 
   const studentData = studentMasterData || studentStyleMap;
 
-  // 시계 및 데이터 갱신 로직
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
       setRealClock(now);
       const day = now.getDay();
       const hours = now.getHours();
-
-      // 월요일 18:00 이전 또는 일요일은 지난주 상태 유지
       if ((day === 1 && hours < 18) || day === 0) {
         const adjusted = new Date(now);
         const offset = day === 1 ? 1 : 0;
@@ -118,7 +100,6 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
         setCurrentTime(now);
       }
     };
-
     updateTime();
     const timer = setInterval(updateTime, 1000);
     fetchRecords();
@@ -142,10 +123,8 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
     let penalty = 0, bonus = 0;
     const isHalfOff = ['반휴', '월반휴', '늦반휴', '늦월반휴'].includes(r.off_type);
     const isFullOff = ['주휴', '월휴', '자율', '늦휴', '늦월휴'].includes(r.off_type);
-    
     if (['늦반휴', '늦휴', '늦월반휴', '늦월휴'].includes(r.off_type)) penalty -= 1;
     if (r.is_late && !isFullOff && r.off_type !== '자율') penalty -= 1;
-    
     if (!isFullOff && r.off_type !== '자율') {
       if (!isHalfOff && r.am_3h === false && studyH > 0) penalty -= 1;
       const target = isHalfOff ? 4 : 9;
@@ -205,23 +184,18 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
   const handleChange = async (name: string, day: string, field: string, value: any) => {
     if (!isAdmin && field !== 'password' && field !== 'goal' && name !== selectedName) return;
     setIsSaving(true);
-    
     if (field === 'password') {
       const { error } = await supabase.from('study_records').upsert(
         DAYS.map(d => ({ student_name: name, day_of_week: d, password: value })),
         { onConflict: 'student_name,day_of_week' }
       );
-      if (!error) alert("비밀번호가 성공적으로 변경되었습니다.");
+      if (!error) alert("비밀번호가 변경되었습니다.");
     } else if (field === 'goal') {
-      const goalPayload = DAYS.map(d => ({ student_name: name, day_of_week: d, goal: value }));
-      await supabase.from('study_records').upsert(goalPayload, { onConflict: 'student_name,day_of_week' });
+      await supabase.from('study_records').upsert(DAYS.map(d => ({ student_name: name, day_of_week: d, goal: value })), { onConflict: 'student_name,day_of_week' });
       setDailyGoal(value);
     } else {
       const existing = records.find(r => r.student_name === name && r.day_of_week === day) || {};
-      await supabase.from('study_records').upsert(
-        { ...existing, student_name: name, day_of_week: day, [field]: value },
-        { onConflict: 'student_name,day_of_week' }
-      );
+      await supabase.from('study_records').upsert({ ...existing, student_name: name, day_of_week: day, [field]: value }, { onConflict: 'student_name,day_of_week' });
     }
     fetchRecords();
     setIsSaving(false);
@@ -239,31 +213,45 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
     <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 font-magic">
       <style>{GLOBAL_STYLE}</style>
       
-      <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] shadow-2xl overflow-hidden border border-slate-200">
-        {/* 헤더 */}
-        <div className="bg-slate-900 p-4 px-6 text-white">
-          <div className="flex justify-between items-center">
-            <span className="text-xs font-black text-yellow-500 tracking-widest flex items-center gap-2 uppercase">
+      {/* [25] 학습 기록 메인 테이블 및 목표 */}
+      <div className="max-w-[1100px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
+        <div className="bg-slate-900 p-4 px-6 md:px-8 flex flex-col gap-2 text-white min-h-[60px]">
+          <div className="flex justify-between items-center w-full">
+            <span className="text-[10px] md:text-xs font-black text-yellow-500 tracking-widest flex items-center gap-2">
               <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-              {realClock.toLocaleDateString('ko-KR')} {realClock.toLocaleTimeString('ko-KR', { hour12: false })}
+              {isAdmin ? "Headmaster Console" : realClock.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}
+              {!isAdmin && <span className="text-white ml-2">{realClock.toLocaleTimeString('ko-KR', { hour12: false })}</span>}
             </span>
-            {isSaving && <div className="text-[10px] text-yellow-500 animate-bounce font-magic">Saving...</div>}
+            {isSaving && <div className="text-[9px] text-yellow-500 font-bold animate-bounce">Magic occurring...</div>}
           </div>
-          <div className="mt-2 pt-2 border-t border-white/10 flex items-center gap-3">
-            <span className="text-[9px] font-bold opacity-40 uppercase tracking-tighter">Current Goal</span>
-            <input type="text" value={dailyGoal} onChange={(e) => setDailyGoal(e.target.value)} onBlur={() => handleChange(selectedName, '월', 'goal', dailyGoal)} className="bg-transparent italic text-xs w-full outline-none text-yellow-100/80 font-bold" placeholder="목표 입력" />
-          </div>
+          {!isAdmin && (
+            <div className="flex items-center gap-3 pt-1 border-t border-white/10 mt-1">
+              <span className="text-[9px] font-black text-white/40 shrink-0 uppercase tracking-tighter">Goal</span>
+              <div className="flex items-center gap-2 flex-1 overflow-hidden group">
+                <input 
+                  type="text"
+                  value={dailyGoal || ""}
+                  onChange={(e) => setDailyGoal(e.target.value)}
+                  placeholder="목표를 입력하세요."
+                  className="bg-transparent italic text-xs w-full focus:outline-none border-b border-transparent focus:border-white/20 pb-0.5 transition-all text-white/90"
+                />
+                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                  <button onClick={() => handleChange(selectedName, '월', 'goal', dailyGoal)} className="text-[10px] font-bold text-yellow-500">[저장]</button>
+                  <button onClick={() => { if(confirm("삭제하시겠습니까?")) { setDailyGoal(""); handleChange(selectedName, '월', 'goal', ""); }}} className="text-[10px] font-bold text-red-400">[삭제]</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* 테이블 메인 */}
         <div className="w-full overflow-x-auto custom-scrollbar">
           <table className="min-w-[850px] w-full table-fixed border-collapse">
             <thead>
-              <tr className="bg-slate-50 text-slate-500 font-bold text-[11px] border-b-2 uppercase tracking-tighter">
+              <tr className="bg-slate-50 text-slate-500 font-black text-[11px] border-b-2 uppercase">
                 <th className="w-28 p-2 sticky left-0 bg-slate-50 z-20 border-r">Student</th>
                 {DAYS.map(d => <th key={d} className="w-16 p-2 text-slate-900 border-r">{d}</th>)}
-                <th className="w-24 p-2 bg-slate-100 border-r">Weekly</th>
-                <th className="w-16 p-2 bg-slate-100">Off</th>
+                <th className="w-24 p-2 bg-slate-100 border-r text-[10px]">Weekly</th>
+                <th className="w-16 p-2 bg-slate-100 text-[10px]">Off</th>
               </tr>
             </thead>
             <tbody>
@@ -277,53 +265,53 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
 
                 return (
                   <React.Fragment key={name}>
-                    {rows.map((rowField, rIdx) => (
-                      <tr key={rowField} className={rIdx === 6 ? "border-b-[6px] border-slate-200" : "border-b border-slate-50"}>
-                        {/* 기숙사별 학생 배경색 적용 */}
+                    {rows.map((field, rIdx) => (
+                      <tr key={field} className={rIdx === 6 ? "border-b-[6px] border-slate-100" : "border-b border-slate-50"}>
                         {rIdx === 0 && (
-                          <td rowSpan={7} className={`p-4 text-center sticky left-0 z-20 border-r-[3px] ${info.color} ${info.text} cursor-pointer hover:brightness-95 transition-all`} onClick={() => setSelectedStudentReport(name)}>
+                          <td rowSpan={7} className={`p-4 text-center sticky left-0 z-20 font-bold border-r-[3px] ${info.color} ${info.text} cursor-pointer hover:brightness-95 transition-all`} onClick={() => setSelectedStudentReport(name)}>
                             <div className="text-3xl mb-1 drop-shadow-sm">{info.emoji}</div>
-                            <div className="text-[11px] font-black leading-tight break-keep">{name.replace(/[^\uAC00-\uD7A3]/g, '')}</div>
-                            <div className="text-[8px] opacity-60 font-bold uppercase tracking-tighter mt-1 mb-2">{info.house}</div>
-                            <button onClick={(e) => { e.stopPropagation(); const p = prompt("New PW?"); if(p) handleChange(name, '월', 'password', p); }} className="text-[8px] opacity-40 border-b border-dotted hover:opacity-100">PW 변경</button>
+                            <div className="leading-tight text-sm font-black mb-1">{name.replace(/[^\uAC00-\uD7A3]/g, '')}</div>
+                            <div className="text-[9px] font-black opacity-70 mb-2">{info.house}</div>
+                            <button onClick={(e) => { e.stopPropagation(); const p = prompt("4자리 숫자"); if(p) handleChange(name, '월', 'password', p); }} className="text-[8px] underline opacity-40 block mx-auto">PW 변경</button>
                           </td>
                         )}
                         {DAYS.map(day => {
                           const rec = studentRecords.find(r => r.day_of_week === day) || {};
                           const res = calc(rec);
-                          const cellBg = getOffBgColor(rec.off_type || '-');
+                          const cellColor = ['반휴','월반휴','늦반휴','늦월반휴'].includes(rec.off_type) ? 'bg-green-100/60' : ['주휴','월휴','늦휴','늦월휴','자율'].includes(rec.off_type) ? 'bg-blue-100/60' : rec.off_type === '결석' ? 'bg-red-100/60' : '';
                           return (
-                            <td key={day} className={`p-1 text-center border-r border-slate-50 transition-colors ${cellBg}`}>
-                              {rowField === 'off_type' ? (
-                                <select className="w-full text-center bg-transparent text-[10px] font-bold outline-none cursor-pointer" value={rec.off_type || '-'} onChange={(e) => handleChange(name, day, 'off_type', e.target.value)}>
+                            <td key={day} className={`p-1 text-center border-r border-slate-50 ${field === 'off_type' ? cellColor : ''}`}>
+                              {field === 'off_type' ? (
+                                <select className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-[10px]" value={rec.off_type || '-'} onChange={(e) => handleChange(name, day, 'off_type', e.target.value)} disabled={!isAdmin && name !== selectedName}>
                                   {OFF_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
                                 </select>
-                              ) : rowField === 'is_late' || rowField === 'am_3h' ? (
-                                <input type="checkbox" checked={!!rec[rowField]} onChange={(e) => handleChange(name, day, rowField, e.target.checked)} className="w-3.5 h-3.5 accent-slate-800 rounded shadow-sm" />
-                              ) : rowField === 'study_time' ? (
-                                <input type="text" className="w-full text-center text-[11px] font-bold outline-none bg-transparent font-magic" value={rec.study_time || ''} onBlur={(e) => handleChange(name, day, 'study_time', e.target.value)} />
+                              ) : field === 'is_late' || field === 'am_3h' ? (
+                                <input type="checkbox" className={field === 'is_late' ? "late-checkbox" : "w-3.5 h-3.5 accent-slate-800 mx-auto block"} checked={!!rec[field]} onChange={(e) => handleChange(name, day, field, e.target.checked)} disabled={!isAdmin && name !== selectedName} />
+                              ) : field === 'study_time' ? (
+                                <input type="text" className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-sm font-magic" placeholder="-" value={rec.study_time || ''} onBlur={(e) => handleChange(name, day, 'study_time', e.target.value)} disabled={!isAdmin && name !== selectedName} />
                               ) : (
-                                <span className={`font-black text-[11px] font-magic ${rowField === 'penalty' && res.penalty < 0 ? 'text-red-500' : rowField === 'bonus' && res.bonus > 0 ? 'text-blue-600' : 'text-slate-800'}`}>
-                                  {rowField === 'total' ? res.total : (res[rowField as keyof typeof res] || '')}
+                                <span className={`font-black text-sm font-magic ${field === 'penalty' && res.penalty < 0 ? 'text-red-500' : field === 'bonus' && res.bonus > 0 ? 'text-blue-600' : 'text-slate-900'}`}>
+                                  {field === 'total' ? res.total : (res[field as keyof typeof res] || (field === 'penalty' || field === 'bonus' ? '0' : ''))}
                                 </span>
                               )}
                             </td>
                           );
                         })}
-                        {/* Weekly 공부시간 및 하단 합계 상점 표시 */}
-                        <td className="bg-slate-50/50 text-center border-r relative align-middle">
-                          {rIdx === 3 && <div className="text-[14px] font-black text-slate-800 font-magic">{calculateWeeklyTotal(name)}</div>}
-                          {rIdx === 6 && (
+                        <td className="bg-slate-50/50 text-center font-black border-r relative">
+                          {field === 'study_time' && <div className="text-sm font-black text-slate-800 font-magic">{calculateWeeklyTotal(name)}</div>}
+                          {field === 'total' && (
                             <div className="absolute inset-x-0 bottom-0 bg-blue-600 py-1 border-t border-blue-700">
                                <span className="text-[9px] font-bold text-white uppercase tracking-tighter">합계: {calculatePoints(name).total}</span>
                             </div>
                           )}
                         </td>
-                        {/* Off 인디케이터 */}
                         {rIdx === 0 && (
-                          <td rowSpan={7} className="p-1 bg-white border-l text-center">
-                            <div className="flex flex-col items-center gap-1">
-                              {[1, 2, 3, 4].map(n => <div key={n} className={`w-5 h-2.5 rounded-sm border transition-colors ${offCount >= (5-n) ? info.accent : 'bg-slate-50 border-slate-200'}`} onClick={() => isAdmin && handleChange(name, '월', 'monthly_off_count', 5-n)} />)}
+                          <td rowSpan={7} className="p-2 bg-white border-l text-center">
+                            <div className="flex flex-col items-center gap-1.5">
+                              {[1, 2, 3, 4].map((n) => (
+                                <div key={n} onClick={() => isAdmin && handleChange(name, '월', 'monthly_off_count', 5-n)} 
+                                     className={`w-7 h-5 rounded-md border-2 transition-all ${isAdmin ? 'cursor-pointer' : ''} ${offCount >= (5-n) ? info.accent : 'bg-slate-50 border-slate-200'}`} />
+                              ))}
                             </div>
                           </td>
                         )}
@@ -337,54 +325,53 @@ export default function Study({ supabase, selectedName, isAdmin, studentMasterDa
         </div>
       </div>
 
-      {/* 학생 개인 요약 팝업 */}
+      {/* [27] 학생 개인 요약 팝업 (완벽한 디자인 복구) */}
       {selectedStudentReport && studentData[selectedStudentReport] && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
-          <div className="bg-white p-6 md:px-10 md:py-10 w-full max-w-lg shadow-[0_30px_70px_-12px_rgba(0,0,0,0.5)] relative rounded-[3rem] animate-in zoom-in-95 duration-200 border border-white/20" onClick={e => e.stopPropagation()}>
-            <div className="flex flex-row items-center justify-center mb-8 w-full gap-2">
-              <div className="w-[40%] flex justify-end pr-2">
-                <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="House Crest" className="w-32 h-32 md:w-40 md:h-40 object-contain drop-shadow-xl" />
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
+          <div className="bg-white p-5 md:px-10 md:py-8 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="flex items-end justify-center mb-6 w-full">
+              <div className="w-[45%] flex justify-end">
+                <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="Logo" className="w-36 h-36 md:w-44 md:h-44 object-contain drop-shadow-md" />
               </div>
-              <div className="w-[60%] flex flex-col justify-center items-start pl-2">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-4xl md:text-5xl drop-shadow-sm">{studentData[selectedStudentReport].emoji}</span>
-                  <span className="font-bold text-xs md:text-sm text-slate-400 tracking-widest uppercase font-magic">{studentData[selectedStudentReport].house}</span>
+              <div className="w-[55%] flex flex-col justify-end items-start pl-4">
+                <div className="flex items-baseline gap-1.5 mb-0">
+                  <span className="text-5xl md:text-6xl">{studentData[selectedStudentReport].emoji}</span>
+                  <span className="font-bold text-xs md:text-sm text-slate-400 tracking-tight leading-none uppercase font-magic">{studentData[selectedStudentReport].house}</span>
                 </div>
-                <div className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter leading-none italic font-magic">
-                  {calculateWeeklyTotal(selectedStudentReport)}
-                </div>
-                <div className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mt-2 border-b border-slate-100 pb-1">
-                  {selectedStudentReport.replace(/[^\uAC00-\uD7A3]/g, '')}'s Weekly Magic
+                <div className="flex flex-col items-start font-magic">
+                  <div className="text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-tight italic">
+                    {calculateWeeklyTotal(selectedStudentReport)}
+                  </div>
+                  <div className="text-sm md:text-base font-bold text-slate-500 tracking-tight mt-1">
+                    {records.find(r => r.student_name === selectedStudentReport && r.goal)?.goal || ""}
+                  </div>
                 </div>
               </div>
             </div>
-            
-            <div className="text-xl md:text-2xl font-black text-slate-800 mb-6 text-center tracking-tight font-magic">
+            <div className="text-xl md:text-2xl font-black text-black mb-4 text-center tracking-tight font-magic">
               {getWeeklyDateRange()}
             </div>
-            
-            <div className="grid grid-cols-4 gap-3 mb-4">
+            <div className="grid grid-cols-4 gap-2.5 mb-2">
               {DAYS.map(day => {
                 const rec = records.find(r => r.student_name === selectedStudentReport && r.day_of_week === day) || {};
                 const isGreen = ['반휴','월반휴','늦반휴','늦월반휴'].includes(rec.off_type);
-                const isBlue = ['주휴','월휴','늦휴','늦월휴'].includes(rec.off_type);
+                const isBlue = ['주휴','월휴','늦휴','늦월휴','자율'].includes(rec.off_type);
                 const isRed = rec.off_type === '결석';
-                
                 return (
-                  <div key={day} className={`p-3 flex flex-col items-center justify-between h-24 rounded-2xl border shadow-sm transition-all ${isGreen ? 'bg-green-50 border-green-100' : isBlue ? 'bg-blue-50 border-blue-100' : isRed ? 'bg-red-50 border-red-100' : 'bg-slate-50 border-slate-100'}`}>
-                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{day} {getDayDate(day)}</div>
-                    <div className="text-lg font-black text-slate-800 font-magic">{rec.study_time || "0:00"}</div>
-                    <div className="text-[8px] font-black h-3 text-slate-500 uppercase truncate w-full text-center">
+                  <div key={day} className={`p-2.5 flex flex-col items-center justify-between h-24 rounded-2xl border shadow-sm transition-all ${isGreen ? 'bg-green-100/60 border-green-200' : isBlue ? 'bg-blue-100/60 border-blue-200' : isRed ? 'bg-red-100/60 border-red-200' : 'bg-slate-50 border-slate-100'}`}>
+                    <div className={`text-[10px] font-bold ${isGreen ? 'text-green-700' : isBlue ? 'text-blue-700' : isRed ? 'text-red-700' : 'text-slate-400'}`}>{getDayDate(day)} {day}</div>
+                    <div className="text-[18px] font-black text-slate-800 font-magic">{rec.study_time || "0:00"}</div>
+                    <div className={`text-[9px] font-black h-3 leading-none uppercase ${isGreen ? 'text-green-700' : isBlue ? 'text-blue-700' : isRed ? 'text-red-700' : 'text-slate-400'}`}>
                       {['반휴','월반휴','주휴','결석'].includes(rec.off_type) ? rec.off_type : ""}
                     </div>
                   </div>
                 );
               })}
-              
-              <div className="p-3 text-[10px] font-bold leading-relaxed flex flex-col justify-center gap-1 bg-slate-900 text-white rounded-2xl shadow-lg border border-slate-700 font-magic">
-                <div className="flex justify-between border-b border-white/10 pb-1"><span>BONUS</span><span className="text-blue-400">+{calculatePoints(selectedStudentReport).bonus}</span></div>
-                <div className="flex justify-between border-b border-white/10 pb-1"><span>PENALTY</span><span className="text-red-400">{calculatePoints(selectedStudentReport).penalty}</span></div>
-                <div className="flex justify-between text-yellow-400"><span>OFF</span><span>{calculatePoints(selectedStudentReport).remainingWeeklyOff}</span></div>
+              <div className="p-3 text-[10px] font-black leading-relaxed flex flex-col justify-center gap-1 bg-slate-900 text-white rounded-2xl shadow-lg font-magic">
+                <div className="flex justify-between"><span>상점</span><span className="text-blue-400">+{calculatePoints(selectedStudentReport).bonus}</span></div>
+                <div className="flex justify-between"><span>벌점</span><span className="text-red-400">{calculatePoints(selectedStudentReport).penalty}</span></div>
+                <div className="flex justify-between text-yellow-400 mt-0.5"><span>휴무</span><span>{calculatePoints(selectedStudentReport).remainingWeeklyOff}</span></div>
+                <div className="flex justify-between text-cyan-400"><span>월휴</span><span>{calculatePoints(selectedStudentReport).remainingMonthlyOff}</span></div>
               </div>
             </div>
           </div>
