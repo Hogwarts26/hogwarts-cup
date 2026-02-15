@@ -1,125 +1,49 @@
 "use client";
-import React, { useState, useEffect } from 'react';
-import { supabase } from './supabase'; 
+import Link from 'next/link';
 
-import Login from './login';
-import Study from './study';
-import Game from './game'; 
-import Dragon from './dragon';
-import HeaderSection from './headersection';
-
-export default function HogwartsPage() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [view, setView] = useState('lobby'); 
-  const [selectedName, setSelectedName] = useState(""); 
-  const [studentMasterData, setStudentMasterData] = useState<any>({});
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
-
-  const [studyRecords, setStudyRecords] = useState<any[]>([]);
-  const DAYS = ['월', '화', '수', '목', '금', '토', '일'];
-
-  const toggleMusic = () => setIsPlaying(!isPlaying);
-
-  const fetchData = async () => {
-    try {
-      const { data: masterData } = await supabase.from('student_master').select('*');
-      if (masterData) {
-        const formatted = masterData.reduce((acc: any, cur: any) => {
-          acc[cur.student_name] = cur;
-          return acc;
-        }, {});
-        setStudentMasterData(formatted);
-      }
-
-      const { data: recordsData } = await supabase.from('study_records').select('*');
-      if (recordsData) {
-        setStudyRecords(recordsData);
-      }
-    } catch (err) { console.error("데이터 로딩 실패:", err); }
-  };
-
-  useEffect(() => {
-    if (isLoggedIn) fetchData();
-  }, [isLoggedIn]);
-
-  const handleLoginSuccess = (name: string) => {
-    setSelectedName(name);
-    setIsAdmin(name === "관리자");
-    setIsLoggedIn(true);
-  };
-
-  if (!isLoggedIn) {
-    return <Login onLoginSuccess={handleLoginSuccess} supabase={supabase} globalStyle="" />;
-  }
+export default function LobbyPage() {
+  const menus = [
+    { id: 'study', name: 'Great Hall', sub: '학습 기록', img: '/study.gif', href: '/study' },
+    { id: 'dragon', name: 'Dragon Cave', sub: '용 키우기', img: '/dragoncave.gif', href: '/dragon' },
+    { id: 'ranking', name: 'House Cup', sub: '기숙사 순위', img: '/game.gif', href: '/ranking' },
+    { id: 'timer', name: 'Class Timer', sub: '교시제 타이머', img: '/timer.gif', href: '/timer' },
+  ];
 
   return (
-    <div className="min-h-screen bg-stone-100 font-serif">
-      <HeaderSection isAdmin={isAdmin} isPlaying={isPlaying} toggleMusic={toggleMusic} />
+    <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-[url('https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/bg.png')] bg-cover bg-fixed bg-center">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" /> {/* 배경 살짝 어둡게 */}
+      
+      <div className="relative z-10 w-full max-w-6xl">
+        <h1 className="text-5xl md:text-7xl font-magic text-center mb-16 text-yellow-500 drop-shadow-[0_0_20px_rgba(234,179,8,0.5)]">
+          SELECT YOUR PATH
+        </h1>
 
-      <main className="max-w-[1100px] mx-auto py-6 px-4">
-        {view === 'lobby' && (
-          <div className="flex flex-col md:flex-row gap-8 items-center justify-center min-h-[70vh]">
-            <div onClick={() => setView('study')} className="cursor-pointer group text-center">
-              <div className="overflow-hidden rounded-2xl shadow-xl border-4 border-white group-hover:border-yellow-500 transition-all">
-                <img src="/study.gif" alt="Study" className="w-64 h-64 object-cover transition-transform group-hover:scale-110" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {menus.map((menu) => (
+            <Link key={menu.id} href={menu.href} className="group">
+              <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/40 backdrop-blur-md transition-all duration-500 hover:border-yellow-500/50 hover:-translate-y-3 hover:shadow-[0_20px_40px_rgba(0,0,0,0.4)]">
+                {/* GIF 이미지 영역 */}
+                <div className="aspect-[4/5] w-full overflow-hidden">
+                  <img 
+                    src={menu.img} 
+                    alt={menu.name} 
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                </div>
+                
+                {/* 텍스트 영역 */}
+                <div className="p-6 text-center bg-gradient-to-t from-slate-900 via-slate-900/80 to-transparent">
+                  <h2 className="font-magic text-2xl text-white mb-1">{menu.name}</h2>
+                  <p className="text-yellow-500/70 text-sm font-bold tracking-widest">{menu.sub}</p>
+                </div>
+
+                {/* 호버 시 나타나는 빛 효과 */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-tr from-yellow-500/10 to-transparent" />
               </div>
-              <p className="mt-4 font-black text-slate-800 text-lg uppercase tracking-widest">Study Room</p>
-            </div>
-
-            <div onClick={() => setView('game')} className="cursor-pointer group text-center">
-              <div className="overflow-hidden rounded-2xl shadow-xl border-4 border-white group-hover:border-yellow-500 transition-all">
-                <img src="/game.gif" alt="Game" className="w-64 h-64 object-cover transition-transform group-hover:scale-110" />
-              </div>
-              <p className="mt-4 font-black text-slate-800 text-lg uppercase tracking-widest">House Cup</p>
-            </div>
-
-            <div onClick={() => setView('dragon')} className="cursor-pointer group text-center">
-              <div className="overflow-hidden rounded-2xl shadow-xl border-4 border-white group-hover:border-yellow-500 transition-all">
-                <img src="/dragoncave.gif" alt="Dragon" className="w-64 h-64 object-cover transition-transform group-hover:scale-110" />
-              </div>
-              <p className="mt-4 font-black text-slate-800 text-lg uppercase tracking-widest">Dragon Cave</p>
-            </div>
-          </div>
-        )}
-
-        {view !== 'lobby' && (
-          <button 
-            onClick={() => setView('lobby')}
-            className="mb-8 px-4 py-2 bg-slate-800 text-white rounded-lg text-xs font-bold hover:bg-slate-700 transition-all shadow-lg flex items-center gap-2"
-          >
-            🏰 MAIN LOBBY
-          </button>
-        )}
-
-        {/* [중요] Study 컴포넌트에 로그인 정보를 넘겨줍니다 */}
-        {view === 'study' && (
-          <Study 
-            supabase={supabase}
-            selectedName={selectedName}
-            isAdmin={isAdmin}
-            studentMasterData={studentMasterData}
-          />
-        )}
-        
-        {view === 'game' && (
-          <Game 
-            records={studyRecords} 
-            studentData={studentMasterData} 
-            DAYS={DAYS} 
-          />
-        )}
-        
-        {view === 'dragon' && (
-          <Dragon 
-            studentMasterData={studentMasterData}
-            selectedName={selectedName}
-            setStudentMasterData={setStudentMasterData}
-            supabase={supabase}
-            currentUser={{ name: selectedName }}
-          />
-        )}
-      </main>
+            </Link>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
