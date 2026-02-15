@@ -559,7 +559,7 @@ const handleSaveName = async () => {
   };
 
   // ==========================================
-  // [11] 점수 계산 및 리포트 연동 로직
+  // [11] 점수 계산 및 리포트 연동 로직 (자율 상점 추가 버전)
   // ==========================================
   const calc = (r: any) => {
     // 1. 데이터가 없거나, 버튼이 '-' 상태인 경우 점수 계산 안 함 (0점)
@@ -577,33 +577,41 @@ const handleSaveName = async () => {
     let penalty = 0, bonus = 0;
     
     const isHalfOff = ['반휴', '월반휴', '늦반휴', '늦월반휴'].includes(r.off_type);
-    const isFullOff = ['주휴', '월휴', '자율', '늦휴', '늦월휴'].includes(r.off_type);
+    const isFullOff = ['주휴', '월휴', '늦휴', '늦월휴'].includes(r.off_type);
+    const isAutonomous = r.off_type === '자율'; // '자율' 여부 확인
     
     // A. 늦휴무 벌점 (-1)
     if (['늦반휴', '늦휴', '늦월반휴', '늦월휴'].includes(r.off_type)) {
       penalty -= 1;
     }
     
-    // B. 지각 벌점
-    if (r.is_late && !isFullOff && r.off_type !== '자율') {
+    // B. 지각 벌점 (자율 제외)
+    if (r.is_late && !isFullOff && !isAutonomous) {
       penalty -= 1;
     }
     
-    // C. 시간당 상벌점
-    if (!isFullOff && r.off_type !== '자율') {
+    // C. 시간당 상벌점 계산
+    // '주휴/월휴' 계열만 아니면 계산에 진입 (자율도 진입)
+    if (!isFullOff) {
       
-      // 오전 3시간 체크
-      if (!isHalfOff && r.am_3h === false && studyH > 0) {
-        penalty -= 1;
+      // 벌점 로직: 자율이 아닐 때만 적용
+      if (!isAutonomous) {
+        // 오전 3시간 체크
+        if (!isHalfOff && r.am_3h === false && studyH > 0) {
+          penalty -= 1;
+        }
+
+        // 기준 시간 미달 체크
+        const target = isHalfOff ? 4 : 9;
+        if (studyH < target) {
+          penalty -= Math.ceil(target - studyH);
+        }
       }
 
-      // 기준 시간 미달/초과 체크
-      const target = isHalfOff ? 4 : 9;
-      
-      if (studyH < target) {
-        penalty -= Math.ceil(target - studyH);
-      } else if (!isHalfOff && studyH >= target + 1) {
-        bonus += Math.floor(studyH - target);
+      // 상점 로직: 자율이든 일반 출석이든 10시간 이상(9시간 초과) 시 적용
+      // 단, 반휴/월반휴 등은 기존 규칙대로 상점에서 제외
+      if (!isHalfOff && studyH >= 10) { 
+        bonus += Math.floor(studyH - 9);
       }
     }
 
