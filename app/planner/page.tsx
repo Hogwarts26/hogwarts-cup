@@ -5,13 +5,13 @@ import Link from 'next/link';
 
 type Todo = { id: string; subject: string; content: string; completed: boolean };
 type WeeklyData = { [key: string]: Todo[] };
-type Particle = { id: number; x: number; y: number; tx: number; ty: number; color: string; shape: string; size: number };
+type Particle = { id: number; x: number; y: number; tx: number; ty: number; color: string; shape: string; size: number; delay: number };
 
 const DAYS_ORDER = ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"];
 const SHAPES = [
-  "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)", // 5각별
+  "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)", // 별
   "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)", // 다이아몬드
-  "polygon(50% 0%, 90% 20%, 100% 60%, 75% 100%, 25% 100%, 0% 60%, 10% 20%)" // 다각형
+  "polygon(50% 0%, 80% 10%, 100% 35%, 100% 70%, 80% 90%, 50% 100%, 20% 90%, 0% 70%, 0% 35%, 20% 10%)" // 보석형
 ];
 
 export default function PlannerPage() {
@@ -28,8 +28,6 @@ export default function PlannerPage() {
   const [openDays, setOpenDays] = useState<{ [key: string]: boolean }>({});
   const [isPlaying, setIsPlaying] = useState(false);
   const [bgm, setBgm] = useState<HTMLAudioElement | null>(null);
-  
-  // 🔥 진짜 불꽃놀이를 위한 파편 상태
   const [particles, setParticles] = useState<Particle[]>([]);
 
   useEffect(() => {
@@ -41,20 +39,25 @@ export default function PlannerPage() {
     }
   }, []);
 
-  // 🎇 불꽃 터뜨리기 로직
+  // 🎇 리듬감 있는 불꽃 발사 로직
   const fireCelebrate = useCallback(() => {
-    const newParticles: Particle[] = [];
     const colors = isDarkMode 
-      ? ['#FFD700', '#FF69B4', '#00BFFF', '#ADFF2F', '#FF4500', '#FFFFFF']
-      : ['#D97706', '#DB2777', '#2563EB', '#059669', '#DC2626', '#4F46E5'];
+      ? ['#FFD700', '#FF69B4', '#00BFFF', '#ADFF2F', '#FF4500', '#FFFFFF', '#BC8CF2']
+      : ['#D97706', '#DB2777', '#2563EB', '#059669', '#DC2626', '#4F46E5', '#7C3AED'];
 
-    // 3군데서 터뜨림
-    [25, 50, 75].forEach((startX) => {
-      const startY = Math.random() * 20 + 30; // 30~50% 높이에서 터짐
-      for (let i = 0; i < 30; i++) { // 각 위치당 30개 파편
+    let allParticles: Particle[] = [];
+    
+    // 5번의 폭죽을 시간차를 두고 생성
+    for (let f = 0; f < 5; f++) {
+      const startX = 15 + Math.random() * 70; // 15%~85% 사이 랜덤 위치
+      const startY = 20 + Math.random() * 40; // 높이 다양화
+      const burstDelay = f * 0.4; // 0.4초 간격으로 순차적 폭발
+      const burstSize = 0.5 + Math.random() * 1.5; // 폭죽 크기 랜덤
+
+      for (let i = 0; i < 25; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const distance = Math.random() * 200 + 50;
-        newParticles.push({
+        const distance = (Math.random() * 150 + 50) * burstSize;
+        allParticles.push({
           id: Math.random(),
           x: startX,
           y: startY,
@@ -62,13 +65,14 @@ export default function PlannerPage() {
           ty: Math.sin(angle) * distance,
           color: colors[Math.floor(Math.random() * colors.length)],
           shape: SHAPES[Math.floor(Math.random() * SHAPES.length)],
-          size: Math.random() * 8 + 6
+          size: (Math.random() * 6 + 4) * burstSize,
+          delay: burstDelay
         });
       }
-    });
+    }
 
-    setParticles(newParticles);
-    setTimeout(() => setParticles([]), 3000); // 3초 후 제거
+    setParticles(allParticles);
+    setTimeout(() => setParticles([]), 5000); // 전체 애니메이션 여운을 위해 5초 후 제거
   }, [isDarkMode]);
 
   const getMonday = (offsetDays = 0) => {
@@ -177,7 +181,7 @@ export default function PlannerPage() {
       const dayTasks = newData[day];
       const allDone = dayTasks.length > 0 && dayTasks.every(t => t.completed);
       if (allDone) {
-        fireCelebrate(); // 🔥 여기서 진짜 불꽃놀이 실행
+        fireCelebrate();
       }
     }
 
@@ -212,7 +216,7 @@ export default function PlannerPage() {
   return (
     <div className={`min-h-screen pb-20 transition-colors duration-500 font-sans ${theme.bg} ${theme.textMain}`}>
       
-      {/* 🎇 진짜 파편들이 흩어지는 애니메이션 CSS */}
+      {/* 🎇 리듬감 있는 폭발 애니메이션 */}
       <style jsx global>{`
         .particle {
           position: fixed;
@@ -224,21 +228,24 @@ export default function PlannerPage() {
           clip-path: var(--shape);
           pointer-events: none;
           z-index: 9999;
-          animation: explode 2.5s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
-          box-shadow: 0 0 10px var(--color);
+          opacity: 0;
+          animation: explode-realistic 2.5s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+          animation-delay: var(--delay);
+          filter: drop-shadow(0 0 5px var(--color));
         }
 
-        @keyframes explode {
-          0% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
+        @keyframes explode-realistic {
+          0% { transform: translate(0, 0) scale(0) rotate(0deg); opacity: 0; }
+          5% { opacity: 1; transform: translate(0, 0) scale(1.2) rotate(0deg); }
           80% { opacity: 1; }
           100% { 
-            transform: translate(var(--tx), calc(var(--ty) + 150px)) scale(0) rotate(720deg); 
+            transform: translate(var(--tx), calc(var(--ty) + 120px)) scale(0) rotate(450deg); 
             opacity: 0; 
           }
         }
       `}</style>
 
-      {/* 불꽃 파편들 렌더링 */}
+      {/* 파편 렌더링 */}
       {particles.map(p => (
         <div 
           key={p.id} 
@@ -250,7 +257,8 @@ export default function PlannerPage() {
             '--ty': `${p.ty}px`, 
             '--color': p.color, 
             '--shape': p.shape,
-            '--size': `${p.size}px`
+            '--size': `${p.size}px`,
+            '--delay': `${p.delay}s`
           } as any}
         />
       ))}
@@ -259,6 +267,7 @@ export default function PlannerPage() {
       <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet" />
 
       <div className="max-w-4xl mx-auto p-4 md:p-8">
+        {/* Navigation */}
         <div className="flex justify-between items-center mb-8">
           <Link href="/" className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${theme.btn}`}>← BACK TO LOBBY</Link>
           <div className="flex gap-2">
@@ -271,6 +280,7 @@ export default function PlannerPage() {
           </div>
         </div>
 
+        {/* Weekly Header */}
         <div className="flex justify-center gap-3 mb-10">
           <button onClick={() => { const m = getMonday(-7); setViewingWeek(m); fetchPlannerData(selectedName, m); }} 
                   className={`px-5 py-2.5 rounded-2xl text-[11px] font-black border transition-all ${viewingWeek !== currentWeekMonday ? 'bg-blue-600 text-white border-blue-600 shadow-lg' : theme.btn + ' opacity-60 hover:opacity-100'}`}>
@@ -284,6 +294,7 @@ export default function PlannerPage() {
           )}
         </div>
 
+        {/* Info Area */}
         <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-8">
           <div className="w-full md:w-auto">
             <h1 className="text-6xl font-black italic tracking-tighter mb-1" style={{ fontFamily: 'Cinzel' }}>{calculateDDay()}</h1>
@@ -311,6 +322,7 @@ export default function PlannerPage() {
           </div>
         </div>
 
+        {/* Planner Body */}
         <div className="space-y-6">
           {DAYS_ORDER.map((day, idx) => {
             const dayTodos = weeklyData[day] || [];
@@ -336,29 +348,27 @@ export default function PlannerPage() {
                       </div>
                     </div>
                   </div>
-                  
                   {viewingWeek === currentWeekMonday && (
-                    <button onClick={(e) => { e.stopPropagation(); addTodo(day); }}
-                            className="p-2 transition-all opacity-30 hover:opacity-100 hover:scale-125">
+                    <button onClick={(e) => { e.stopPropagation(); addTodo(day); }} className="p-2 transition-all opacity-30 hover:opacity-100">
                       <span className="text-xl font-light">+</span>
                     </button>
                   )}
                 </div>
 
                 {isOpen && (
-                  <div className="px-4 md:px-6 pb-6 pt-0 space-y-2 animate-in fade-in slide-in-from-top-1 duration-300">
+                  <div className="px-4 md:px-6 pb-6 pt-0 space-y-2">
                     {dayTodos.map((todo) => (
                       <div key={todo.id} className={`flex items-center gap-2 md:gap-3 p-2 rounded-xl transition-all ${todo.completed ? 'opacity-30' : ''}`}>
                         <select value={todo.subject} onChange={(e) => updateTodo(day, todo.id, 'subject', e.target.value)} disabled={viewingWeek !== currentWeekMonday}
-                                className={`text-[9px] md:text-[10px] font-black p-1.5 rounded-lg border outline-none transition-all ${theme.input} w-16 md:w-20 flex-shrink-0`}>
+                                className={`text-[9px] md:text-[10px] font-black p-1.5 rounded-lg border outline-none ${theme.input} w-16 md:w-20`}>
                           {subjects.filter(s => s !== "").map((s, i) => <option key={i} value={s}>{s}</option>)}
-                          {subjects.every(s => s === "") && <option>과목설정</option>}
+                          {subjects.every(s => s === "") && <option>과목</option>}
                         </select>
                         <input type="text" value={todo.content} onChange={(e) => updateTodo(day, todo.id, 'content', e.target.value)} placeholder="계획을 입력하세요" disabled={viewingWeek !== currentWeekMonday}
-                               className={`flex-1 min-w-0 bg-transparent px-1 py-1 text-sm font-medium outline-none ${todo.completed ? 'line-through text-slate-500' : theme.textMain}`} />
-                        <div className="flex items-center gap-2 md:gap-3 ml-1 flex-shrink-0">
+                               className={`flex-1 bg-transparent px-1 py-1 text-sm outline-none ${todo.completed ? 'line-through text-slate-500' : theme.textMain}`} />
+                        <div className="flex items-center gap-2 flex-shrink-0">
                           <input type="checkbox" checked={todo.completed} onChange={(e) => updateTodo(day, todo.id, 'completed', e.target.checked)} disabled={viewingWeek !== currentWeekMonday}
-                                 className="w-5 h-5 md:w-4 md:h-4 rounded border-2 border-slate-500 cursor-pointer accent-blue-500" />
+                                 className="w-5 h-5 md:w-4 md:h-4 cursor-pointer accent-blue-500" />
                           {viewingWeek === currentWeekMonday && (
                             <button onClick={() => deleteTodo(day, todo.id)} className="text-red-500/10 hover:text-red-500 transition-colors font-bold text-[10px] p-1">✕</button>
                           )}
