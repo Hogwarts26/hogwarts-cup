@@ -267,7 +267,7 @@ export default function PlannerPage() {
                           <input type="checkbox" checked={todo.completed} onChange={(e) => updateTodo(day, todo.id, 'completed', e.target.checked)} disabled={viewingWeek !== currentWeekMonday}
                                  className="w-5 h-5 md:w-4 md:h-4 cursor-pointer accent-blue-500" />
                           {viewingWeek === currentWeekMonday && (
-                            <button onClick={() => deleteTodo(day, todo.id)} className="text-red-500/10 hover:text-red-500 transition-colors font-bold text-[10px] p-1">✕</button>
+                            <button onClick={() => deleteTodo(day, todo.id)} className="text-red-500/70 hover:text-red-500 transition-colors font-bold text-[10px] p-1">✕</button>
                           )}
                         </div>
                       </div>
