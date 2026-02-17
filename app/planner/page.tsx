@@ -73,7 +73,10 @@ export default function PlannerPage() {
         const parsed = JSON.parse(authData);
         setSelectedName(parsed.name);
         fetchPlannerData(parsed.name, monday);
-      } catch (e) { console.error("인증 에러", e); }
+      } catch (e) {
+        console.error("인증 에러", e);
+        setLoading(false);
+      }
     } else {
       setLoading(false);
     }
@@ -96,6 +99,8 @@ export default function PlannerPage() {
       } else {
         setWeeklyData({ "월요일": [], "화요일": [], "수요일": [], "목요일": [], "금요일": [], "토요일": [], "일요일": [] });
       }
+    } catch (err) {
+      console.error("Fetch Error:", err);
     } finally {
       setLoading(false);
     }
@@ -104,14 +109,18 @@ export default function PlannerPage() {
   // DB 통합 저장
   const saveAllToDB = async (updatedWeekly: WeeklyData, updatedSubjects: string[], updatedExamDate: string) => {
     if (!selectedName || viewingWeek !== currentWeekMonday) return;
-    await supabase.from('daily_planner').upsert({
-      student_name: selectedName,
-      plan_date: viewingWeek, 
-      content_json: updatedWeekly,
-      subjects_json: updatedSubjects,
-      exam_date: updatedExamDate,
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'student_name,plan_date' });
+    try {
+      await supabase.from('daily_planner').upsert({
+        student_name: selectedName,
+        plan_date: viewingWeek, 
+        content_json: updatedWeekly,
+        subjects_json: updatedSubjects,
+        exam_date: updatedExamDate,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'student_name,plan_date' });
+    } catch (err) {
+      console.error("Save Error:", err);
+    }
   };
 
   const calculateDDay = () => {
@@ -123,11 +132,10 @@ export default function PlannerPage() {
     return days === 0 ? "D-Day" : days > 0 ? `D-${days}` : `D+${Math.abs(days)}`;
   };
 
-  // 이벤트 핸들러
   const toggleMusic = () => {
     if (!bgm) return;
     if (isPlaying) { bgm.pause(); } 
-    else { bgm.play().catch(e => console.log("재생 오류", e)); }
+    else { bgm.play().catch(e => console.log("BGM Play Error", e)); }
     setIsPlaying(!isPlaying);
   };
 
@@ -162,7 +170,6 @@ export default function PlannerPage() {
     saveAllToDB(newData, subjects, examDate);
   };
 
-  // 테마 스타일
   const theme = {
     bg: isDarkMode ? 'bg-[#020617]' : 'bg-slate-50',
     card: isDarkMode ? 'bg-slate-900/40 border-white/5 shadow-2xl' : 'bg-white border-slate-200 shadow-sm',
@@ -185,7 +192,6 @@ export default function PlannerPage() {
       <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet" />
 
       <div className="max-w-4xl mx-auto p-4 md:p-8">
-        {/* 상단 툴바 */}
         <div className="flex justify-between items-center mb-8">
           <Link href="/" className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${theme.btn}`}>← BACK TO LOBBY</Link>
           <div className="flex gap-2">
@@ -198,7 +204,6 @@ export default function PlannerPage() {
           </div>
         </div>
 
-        {/* 주차 선택 */}
         <div className="flex justify-center gap-3 mb-10">
           <button onClick={() => { const m = getMonday(-7); setViewingWeek(m); fetchPlannerData(selectedName, m); }} 
                   className={`px-5 py-2.5 rounded-2xl text-[11px] font-black border transition-all ${viewingWeek !== currentWeekMonday ? 'bg-blue-600 text-white border-blue-600 shadow-lg' : theme.btn + ' opacity-60 hover:opacity-100'}`}>
@@ -212,11 +217,10 @@ export default function PlannerPage() {
           )}
         </div>
 
-        {/* 헤더 및 설정 */}
         <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-8">
           <div className="w-full md:w-auto">
             <h1 className="text-6xl font-black italic tracking-tighter mb-1" style={{ fontFamily: 'Cinzel' }}>{calculateDDay()}</h1>
-            <p className={`text-[11px] font-black uppercase tracking-[0.3em] ${theme.accent}`}>Goal: {examDate || "시험 날짜를 설정하세요"}</p>
+            <p className={`text-[11px] font-black uppercase tracking-[0.3em] ${theme.accent}`}>Goal: {examDate || "날짜를 설정하세요"}</p>
           </div>
           <div className={`p-6 rounded-[2rem] border w-full md:w-[400px] ${theme.card}`}>
             <div className="flex justify-between items-center mb-4 text-[10px] font-black uppercase opacity-40">
@@ -237,7 +241,6 @@ export default function PlannerPage() {
           </div>
         </div>
 
-        {/* 주간 플래너 리스트 */}
         <div className="space-y-6">
           {DAYS_ORDER.map((day, idx) => {
             const dayTodos = weeklyData[day] || [];
@@ -249,28 +252,34 @@ export default function PlannerPage() {
               <div key={day} className={`rounded-[2.5rem] border transition-all duration-500 overflow-hidden ${theme.card} ${isOpen ? 'ring-2 ring-blue-500/10' : ''}`}>
                 <div onClick={() => setOpenDays(prev => ({ ...prev, [day]: !prev[day] }))} className="p-5 flex items-center justify-between cursor-pointer group">
                   <div className="flex items-center gap-3">
-                    {/* ✅ 접기 화살표 사이즈 축소 */}
                     <span className={`text-[9px] opacity-30 transition-transform duration-300 ${isOpen ? 'rotate-0' : '-rotate-90'}`}>▼</span>
                     <div className="flex items-baseline gap-2">
                       <span className="text-xl font-black italic tracking-tight">{day}</span>
                       <span className="text-[10px] font-bold opacity-30 tracking-tighter">{getFormattedDate(viewingWeek, idx)}</span>
                     </div>
-                    {/* 게이지 바 */}
-                    <div className="hidden md:flex items-center gap-3 ml-4">
-                      <div className="w-16 h-0.5 bg-slate-800/20 rounded-full overflow-hidden">
-                        <div className={`h-full bg-blue-500 transition-all duration-700`} style={{ width: `${progress}%` }} />
-                      </div>
-                    </div>
                   </div>
                   
-                  {/* ✅ + ADD TASK 버튼 고정 노출 & 세련된 디자인 */}
                   {viewingWeek === currentWeekMonday && (
                     <button onClick={(e) => { e.stopPropagation(); addTodo(day); }}
                             className={`px-3 py-1.5 rounded-full border text-[9px] font-black transition-all flex items-center gap-1 active:scale-95
-                            ${isDarkMode ?을 입력하세요" disabled={viewingWeek !== currentWeekMonday}
+                            ${isDarkMode ? 'border-blue-500/40 text-blue-400 bg-blue-500/5 hover:bg-blue-500/10' : 'border-blue-200 text-blue-600 bg-blue-50 hover:bg-blue-100 shadow-sm'}`}>
+                      <span className="text-xs">+</span> ADD TASK
+                    </button>
+                  )}
+                </div>
+
+                {isOpen && (
+                  <div className="px-6 pb-6 pt-0 space-y-2 animate-in fade-in slide-in-from-top-1 duration-300">
+                    {dayTodos.length === 0 && <div className="text-center py-6 opacity-10 text-[10px] font-black tracking-widest uppercase">No Plans</div>}
+                    {dayTodos.map((todo) => (
+                      <div key={todo.id} className={`flex items-center gap-3 p-2 rounded-xl transition-all ${todo.completed ? 'opacity-30' : ''}`}>
+                        <select value={todo.subject} onChange={(e) => updateTodo(day, todo.id, 'subject', e.target.value)} disabled={viewingWeek !== currentWeekMonday}
+                                className={`text-[10px] font-black p-1.5 rounded-lg border outline-none transition-all ${theme.input} w-20`}>
+                          {subjects.filter(s => s !== "").map((s, i) => <option key={i} value={s}>{s}</option>)}
+                          {subjects.every(s => s === "") && <option>과목설정</option>}
+                        </select>
+                        <input type="text" value={todo.content} onChange={(e) => updateTodo(day, todo.id, 'content', e.target.value)} placeholder="할 일을 입력하세요" disabled={viewingWeek !== currentWeekMonday}
                                className={`flex-1 bg-transparent px-1 py-1 text-sm font-medium outline-none ${todo.completed ? 'line-through text-slate-500' : theme.textMain}`} />
-                        
-                        {/* ✅ 체크박스 및 삭제버튼 우측 배치 & 축소 */}
                         <div className="flex items-center gap-3 ml-auto">
                           <input type="checkbox" checked={todo.completed} onChange={(e) => updateTodo(day, todo.id, 'completed', e.target.checked)} disabled={viewingWeek !== currentWeekMonday}
                                  className="w-4 h-4 rounded border-2 border-slate-500 cursor-pointer accent-blue-500 flex-shrink-0" />
