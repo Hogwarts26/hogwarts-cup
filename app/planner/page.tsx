@@ -140,7 +140,7 @@ export default function PlannerPage() {
       const allDone = dayTasks.length > 0 && dayTasks.every(t => t.completed);
       if (allDone) {
         setShowWinnerEffect(true);
-        setTimeout(() => setShowWinnerEffect(false), 5000); // 5초간 지속
+        setTimeout(() => setShowWinnerEffect(false), 4000); 
       }
     }
 
@@ -173,48 +173,72 @@ export default function PlannerPage() {
   );
 
   return (
-    <div className={`min-h-screen pb-20 transition-colors duration-500 font-sans ${theme.bg} ${theme.textMain} ${showWinnerEffect ? 'winner-sparkle' : ''}`} style={{ fontFamily: "'Pretendard Variable', sans-serif" }}>
-      {/* ✅ 업그레이드된 마법 반짝이 효과 */}
+    <div className={`min-h-screen pb-20 transition-colors duration-500 font-sans ${theme.bg} ${theme.textMain}`}>
+      
+      {/* 🎇 테마별 최적화된 불꽃놀이 효과 */}
       <style jsx global>{`
-        .winner-sparkle::before, .winner-sparkle::after {
-          content: '';
+        .firework-overlay {
           position: fixed;
-          top: -10%; left: -10%; width: 120%; height: 120%;
-          background-image: 
-            radial-gradient(4px 4px at 10% 20%, #fff, transparent),
-            radial-gradient(6px 6px at 30% 50%, #fbbf24, transparent),
-            radial-gradient(3px 3px at 50% 10%, #60a5fa, transparent),
-            radial-gradient(5px 5px at 70% 80%, #fff, transparent),
-            radial-gradient(4px 4px at 90% 30%, #fbbf24, transparent),
-            radial-gradient(6px 6px at 20% 70%, #60a5fa, transparent),
-            radial-gradient(3px 3px at 40% 90%, #fff, transparent),
-            radial-gradient(5px 5px at 80% 40%, #fbbf24, transparent);
-          background-size: 400px 400px;
-          opacity: 0;
+          inset: 0;
           pointer-events: none;
           z-index: 9999;
+          overflow: hidden;
         }
 
-        .winner-sparkle::before {
-          animation: magic-dust 2s infinite linear;
+        .firework {
+          position: absolute;
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #fff;
+          /* 테마에 따른 불꽃 색상 변수 설정 */
+          --c1: ${isDarkMode ? '#fbbf24' : '#d97706'}; /* Gold */
+          --c2: ${isDarkMode ? '#60a5fa' : '#2563eb'}; /* Blue */
+          --c3: ${isDarkMode ? '#f472b6' : '#db2777'}; /* Pink */
+          --c4: ${isDarkMode ? '#34d399' : '#059669'}; /* Green */
+          
+          box-shadow: 0 0 15px 4px #fff, 0 0 25px 8px var(--c3);
+          animation: fireworks-launch 1.8s ease-out forwards;
         }
 
-        .winner-sparkle::after {
-          background-position: 200px 200px;
-          animation: magic-dust 3s infinite linear reverse;
+        @keyframes fireworks-launch {
+          0% { transform: translate(0, 100vh) scale(1); opacity: 1; }
+          35% { transform: translate(var(--x), var(--y)) scale(1.2); opacity: 1; }
+          100% {
+            background: transparent;
+            box-shadow: 
+              -140px -160px 0 3px var(--c1), 140px -160px 0 3px var(--c2),
+              -200px 0 0 3px var(--c3), 200px 0 0 3px var(--c4),
+              -140px 160px 0 3px var(--c1), 140px 160px 0 3px var(--c2),
+              0 -240px 0 4px var(--c1), 0 240px 0 4px var(--c2),
+              -110px -110px 0 3px #fff, 110px -110px 0 3px #fff;
+            opacity: 0;
+            transform: translate(var(--x), var(--y)) scale(2.5);
+          }
         }
 
-        @keyframes magic-dust {
-          0% { transform: translateY(-50px) scale(0.8); opacity: 0; filter: blur(0px); }
-          50% { opacity: 1; filter: blur(1px) brightness(1.8); }
-          100% { transform: translateY(100px) scale(1.2); opacity: 0; filter: blur(2px); }
-        }
+        .fw-1 { --x: 50vw; --y: 20vh; animation-delay: 0.1s; }
+        .fw-2 { --x: 20vw; --y: 40vh; animation-delay: 0.5s; }
+        .fw-3 { --x: 80vw; --y: 30vh; animation-delay: 0.9s; }
+        .fw-4 { --x: 35vw; --y: 65vh; animation-delay: 1.3s; }
+        .fw-5 { --x: 65vw; --y: 55vh; animation-delay: 1.7s; }
       `}</style>
+
+      {showWinnerEffect && (
+        <div className="firework-overlay">
+          <div className="firework fw-1"></div>
+          <div className="firework fw-2"></div>
+          <div className="firework fw-3"></div>
+          <div className="firework fw-4"></div>
+          <div className="firework fw-5"></div>
+        </div>
+      )}
 
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css" />
       <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet" />
 
       <div className="max-w-4xl mx-auto p-4 md:p-8">
+        {/* Top Navigation */}
         <div className="flex justify-between items-center mb-8">
           <Link href="/" className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${theme.btn}`}>← BACK TO LOBBY</Link>
           <div className="flex gap-2">
@@ -227,6 +251,7 @@ export default function PlannerPage() {
           </div>
         </div>
 
+        {/* Week Switcher */}
         <div className="flex justify-center gap-3 mb-10">
           <button onClick={() => { const m = getMonday(-7); setViewingWeek(m); fetchPlannerData(selectedName, m); }} 
                   className={`px-5 py-2.5 rounded-2xl text-[11px] font-black border transition-all ${viewingWeek !== currentWeekMonday ? 'bg-blue-600 text-white border-blue-600 shadow-lg' : theme.btn + ' opacity-60 hover:opacity-100'}`}>
@@ -240,6 +265,7 @@ export default function PlannerPage() {
           )}
         </div>
 
+        {/* Header Info */}
         <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-8">
           <div className="w-full md:w-auto">
             <h1 className="text-6xl font-black italic tracking-tighter mb-1" style={{ fontFamily: 'Cinzel' }}>{calculateDDay()}</h1>
@@ -267,6 +293,7 @@ export default function PlannerPage() {
           </div>
         </div>
 
+        {/* Daily Planners */}
         <div className="space-y-6">
           {DAYS_ORDER.map((day, idx) => {
             const dayTodos = weeklyData[day] || [];
