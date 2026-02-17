@@ -175,7 +175,7 @@ export default function PlannerPage() {
     card: isDarkMode ? 'bg-slate-900/40 border-white/5 shadow-2xl' : 'bg-white border-slate-200 shadow-sm',
     textMain: isDarkMode ? 'text-white' : 'text-slate-900',
     btn: isDarkMode ? 'bg-slate-800/50 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-600 shadow-sm',
-    input: isDarkMode ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-800',
+    input: isDarkMode ? 'bg-white/5 border-white/20 text-white focus:border-blue-500/50' : 'bg-slate-100 border-slate-300 text-slate-800 focus:border-blue-400',
     option: isDarkMode ? 'bg-slate-900 text-white' : 'bg-white text-slate-900',
     accent: isDarkMode ? 'text-blue-400' : 'text-blue-600',
   };
@@ -225,8 +225,9 @@ export default function PlannerPage() {
           <div className={`p-6 rounded-[2rem] border w-full md:w-[400px] ${theme.card}`}>
             <div className="flex justify-between items-center mb-4 text-[10px] font-black uppercase opacity-40">
               <span>My Subjects (Synced)</span>
+              {/* ✅ 시험일 날짜 선택 칸 시인성 보정 */}
               <input type="date" value={examDate} onChange={(e) => { setExamDate(e.target.value); saveAllToDB(weeklyData, subjects, e.target.value); }} 
-                     className={`font-bold p-1.5 rounded-lg outline-none border ${theme.input}`} />
+                     className={`font-bold p-2 rounded-lg outline-none border-2 animate-pulse focus:animate-none ${theme.input}`} />
             </div>
             <div className="grid grid-cols-4 gap-2">
               {subjects.map((sub, i) => (
@@ -269,22 +270,25 @@ export default function PlannerPage() {
                 </div>
 
                 {isOpen && (
-                  <div className="px-6 pb-6 pt-0 space-y-2 animate-in fade-in slide-in-from-top-1 duration-300">
+                  <div className="px-4 md:px-6 pb-6 pt-0 space-y-2 animate-in fade-in slide-in-from-top-1 duration-300">
                     {dayTodos.length === 0 && <div className="text-center py-6 opacity-10 text-[10px] font-black tracking-widest uppercase">No Plans</div>}
                     {dayTodos.map((todo) => (
-                      <div key={todo.id} className={`flex items-center gap-3 p-2 rounded-xl transition-all ${todo.completed ? 'opacity-30' : ''}`}>
+                      <div key={todo.id} className={`flex items-center gap-2 md:gap-3 p-2 rounded-xl transition-all ${todo.completed ? 'opacity-30' : ''}`}>
                         <select value={todo.subject} onChange={(e) => updateTodo(day, todo.id, 'subject', e.target.value)} disabled={viewingWeek !== currentWeekMonday}
-                                className={`text-[10px] font-black p-1.5 rounded-lg border outline-none transition-all ${theme.input} w-20`}>
+                                className={`text-[9px] md:text-[10px] font-black p-1.5 rounded-lg border outline-none transition-all ${theme.input} w-16 md:w-20 flex-shrink-0`}>
                           {subjects.filter(s => s !== "").map((s, i) => <option key={i} value={s}>{s}</option>)}
                           {subjects.every(s => s === "") && <option>과목설정</option>}
                         </select>
+                        {/* ✅ 공부 내용 입력칸: flex-1로 너비를 최대한 확보하되 우측 아이콘들이 밀리지 않게 설정 */}
                         <input type="text" value={todo.content} onChange={(e) => updateTodo(day, todo.id, 'content', e.target.value)} placeholder="할 일을 입력하세요" disabled={viewingWeek !== currentWeekMonday}
-                               className={`flex-1 bg-transparent px-1 py-1 text-sm font-medium outline-none ${todo.completed ? 'line-through text-slate-500' : theme.textMain}`} />
-                        <div className="flex items-center gap-3 ml-auto">
+                               className={`flex-1 min-w-0 bg-transparent px-1 py-1 text-sm font-medium outline-none ${todo.completed ? 'line-through text-slate-500' : theme.textMain}`} />
+                        
+                        {/* ✅ 체크박스와 삭제 버튼 영역: flex-shrink-0을 주어 화면 밖으로 밀려나지 않게 고정 */}
+                        <div className="flex items-center gap-2 md:gap-3 ml-1 flex-shrink-0">
                           <input type="checkbox" checked={todo.completed} onChange={(e) => updateTodo(day, todo.id, 'completed', e.target.checked)} disabled={viewingWeek !== currentWeekMonday}
-                                 className="w-4 h-4 rounded border-2 border-slate-500 cursor-pointer accent-blue-500 flex-shrink-0" />
+                                 className="w-5 h-5 md:w-4 md:h-4 rounded border-2 border-slate-500 cursor-pointer accent-blue-500" />
                           {viewingWeek === currentWeekMonday && (
-                            <button onClick={() => deleteTodo(day, todo.id)} className="text-red-500/30 hover:text-red-500 transition-colors font-bold text-sm px-1">✕</button>
+                            <button onClick={() => deleteTodo(day, todo.id)} className="text-red-500/40 hover:text-red-500 transition-colors font-bold text-lg md:text-sm p-1">✕</button>
                           )}
                         </div>
                       </div>
