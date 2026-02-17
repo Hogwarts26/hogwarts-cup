@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import Link from 'next/link';
 
@@ -95,6 +95,8 @@ export default function PlannerPage() {
     } catch (err) { console.error("Save Error:", err); }
   };
 
+  const recordEditDay = (day: string) => { localStorage.setItem('last_edited_day', day); };
+
   const calculateDDay = () => {
     if (!examDate) return "D-?";
     const target = new Date(examDate); target.setHours(0,0,0,0);
@@ -118,6 +120,7 @@ export default function PlannerPage() {
 
   const addTodo = (day: string) => {
     if (viewingWeek !== currentWeekMonday) return;
+    recordEditDay(day);
     const newData = { ...weeklyData };
     if (!newData[day]) newData[day] = [];
     newData[day] = [...newData[day], { id: Date.now().toString(), subject: subjects.find(s => s !== "") || "과목", content: "", completed: false }];
@@ -127,8 +130,10 @@ export default function PlannerPage() {
 
   const updateTodo = (day: string, id: string, field: keyof Todo, value: any) => {
     if (viewingWeek !== currentWeekMonday) return;
+    recordEditDay(day);
     const newData = { ...weeklyData };
     newData[day] = newData[day].map(t => t.id === id ? { ...t, [field]: value } : t);
+    
     setWeeklyData(newData);
     saveAllToDB(newData, subjects, examDate);
   };
@@ -143,47 +148,65 @@ export default function PlannerPage() {
   };
 
   const theme = {
-    bg: isDarkMode ? 'bg-[#0a0a0a]' : 'bg-[#fcfcfc]',
-    card: isDarkMode ? 'bg-[#1a1a1a] border-[#2a2a2a]' : 'bg-white border-slate-200',
+    bg: isDarkMode ? 'bg-[#020617]' : 'bg-slate-50',
+    card: isDarkMode ? 'bg-slate-900/40 border-white/5 shadow-2xl' : 'bg-white border-slate-200 shadow-sm',
     textMain: isDarkMode ? 'text-white' : 'text-slate-900',
-    btn: isDarkMode ? 'bg-[#222] border-[#333] text-white' : 'bg-white border-slate-200 text-slate-600 shadow-sm',
-    input: isDarkMode ? 'bg-[#111] border-[#222] text-white' : 'bg-slate-50 border-slate-200 text-slate-800',
-    accent: isDarkMode ? 'text-blue-500' : 'text-blue-600',
+    btn: isDarkMode ? 'bg-slate-800/50 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-600 shadow-sm',
+    input: isDarkMode ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-100 border-slate-200 text-slate-800',
+    accent: isDarkMode ? 'text-blue-400' : 'text-blue-600',
   };
 
   if (loading) return (
     <div className={`min-h-screen flex items-center justify-center ${theme.bg}`}>
-      <div className={`${theme.textMain} font-serif tracking-widest`}>LOADING...</div>
+      <div className={`${theme.textMain} font-serif animate-pulse tracking-[0.3em]`}>REVEALING YOUR SCROLL...</div>
     </div>
   );
 
   return (
-    <div className={`min-h-screen pb-20 font-sans ${theme.bg} ${theme.textMain}`}>
+    <div className={`min-h-screen pb-20 transition-colors duration-500 font-sans ${theme.bg} ${theme.textMain}`}>
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css" />
       <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet" />
 
       <div className="max-w-4xl mx-auto p-4 md:p-8">
-        {/* Nav */}
-        <div className="flex justify-between items-center mb-12">
-          <Link href="/" className={`px-4 py-2 rounded-lg text-[10px] font-bold border transition-all ${theme.btn}`}>BACK</Link>
+        <div className="flex justify-between items-center mb-8">
+          <Link href="/" className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${theme.btn}`}>← BACK TO LOBBY</Link>
           <div className="flex gap-2">
-            <button onClick={toggleMusic} className={`w-10 h-10 rounded-lg border flex items-center justify-center ${theme.btn}`}>{isPlaying ? '🎵' : '🔇'}</button>
-            <button onClick={toggleTheme} className={`w-10 h-10 rounded-lg border flex items-center justify-center ${theme.btn}`}>{isDarkMode ? '🌝' : '🌞'}</button>
+            <button onClick={toggleMusic} className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${isPlaying ? 'border-yellow-400 bg-yellow-400/10 animate-pulse' : theme.btn}`}>
+              {isPlaying ? '🎵' : '🔇'}
+            </button>
+            <button onClick={toggleTheme} className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${theme.btn}`}>
+              {isDarkMode ? '🌝' : '🌞'}
+            </button>
           </div>
         </div>
 
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
-          <div>
-            <h1 className="text-7xl font-black tracking-tighter mb-2" style={{ fontFamily: 'Cinzel' }}>{calculateDDay()}</h1>
-            <div className="flex items-center gap-3">
-              <span className={`text-[11px] font-bold tracking-widest uppercase ${theme.accent}`}>Weekly Focus</span>
-              <input type="date" value={examDate} onChange={(e) => { setExamDate(e.target.value); saveAllToDB(weeklyData, subjects, e.target.value); }} 
-                     className={`text-[11px] font-bold p-1 bg-transparent outline-none border-b border-current opacity-50 focus:opacity-100 transition-opacity`} />
-            </div>
+        <div className="flex justify-center gap-3 mb-10">
+          <button onClick={() => { const m = getMonday(-7); setViewingWeek(m); fetchPlannerData(selectedName, m); }} 
+                  className={`px-5 py-2.5 rounded-2xl text-[11px] font-black border transition-all ${viewingWeek !== currentWeekMonday ? 'bg-blue-600 text-white border-blue-600 shadow-lg' : theme.btn + ' opacity-60 hover:opacity-100'}`}>
+            {viewingWeek !== currentWeekMonday ? '● 지난주 기록 확인 중' : '← 지난주 기록 보기'}
+          </button>
+          {viewingWeek !== currentWeekMonday && (
+            <button onClick={() => { setViewingWeek(currentWeekMonday); fetchPlannerData(selectedName, currentWeekMonday); }} 
+                    className="px-5 py-2.5 rounded-2xl text-[11px] font-black bg-emerald-600 text-white border border-emerald-500 shadow-lg animate-bounce">
+              이번 주로 돌아오기 →
+            </button>
+          )}
+        </div>
+
+        <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-8">
+          <div className="w-full md:w-auto">
+            <h1 className="text-6xl font-black italic tracking-tighter mb-1" style={{ fontFamily: 'Cinzel' }}>{calculateDDay()}</h1>
+            <p className={`text-[11px] font-black uppercase tracking-[0.3em] ${theme.accent}`}>Goal: {examDate || "결전의 날을 설정하세요"}</p>
           </div>
-          
-          <div className={`p-6 rounded-2xl border ${theme.card} w-full md:w-[320px]`}>
+          <div className={`p-6 rounded-[2rem] border w-full md:w-[400px] ${theme.card}`}>
+            <div className="flex justify-between items-center mb-4 text-[10px] font-black uppercase opacity-40">
+              <span>My Subjects (Synced)</span>
+              <div className="relative">
+                {!examDate && <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold pointer-events-none text-blue-500">결전의 날</span>}
+                <input type="date" value={examDate} onChange={(e) => { setExamDate(e.target.value); saveAllToDB(weeklyData, subjects, e.target.value); }} 
+                       className={`font-bold p-1.5 rounded-lg outline-none border w-[120px] text-center ${theme.input} ${!examDate ? 'text-transparent' : ''}`} />
+              </div>
+            </div>
             <div className="grid grid-cols-4 gap-2">
               {subjects.map((sub, i) => (
                 <input key={i} value={sub} onChange={(e) => {
@@ -191,50 +214,62 @@ export default function PlannerPage() {
                   newSubs[i] = e.target.value;
                   setSubjects(newSubs);
                   saveAllToDB(weeklyData, newSubs, examDate);
-                }} placeholder={`S${i+1}`} className={`text-[10px] font-bold p-2 rounded-lg border outline-none text-center ${theme.input}`} />
+                }} placeholder={`과목 ${i+1}`} className={`text-[10px] font-bold p-2 rounded-xl border outline-none text-center transition-all ${theme.input}`} />
               ))}
             </div>
           </div>
         </div>
 
-        {/* Days */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           {DAYS_ORDER.map((day, idx) => {
             const dayTodos = weeklyData[day] || [];
-            const progress = dayTodos.length > 0 ? Math.round((dayTodos.filter(t => t.completed).length / dayTodos.length) * 100) : 0;
+            const completedCount = dayTodos.filter(t => t.completed).length;
+            const progress = dayTodos.length > 0 ? Math.round((completedCount / dayTodos.length) * 100) : 0;
             const isOpen = openDays[day];
 
             return (
-              <div key={day} className={`border rounded-2xl transition-all ${theme.card} ${progress === 100 ? 'border-blue-500/50' : ''}`}>
-                <div onClick={() => setOpenDays(prev => ({ ...prev, [day]: !prev[day] }))} className="p-6 flex items-center justify-between cursor-pointer">
-                  <div className="flex items-center gap-6">
-                    <span className="text-2xl font-black italic tracking-tight">{day}</span>
-                    <div className="flex items-center gap-3">
-                      <div className="w-16 h-1 bg-slate-500/10 rounded-full">
-                        <div className={`h-full transition-all duration-500 ${progress === 100 ? 'bg-blue-500' : 'bg-slate-400'}`} style={{ width: `${progress}%` }} />
+              <div key={day} className={`rounded-[2.5rem] border transition-all duration-500 overflow-hidden ${theme.card} ${isOpen ? 'ring-2 ring-blue-500/10' : ''}`}>
+                <div onClick={() => setOpenDays(prev => ({ ...prev, [day]: !prev[day] }))} className="p-5 flex items-center justify-between cursor-pointer group">
+                  <div className="flex items-center gap-3">
+                    <span className={`text-[9px] opacity-30 transition-transform duration-300 ${isOpen ? 'rotate-0' : '-rotate-90'}`}>▼</span>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-xl font-black italic tracking-tight">{day}</span>
+                        <span className="text-[10px] font-bold opacity-30 tracking-tighter">{getFormattedDate(viewingWeek, idx)}</span>
                       </div>
-                      <span className={`text-[10px] font-bold ${progress === 100 ? theme.accent : 'opacity-20'}`}>{progress}%</span>
+                      <div className="flex items-center gap-3">
+                        <div className="w-24 h-1 bg-slate-800/20 rounded-full overflow-hidden">
+                          <div className={`h-full transition-all duration-700 ${progress === 100 ? 'bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.6)]' : 'bg-blue-500'}`} style={{ width: `${progress}%` }} />
+                        </div>
+                        <span className={`text-[10px] font-black ${progress === 100 ? 'text-yellow-500' : 'opacity-40'}`}>{progress}%</span>
+                      </div>
                     </div>
                   </div>
                   {viewingWeek === currentWeekMonday && (
-                    <button onClick={(e) => { e.stopPropagation(); addTodo(day); }} className="text-2xl font-light opacity-20 hover:opacity-100 transition-opacity">+</button>
+                    <button onClick={(e) => { e.stopPropagation(); addTodo(day); }} className="p-2 transition-all opacity-30 hover:opacity-100">
+                      <span className="text-xl font-light">+</span>
+                    </button>
                   )}
                 </div>
 
                 {isOpen && (
-                  <div className="px-6 pb-6 space-y-3">
+                  <div className="px-4 md:px-6 pb-6 pt-0 space-y-2">
                     {dayTodos.map((todo) => (
-                      <div key={todo.id} className="flex items-center gap-4 group">
-                        <input type="checkbox" checked={todo.completed} onChange={(e) => updateTodo(day, todo.id, 'completed', e.target.checked)} 
-                               className="w-5 h-5 rounded border border-slate-500 appearance-none checked:bg-blue-500 checked:border-blue-500 transition-all cursor-pointer" />
-                        <select value={todo.subject} onChange={(e) => updateTodo(day, todo.id, 'subject', e.target.value)}
-                                className={`text-[10px] font-bold bg-transparent outline-none border-none opacity-40 w-16`}>
-                          {subjects.map((s, i) => s && <option key={i} value={s}>{s}</option>)}
-                          <option value="과목">과목</option>
+                      <div key={todo.id} className={`flex items-center gap-2 md:gap-3 p-2 rounded-xl transition-all ${todo.completed ? 'opacity-30' : ''}`}>
+                        <select value={todo.subject} onChange={(e) => updateTodo(day, todo.id, 'subject', e.target.value)} disabled={viewingWeek !== currentWeekMonday}
+                                className={`text-[9px] md:text-[10px] font-black p-1.5 rounded-lg border outline-none ${theme.input} w-16 md:w-20`}>
+                          {subjects.filter(s => s !== "").map((s, i) => <option key={i} value={s}>{s}</option>)}
+                          {subjects.every(s => s === "") && <option>과목</option>}
                         </select>
-                        <input type="text" value={todo.content} onChange={(e) => updateTodo(day, todo.id, 'content', e.target.value)} 
-                               className={`flex-1 bg-transparent text-sm outline-none ${todo.completed ? 'line-through opacity-30' : ''}`} />
-                        <button onClick={() => deleteTodo(day, todo.id)} className="opacity-0 group-hover:opacity-30 hover:!opacity-100 transition-opacity text-xs">✕</button>
+                        <input type="text" value={todo.content} onChange={(e) => updateTodo(day, todo.id, 'content', e.target.value)} placeholder="계획을 입력하세요" disabled={viewingWeek !== currentWeekMonday}
+                               className={`flex-1 bg-transparent px-1 py-1 text-sm outline-none ${todo.completed ? 'line-through text-slate-500' : theme.textMain}`} />
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <input type="checkbox" checked={todo.completed} onChange={(e) => updateTodo(day, todo.id, 'completed', e.target.checked)} disabled={viewingWeek !== currentWeekMonday}
+                                 className="w-5 h-5 md:w-4 md:h-4 cursor-pointer accent-blue-500" />
+                          {viewingWeek === currentWeekMonday && (
+                            <button onClick={() => deleteTodo(day, todo.id)} className="text-red-500/10 hover:text-red-500 transition-colors font-bold text-[10px] p-1">✕</button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
