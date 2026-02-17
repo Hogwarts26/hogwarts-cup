@@ -12,20 +12,19 @@ export default function PlannerPage() {
   const [selectedName, setSelectedName] = useState("");
   const [loading, setLoading] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(true);
-  
   const [currentWeekMonday, setCurrentWeekMonday] = useState("");
   const [viewingWeek, setViewingWeek] = useState(""); 
-
   const [subjects, setSubjects] = useState<string[]>(Array(8).fill(""));
   const [examDate, setExamDate] = useState("");
-  
   const [weeklyData, setWeeklyData] = useState<WeeklyData>({
     "월요일": [], "화요일": [], "수요일": [], "목요일": [], "금요일": [], "토요일": [], "일요일": []
   });
-
   const [openDays, setOpenDays] = useState<{ [key: string]: boolean }>({});
   const [isPlaying, setIsPlaying] = useState(false);
   const [bgm, setBgm] = useState<HTMLAudioElement | null>(null);
+  
+  // ✅ 100% 축하 효과 상태
+  const [showWinnerEffect, setShowWinnerEffect] = useState(false);
 
   useEffect(() => {
     if (typeof Audio !== 'undefined') {
@@ -55,10 +54,8 @@ export default function PlannerPage() {
     const monday = getMonday();
     setCurrentWeekMonday(monday);
     setViewingWeek(monday);
-
     const savedTheme = localStorage.getItem('planner_theme');
     if (savedTheme === 'light') setIsDarkMode(false);
-
     const lastOpened = localStorage.getItem('last_edited_day') || "월요일";
     setOpenDays({ [lastOpened]: true });
     
@@ -80,13 +77,7 @@ export default function PlannerPage() {
   const fetchPlannerData = async (name: string, mondayDate: string) => {
     setLoading(true);
     try {
-      const { data } = await supabase
-        .from('daily_planner')
-        .select('*')
-        .eq('student_name', name)
-        .eq('plan_date', mondayDate)
-        .maybeSingle();
-
+      const { data } = await supabase.from('daily_planner').select('*').eq('student_name', name).eq('plan_date', mondayDate).maybeSingle();
       if (data) {
         if (data.content_json) setWeeklyData(data.content_json);
         if (data.subjects_json) setSubjects(data.subjects_json);
@@ -94,32 +85,20 @@ export default function PlannerPage() {
       } else {
         setWeeklyData({ "월요일": [], "화요일": [], "수요일": [], "목요일": [], "금요일": [], "토요일": [], "일요일": [] });
       }
-    } catch (err) {
-      console.error("Fetch Error:", err);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.error("Fetch Error:", err); } finally { setLoading(false); }
   };
 
   const saveAllToDB = async (updatedWeekly: WeeklyData, updatedSubjects: string[], updatedExamDate: string) => {
     if (!selectedName || viewingWeek !== currentWeekMonday) return;
     try {
       await supabase.from('daily_planner').upsert({
-        student_name: selectedName,
-        plan_date: viewingWeek, 
-        content_json: updatedWeekly,
-        subjects_json: updatedSubjects,
-        exam_date: updatedExamDate,
-        updated_at: new Date().toISOString()
+        student_name: selectedName, plan_date: viewingWeek, content_json: updatedWeekly,
+        subjects_json: updatedSubjects, exam_date: updatedExamDate, updated_at: new Date().toISOString()
       }, { onConflict: 'student_name,plan_date' });
-    } catch (err) {
-      console.error("Save Error:", err);
-    }
+    } catch (err) { console.error("Save Error:", err); }
   };
 
-  const recordEditDay = (day: string) => {
-    localStorage.setItem('last_edited_day', day);
-  };
+  const recordEditDay = (day: string) => { localStorage.setItem('last_edited_day', day); };
 
   const calculateDDay = () => {
     if (!examDate) return "D-?";
@@ -132,8 +111,7 @@ export default function PlannerPage() {
 
   const toggleMusic = () => {
     if (!bgm) return;
-    if (isPlaying) { bgm.pause(); } 
-    else { bgm.play().catch(e => console.log("BGM Play Error", e)); }
+    if (isPlaying) { bgm.pause(); } else { bgm.play().catch(e => console.log("BGM Play Error", e)); }
     setIsPlaying(!isPlaying);
   };
 
@@ -158,6 +136,17 @@ export default function PlannerPage() {
     recordEditDay(day);
     const newData = { ...weeklyData };
     newData[day] = newData[day].map(t => t.id === id ? { ...t, [field]: value } : t);
+    
+    // ✅ 100% 달성 체크 로직
+    if (field === 'completed' && value === true) {
+      const dayTasks = newData[day];
+      const allDone = dayTasks.length > 0 && dayTasks.every(t => t.completed);
+      if (allDone) {
+        setShowWinnerEffect(true);
+        setTimeout(() => setShowWinnerEffect(false), 4000); // 4초 뒤 효과 제거
+      }
+    }
+
     setWeeklyData(newData);
     saveAllToDB(newData, subjects, examDate);
   };
@@ -187,7 +176,33 @@ export default function PlannerPage() {
   );
 
   return (
-    <div className={`min-h-screen pb-20 transition-colors duration-500 font-sans ${theme.bg} ${theme.textMain}`} style={{ fontFamily: "'Pretendard Variable', sans-serif" }}>
+    <div className={`min-h-screen pb-20 transition-colors duration-500 font-sans ${theme.bg} ${theme.textMain} ${showWinnerEffect ? 'winner-sparkle' : ''}`} style={{ fontFamily: "'Pretendard Variable', sans-serif" }}>
+      {/* ✅ Pixie Dust 전용 스타일 태그 */}
+      <style jsx global>{`
+        .winner-sparkle { position: relative; overflow: hidden; }
+        .winner-sparkle::before, .winner-sparkle::after {
+          content: ''; position: fixed; inset: -100px;
+          background-image: 
+            radial-gradient(2px 2px at 20px 30px, white, rgba(255,255,255,0)),
+            radial-gradient(3px 3px at 50px 80px, #60a5fa, rgba(255,255,255,0)),
+            radial-gradient(2px 2px at 90px 20px, white, rgba(255,255,255,0)),
+            radial-gradient(3px 3px at 130px 60px, #fbbf24, rgba(255,255,255,0)),
+            radial-gradient(2px 2px at 160px 110px, white, rgba(255,255,255,0)),
+            radial-gradient(3px 3px at 210px 40px, #60a5fa, rgba(255,255,255,0));
+          background-size: 300px 300px;
+          opacity: 0; pointer-events: none; z-index: 9999;
+        }
+        .winner-sparkle::before { animation: pixie-dust 3s infinite linear; }
+        .winner-sparkle::after { background-position: 150px 150px; animation: pixie-dust 4s infinite linear reverse; }
+        @keyframes pixie-dust {
+          0% { transform: scale(0.8) translateY(0); opacity: 0; }
+          20% { opacity: 0.7; }
+          50% { transform: scale(1.1) translateY(-20px); opacity: 1; filter: brightness(1.5) blur(1px); }
+          80% { opacity: 0.7; }
+          100% { transform: scale(1.3) translateY(-40px); opacity: 0; }
+        }
+      `}</style>
+
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css" />
       <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet" />
 
@@ -226,7 +241,7 @@ export default function PlannerPage() {
             <div className="flex justify-between items-center mb-4 text-[10px] font-black uppercase opacity-40">
               <span>My Subjects (Synced)</span>
               <div className="relative">
-                {!examDate && <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold pointer-events-none text-blue-500">시험일 입력</span>}
+                {!examDate && <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold pointer-events-none text-blue-500">결전의 날</span>}
                 <input type="date" value={examDate} onChange={(e) => { setExamDate(e.target.value); saveAllToDB(weeklyData, subjects, e.target.value); }} 
                        className={`font-bold p-1.5 rounded-lg outline-none border w-[120px] text-center ${theme.input} ${!examDate ? 'text-transparent' : ''}`} />
               </div>
@@ -261,9 +276,12 @@ export default function PlannerPage() {
                         <span className="text-xl font-black italic tracking-tight">{day}</span>
                         <span className="text-[10px] font-bold opacity-30 tracking-tighter">{getFormattedDate(viewingWeek, idx)}</span>
                       </div>
-                      {/* ✅ 게이지 바 복구 완료 */}
-                      <div className="w-24 h-1 bg-slate-800/20 rounded-full overflow-hidden">
-                        <div className="h-full bg-blue-500 transition-all duration-700" style={{ width: `${progress}%` }} />
+                      <div className="flex items-center gap-3">
+                        <div className="w-24 h-1 bg-slate-800/20 rounded-full overflow-hidden">
+                          <div className="h-full bg-blue-500 transition-all duration-700" style={{ width: `${progress}%` }} />
+                        </div>
+                        {/* 달성률 퍼센트 표시 */}
+                        <span className={`text-[10px] font-black ${progress === 100 ? 'text-blue-500' : 'opacity-40'}`}>{progress}%</span>
                       </div>
                     </div>
                   </div>
@@ -272,14 +290,13 @@ export default function PlannerPage() {
                     <button onClick={(e) => { e.stopPropagation(); addTodo(day); }}
                             className={`px-3 py-1.5 rounded-full border text-[9px] font-black transition-all flex items-center gap-1 active:scale-95
                             ${isDarkMode ? 'border-blue-500/40 text-blue-400 bg-blue-500/5 hover:bg-blue-500/10' : 'border-blue-200 text-blue-600 bg-blue-50 hover:bg-blue-100 shadow-sm'}`}>
-                      <span className="text-xs">+</span> ADD TASK
+                      <span className="text-xs">+</span>
                     </button>
                   )}
                 </div>
 
                 {isOpen && (
                   <div className="px-4 md:px-6 pb-6 pt-0 space-y-2 animate-in fade-in slide-in-from-top-1 duration-300">
-                    {dayTodos.length === 0 && <div className="text-center py-6 opacity-10 text-[10px] font-black tracking-widest uppercase">No Plans</div>}
                     {dayTodos.map((todo) => (
                       <div key={todo.id} className={`flex items-center gap-2 md:gap-3 p-2 rounded-xl transition-all ${todo.completed ? 'opacity-30' : ''}`}>
                         <select value={todo.subject} onChange={(e) => updateTodo(day, todo.id, 'subject', e.target.value)} disabled={viewingWeek !== currentWeekMonday}
