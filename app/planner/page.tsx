@@ -7,7 +7,7 @@ import Link from 'next/link';
 type Todo = { id: string; subject: string; content: string; completed: boolean };
 type WeeklyData = { [key: string]: Todo[] };
 
-// 요일 순서 고정 정의
+// 요일 순서 고정
 const DAYS_ORDER = ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"];
 
 export default function PlannerPage() {
@@ -15,43 +15,50 @@ export default function PlannerPage() {
   const [loading, setLoading] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(true);
   
-  // 주차 관리 (현재 보고 있는 주의 월요일 날짜)
+  // 주차 관리
   const [currentWeekMonday, setCurrentWeekMonday] = useState("");
   const [viewingWeek, setViewingWeek] = useState(""); 
 
-  // 고정 설정값 (과목 8개, 시험날짜)
+  // 과목 및 시험일 상태 (DB 연동)
   const [subjects, setSubjects] = useState<string[]>(Array(8).fill(""));
   const [examDate, setExamDate] = useState("");
   
-  // 주간 데이터 및 접힘 상태
+  // 데이터 및 열림 상태
   const [weeklyData, setWeeklyData] = useState<WeeklyData>({
     "월요일": [], "화요일": [], "수요일": [], "목요일": [], "금요일": [], "토요일": [], "일요일": []
   });
   const [openDays, setOpenDays] = useState<{ [key: string]: boolean }>({ "월요일": true });
 
-  // 배경음악(BGM) 로직
+  // 배경음악(BGM) 설정
   const [isPlaying, setIsPlaying] = useState(false);
-  const [bgm] = useState(() => typeof Audio !== 'undefined' ? new Audio('/hedwig.mp3') : null);
+  const [bgm, setBgm] = useState<HTMLAudioElement | null>(null);
 
-  // 1. 기준이 되는 월요일 날짜 계산 (새벽 4시 기준 초기화 로직)
+  useEffect(() => {
+    if (typeof Audio !== 'undefined') {
+      const audio = new Audio('/hedwig.mp3');
+      audio.loop = true;
+      audio.volume = 0.4;
+      setBgm(audio);
+    }
+  }, []);
+
+  // 날짜 계산 함수
   const getMonday = (offsetDays = 0) => {
     const now = new Date();
-    // 새벽 4시 이전이면 하루 전으로 취급하여 주차 계산
     if (now.getHours() < 4) now.setDate(now.getDate() - 1);
-    
-    const day = now.getDay(); // 0(일) ~ 6(토)
+    const day = now.getDay();
     const diff = now.getDate() - day + (day === 0 ? -6 : 1); 
     const monday = new Date(now.getFullYear(), now.getMonth(), diff + offsetDays);
     return monday.toLocaleDateString('en-CA'); 
   };
 
-  // 특정 요일의 날짜 계산 함수 (MM/DD 형식)
   const getFormattedDate = (mondayString: string, dayIndex: number) => {
     const date = new Date(mondayString);
     date.setDate(date.getDate() + dayIndex);
     return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}`;
   };
 
+  // 데이터 로드
   useEffect(() => {
     const monday = getMonday();
     setCurrentWeekMonday(monday);
@@ -60,101 +67,67 @@ export default function PlannerPage() {
     const savedTheme = localStorage.getItem('planner_theme');
     if (savedTheme === 'light') setIsDarkMode(false);
     
-    const savedSubjects = localStorage.getItem('hg_subjects');
-    if (savedSubjects) setSubjects(JSON.parse(savedSubjects));
-    
-    const savedExamDate = localStorage.getItem('hg_exam_date');
-    if (savedExamDate) setExamDate(savedExamDate);
-
     const authData = localStorage.getItem('hg_auth');
     if (authData) {
       try {
         const parsed = JSON.parse(authData);
         setSelectedName(parsed.name);
         fetchPlannerData(parsed.name, monday);
-      } catch (e) {
-        console.error("인증 파싱 에러", e);
-      }
+      } catch (e) { console.error("인증 에러", e); }
     } else {
       setLoading(false);
     }
   }, []);
 
-  // 2. 특정 주의 데이터 불러오기
   const fetchPlannerData = async (name: string, mondayDate: string) => {
     setLoading(true);
     try {
       const { data } = await supabase
         .from('daily_planner')
-        .select('content_json')
+        .select('*')
         .eq('student_name', name)
         .eq('plan_date', mondayDate)
         .maybeSingle();
 
-      if (data?.content_json) {
-        setWeeklyData(data.content_json);
+      if (data) {
+        if (data.content_json) setWeeklyData(data.content_json);
+        if (data.subjects_json) setSubjects(data.subjects_json);
+        if (data.exam_date) setExamDate(data.exam_date);
       } else {
-        setWeeklyData({
-          "월요일": [], "화요일": [], "수요일": [], "목요일": [], "금요일": [], "토요일": [], "일요일": []
-        });
+        setWeeklyData({ "월요일": [], "화요일": [], "수요일": [], "목요일": [], "금요일": [], "토요일": [], "일요일": [] });
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // 주차 전환 함수
-  const switchWeek = (targetMonday: string) => {
-    setViewingWeek(targetMonday);
-    fetchPlannerData(selectedName, targetMonday);
-  };
-
-  const saveData = async (newData: WeeklyData) => {
-    setWeeklyData(newData);
-    // 이번 주 기록일 때만 DB에 저장 (지난주 기록은 읽기 전용)
+  // DB 통합 저장
+  const saveAllToDB = async (updatedWeekly: WeeklyData, updatedSubjects: string[], updatedExamDate: string) => {
     if (!selectedName || viewingWeek !== currentWeekMonday) return;
-    
     await supabase.from('daily_planner').upsert({
       student_name: selectedName,
       plan_date: viewingWeek, 
-      content_json: newData,
+      content_json: updatedWeekly,
+      subjects_json: updatedSubjects,
+      exam_date: updatedExamDate,
       updated_at: new Date().toISOString()
     }, { onConflict: 'student_name,plan_date' });
   };
 
-  const addTodo = (day: string) => {
-    if (viewingWeek !== currentWeekMonday) return;
-    const newData = { ...weeklyData };
-    // 요일 데이터가 없으면 초기화
-    if (!newData[day]) newData[day] = [];
-    
-    newData[day] = [...newData[day], { 
-      id: Date.now().toString(), 
-      subject: subjects.find(s => s !== "") || "과목", 
-      content: "", 
-      completed: false 
-    }];
-    saveData(newData);
+  const calculateDDay = () => {
+    if (!examDate) return "D-?";
+    const target = new Date(examDate); target.setHours(0,0,0,0);
+    const today = new Date(); today.setHours(0,0,0,0);
+    const diff = target.getTime() - today.getTime();
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    return days === 0 ? "D-Day" : days > 0 ? `D-${days}` : `D+${Math.abs(days)}`;
   };
 
-  const updateTodo = (day: string, id: string, field: keyof Todo, value: any) => {
-    if (viewingWeek !== currentWeekMonday) return;
-    const newData = { ...weeklyData };
-    newData[day] = newData[day].map(t => t.id === id ? { ...t, [field]: value } : t);
-    saveData(newData);
-  };
-
-  const deleteTodo = (day: string, id: string) => {
-    if (viewingWeek !== currentWeekMonday) return;
-    const newData = { ...weeklyData };
-    newData[day] = newData[day].filter(t => t.id !== id);
-    saveData(newData);
-  };
-
+  // 이벤트 핸들러
   const toggleMusic = () => {
     if (!bgm) return;
     if (isPlaying) { bgm.pause(); } 
-    else { bgm.loop = true; bgm.volume = 0.4; bgm.play().catch(e => console.log(e)); }
+    else { bgm.play().catch(e => console.log("재생 오류", e)); }
     setIsPlaying(!isPlaying);
   };
 
@@ -164,20 +137,32 @@ export default function PlannerPage() {
     localStorage.setItem('planner_theme', newMode ? 'dark' : 'light');
   };
 
-  // 🎯 오차 없는 디데이 계산 로직
-  const calculateDDay = () => {
-    if (!examDate) return "D-?";
-    const target = new Date(examDate);
-    target.setHours(0, 0, 0, 0);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const diff = target.getTime() - today.getTime();
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    
-    return days === 0 ? "D-Day" : days > 0 ? `D-${days}` : `D+${Math.abs(days)}`;
+  const addTodo = (day: string) => {
+    if (viewingWeek !== currentWeekMonday) return;
+    const newData = { ...weeklyData };
+    if (!newData[day]) newData[day] = [];
+    newData[day] = [...newData[day], { id: Date.now().toString(), subject: subjects.find(s => s !== "") || "과목", content: "", completed: false }];
+    setWeeklyData(newData);
+    saveAllToDB(newData, subjects, examDate);
   };
 
+  const updateTodo = (day: string, id: string, field: keyof Todo, value: any) => {
+    if (viewingWeek !== currentWeekMonday) return;
+    const newData = { ...weeklyData };
+    newData[day] = newData[day].map(t => t.id === id ? { ...t, [field]: value } : t);
+    setWeeklyData(newData);
+    saveAllToDB(newData, subjects, examDate);
+  };
+
+  const deleteTodo = (day: string, id: string) => {
+    if (viewingWeek !== currentWeekMonday) return;
+    const newData = { ...weeklyData };
+    newData[day] = newData[day].filter(t => t.id !== id);
+    setWeeklyData(newData);
+    saveAllToDB(newData, subjects, examDate);
+  };
+
+  // 테마 스타일
   const theme = {
     bg: isDarkMode ? 'bg-[#020617]' : 'bg-slate-50',
     card: isDarkMode ? 'bg-slate-900/40 border-white/5 shadow-2xl' : 'bg-white border-slate-200 shadow-sm',
@@ -187,8 +172,6 @@ export default function PlannerPage() {
     option: isDarkMode ? 'bg-slate-900 text-white' : 'bg-white text-slate-900',
     accent: isDarkMode ? 'text-blue-400' : 'text-blue-600',
   };
-
-  const isPastWeek = viewingWeek !== currentWeekMonday;
 
   if (loading) return (
     <div className={`min-h-screen flex items-center justify-center ${theme.bg}`}>
@@ -202,11 +185,9 @@ export default function PlannerPage() {
       <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet" />
 
       <div className="max-w-4xl mx-auto p-4 md:p-8">
-        {/* 상단 네비게이션 */}
+        {/* 상단 툴바 */}
         <div className="flex justify-between items-center mb-8">
-          <Link href="/" className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${theme.btn}`}>
-            ← BACK TO LOBBY
-          </Link>
+          <Link href="/" className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${theme.btn}`}>← BACK TO LOBBY</Link>
           <div className="flex gap-2">
             <button onClick={toggleMusic} className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${isPlaying ? 'border-yellow-400 bg-yellow-400/10 animate-pulse' : theme.btn}`}>
               {isPlaying ? '🎵' : '🔇'}
@@ -217,68 +198,46 @@ export default function PlannerPage() {
           </div>
         </div>
 
-        {/* 주차 선택 컨트롤 */}
+        {/* 주차 선택 */}
         <div className="flex justify-center gap-3 mb-10">
-          <button 
-            onClick={() => switchWeek(getMonday(-7))}
-            className={`px-5 py-2.5 rounded-2xl text-[11px] font-black border transition-all ${isPastWeek ? 'bg-blue-600 text-white border-blue-600 shadow-lg' : theme.btn + ' opacity-60 hover:opacity-100'}`}
-          >
-            {isPastWeek ? '● 지난주 기록 확인 중' : '← 지난주 기록 보기'}
+          <button onClick={() => { const m = getMonday(-7); setViewingWeek(m); fetchPlannerData(selectedName, m); }} 
+                  className={`px-5 py-2.5 rounded-2xl text-[11px] font-black border transition-all ${viewingWeek !== currentWeekMonday ? 'bg-blue-600 text-white border-blue-600 shadow-lg' : theme.btn + ' opacity-60 hover:opacity-100'}`}>
+            {viewingWeek !== currentWeekMonday ? '● 지난주 기록 확인 중' : '← 지난주 기록 보기'}
           </button>
-          {isPastWeek && (
-            <button 
-              onClick={() => switchWeek(currentWeekMonday)}
-              className="px-5 py-2.5 rounded-2xl text-[11px] font-black bg-emerald-600 text-white border border-emerald-500 shadow-lg animate-bounce"
-            >
+          {viewingWeek !== currentWeekMonday && (
+            <button onClick={() => { setViewingWeek(currentWeekMonday); fetchPlannerData(selectedName, currentWeekMonday); }} 
+                    className="px-5 py-2.5 rounded-2xl text-[11px] font-black bg-emerald-600 text-white border border-emerald-500 shadow-lg animate-bounce">
               이번 주로 돌아오기 →
             </button>
           )}
         </div>
 
-        {/* 메인 헤더 & 설정 구역 */}
+        {/* 헤더 및 설정 */}
         <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-8">
           <div className="w-full md:w-auto">
             <h1 className="text-6xl font-black italic tracking-tighter mb-1" style={{ fontFamily: 'Cinzel' }}>{calculateDDay()}</h1>
-            <p className={`text-[11px] font-black uppercase tracking-[0.3em] ${theme.accent}`}>Goal: {examDate || "결전의 날을 설정하세요"}</p>
+            <p className={`text-[11px] font-black uppercase tracking-[0.3em] ${theme.accent}`}>Goal: {examDate || "시험 날짜를 설정하세요"}</p>
           </div>
-
           <div className={`p-6 rounded-[2rem] border w-full md:w-[400px] ${theme.card}`}>
             <div className="flex justify-between items-center mb-4 text-[10px] font-black uppercase opacity-40">
-              <span>My Subjects (Fixed)</span>
-              <input 
-                type="date" 
-                value={examDate} 
-                onChange={(e) => { setExamDate(e.target.value); localStorage.setItem('hg_exam_date', e.target.value); }}
-                className={`font-bold p-1.5 rounded-lg outline-none border ${theme.input}`}
-              />
+              <span>My Subjects (Synced)</span>
+              <input type="date" value={examDate} onChange={(e) => { setExamDate(e.target.value); saveAllToDB(weeklyData, subjects, e.target.value); }} 
+                     className={`font-bold p-1.5 rounded-lg outline-none border ${theme.input}`} />
             </div>
             <div className="grid grid-cols-4 gap-2">
               {subjects.map((sub, i) => (
-                <input
-                  key={i}
-                  value={sub}
-                  onChange={(e) => {
-                    const newSubs = [...subjects];
-                    newSubs[i] = e.target.value;
-                    setSubjects(newSubs);
-                    localStorage.setItem('hg_subjects', JSON.stringify(newSubs));
-                  }}
-                  placeholder={`과목 ${i+1}`}
-                  className={`text-[10px] font-bold p-2 rounded-xl border outline-none text-center transition-all ${theme.input}`}
-                />
+                <input key={i} value={sub} onChange={(e) => {
+                  const newSubs = [...subjects];
+                  newSubs[i] = e.target.value;
+                  setSubjects(newSubs);
+                  saveAllToDB(weeklyData, newSubs, examDate);
+                }} placeholder={`과목 ${i+1}`} className={`text-[10px] font-bold p-2 rounded-xl border outline-none text-center transition-all ${theme.input}`} />
               ))}
             </div>
           </div>
         </div>
 
-        {/* 지난주 경고바 */}
-        {isPastWeek && (
-          <div className="bg-blue-600 text-white text-center p-4 rounded-2xl mb-8 text-xs font-black tracking-widest shadow-xl">
-            ※ 현재 지난주 기록을 열람 중입니다. (수정 불가)
-          </div>
-        )}
-
-        {/* 요일별 리스트 (DAYS_ORDER로 순서 고정) */}
+        {/* 주간 플래너 리스트 */}
         <div className="space-y-6">
           {DAYS_ORDER.map((day, idx) => {
             const dayTodos = weeklyData[day] || [];
@@ -287,83 +246,36 @@ export default function PlannerPage() {
             const isOpen = openDays[day];
 
             return (
-              <div key={day} className={`rounded-[2.5rem] border transition-all duration-500 overflow-hidden ${theme.card} ${isOpen ? 'ring-2 ring-blue-500/20' : ''}`}>
-                <div 
-                  onClick={() => setOpenDays(prev => ({ ...prev, [day]: !prev[day] }))}
-                  className="p-6 flex items-center justify-between cursor-pointer group"
-                >
-                  <div className="flex items-center gap-4">
-                    <span className={`text-xl font-black transition-transform duration-300 ${isOpen ? 'rotate-0' : '-rotate-90'}`}>▼</span>
+              <div key={day} className={`rounded-[2.5rem] border transition-all duration-500 overflow-hidden ${theme.card} ${isOpen ? 'ring-2 ring-blue-500/10' : ''}`}>
+                <div onClick={() => setOpenDays(prev => ({ ...prev, [day]: !prev[day] }))} className="p-5 flex items-center justify-between cursor-pointer group">
+                  <div className="flex items-center gap-3">
+                    {/* ✅ 접기 화살표 사이즈 축소 */}
+                    <span className={`text-[9px] opacity-30 transition-transform duration-300 ${isOpen ? 'rotate-0' : '-rotate-90'}`}>▼</span>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-black italic tracking-tight">{day}</span>
-                      <span className="text-[11px] font-bold opacity-40">{getFormattedDate(viewingWeek, idx)}</span>
+                      <span className="text-xl font-black italic tracking-tight">{day}</span>
+                      <span className="text-[10px] font-bold opacity-30 tracking-tighter">{getFormattedDate(viewingWeek, idx)}</span>
                     </div>
-                    
                     {/* 게이지 바 */}
                     <div className="hidden md:flex items-center gap-3 ml-4">
-                      <div className="w-24 h-1 bg-slate-800/50 rounded-full overflow-hidden">
-                        <div className={`h-full transition-all duration-1000 ease-out ${progress === 100 ? 'bg-emerald-500' : 'bg-blue-500'}`} style={{ width: `${progress}%` }} />
+                      <div className="w-16 h-0.5 bg-slate-800/20 rounded-full overflow-hidden">
+                        <div className={`h-full bg-blue-500 transition-all duration-700`} style={{ width: `${progress}%` }} />
                       </div>
-                      <span className={`text-[10px] font-black ${progress === 100 ? 'text-emerald-500' : 'text-blue-500'}`}>{progress}%</span>
                     </div>
                   </div>
                   
-                  {!isPastWeek && (
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); addTodo(day); }}
-                      className="opacity-0 group-hover:opacity-100 bg-blue-600 text-white text-[9px] font-black px-4 py-2 rounded-full shadow-lg transition-all active:scale-95"
-                    >
-                      + ADD TASK
-                    </button>
-                  )}
-                </div>
-
-                {isOpen && (
-                  <div className="p-6 pt-2 space-y-2 border-t border-white/5 animate-in fade-in duration-500">
-                    {dayTodos.length === 0 && (
-                      <div className="text-center py-8 opacity-20 text-[10px] font-bold tracking-widest uppercase">No Plans</div>
-                    )}
-                    {dayTodos.map((todo) => (
-                      <div key={todo.id} className={`flex items-center gap-3 p-2 rounded-xl transition-all ${todo.completed ? 'opacity-30' : ''}`}>
-                        <select
-                          value={todo.subject}
-                          onChange={(e) => updateTodo(day, todo.id, 'subject', e.target.value)}
-                          disabled={isPastWeek}
-                          className={`text-[10px] font-black p-1.5 rounded-lg border outline-none transition-all ${theme.input} w-20`}
-                        >
-                          {subjects.filter(s => s !== "").map((s, i) => (
-                            <option key={i} value={s} className={theme.option}>{s}</option>
-                          ))}
-                          {subjects.every(s => s === "") && <option className={theme.option}>과목설정</option>}
-                        </select>
-
-                        <input
-                          type="text"
-                          value={todo.content}
-                          onChange={(e) => updateTodo(day, todo.id, 'content', e.target.value)}
-                          placeholder="공부할 내용"
-                          disabled={isPastWeek}
-                          className={`flex-1 bg-transparent px-1 py-1 text-sm font-medium outline-none border-b border-transparent focus:border-blue-500/50 transition-all ${
-                            todo.completed ? 'line-through text-slate-500' : theme.textMain
-                          }`}
-                        />
-
-                        {/* 체크박스와 삭제버튼 우측 배치 */}
-                        <div className="flex items-center gap-2 ml-auto">
-                          <input 
-                            type="checkbox" 
-                            checked={todo.completed}
-                            onChange={(e) => updateTodo(day, todo.id, 'completed', e.target.checked)}
-                            disabled={isPastWeek}
-                            className="w-4 h-4 rounded border-2 border-slate-500 cursor-pointer accent-blue-500 transition-all flex-shrink-0"
-                          />
-                          {!isPastWeek && (
-                            <button 
-                              onClick={() => deleteTodo(day, todo.id)} 
-                              className="text-red-500/40 hover:text-red-500 transition-colors font-bold text-sm px-1"
-                            >
-                              ✕
-                            </button>
+                  {/* ✅ + ADD TASK 버튼 고정 노출 & 세련된 디자인 */}
+                  {viewingWeek === currentWeekMonday && (
+                    <button onClick={(e) => { e.stopPropagation(); addTodo(day); }}
+                            className={`px-3 py-1.5 rounded-full border text-[9px] font-black transition-all flex items-center gap-1 active:scale-95
+                            ${isDarkMode ?을 입력하세요" disabled={viewingWeek !== currentWeekMonday}
+                               className={`flex-1 bg-transparent px-1 py-1 text-sm font-medium outline-none ${todo.completed ? 'line-through text-slate-500' : theme.textMain}`} />
+                        
+                        {/* ✅ 체크박스 및 삭제버튼 우측 배치 & 축소 */}
+                        <div className="flex items-center gap-3 ml-auto">
+                          <input type="checkbox" checked={todo.completed} onChange={(e) => updateTodo(day, todo.id, 'completed', e.target.checked)} disabled={viewingWeek !== currentWeekMonday}
+                                 className="w-4 h-4 rounded border-2 border-slate-500 cursor-pointer accent-blue-500 flex-shrink-0" />
+                          {viewingWeek === currentWeekMonday && (
+                            <button onClick={() => deleteTodo(day, todo.id)} className="text-red-500/30 hover:text-red-500 transition-colors font-bold text-sm px-1">✕</button>
                           )}
                         </div>
                       </div>
@@ -373,12 +285,6 @@ export default function PlannerPage() {
               </div>
             );
           })}
-        </div>
-
-        <div className="mt-12 text-center opacity-20">
-          <p className="text-[9px] font-black uppercase tracking-[0.4em]">
-            Records reset every Monday at 04:00 AM
-          </p>
         </div>
       </div>
     </div>
