@@ -53,17 +53,17 @@ function SortableTodoItem({
       style={style} 
       className={`flex items-center gap-2 md:gap-3 p-2 rounded-xl transition-all ${todo.completed ? 'opacity-30' : ''} ${isDragging ? 'bg-blue-500/10' : ''}`}
     >
-      {/* 드래그 핸들 (가로줄 세 개) */}
+      {/* 드래그 핸들 (모바일 대응: 패딩 키움) */}
       {viewingWeek === currentWeekMonday && (
         <div 
           {...attributes} 
           {...listeners} 
-          className="cursor-grab active:cursor-grabbing p-1 opacity-30 hover:opacity-100 transition-opacity"
+          className="cursor-grab active:cursor-grabbing p-3 -ml-2 opacity-30 hover:opacity-100 transition-opacity touch-none"
         >
           <div className="flex flex-col gap-[2px]">
-            <div className="w-3 h-[1.5px] bg-current"></div>
-            <div className="w-3 h-[1.5px] bg-current"></div>
-            <div className="w-3 h-[1.5px] bg-current"></div>
+            <div className="w-4 h-[1.5px] bg-current"></div>
+            <div className="w-4 h-[1.5px] bg-current"></div>
+            <div className="w-4 h-[1.5px] bg-current"></div>
           </div>
         </div>
       )}
@@ -119,10 +119,17 @@ export default function PlannerPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [bgm, setBgm] = useState<HTMLAudioElement | null>(null);
 
-  // dnd-kit 센서 설정
+  // --- 모바일 롱프레스(꾹 누르기) 대응 센서 설정 ---
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }), // 클릭과 드래그 구분
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        delay: 250, // 0.25초 동안 꾹 눌러야 드래그 시작
+        tolerance: 5, // 누르는 동안 5px 이상 움직이면 취소 (스크롤 허용)
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
   );
 
   useEffect(() => {
@@ -248,7 +255,6 @@ export default function PlannerPage() {
     saveAllToDB(newData, subjects, examDate);
   };
 
-  // --- 드래그 종료 핸들러 ---
   const handleDragEnd = (event: DragEndEvent, day: string) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
@@ -370,7 +376,6 @@ export default function PlannerPage() {
 
                 {isOpen && (
                   <div className="px-4 md:px-6 pb-6 pt-0 space-y-2">
-                    {/* dnd-kit Context 영역 */}
                     <DndContext 
                       sensors={sensors}
                       collisionDetection={closestCenter}
