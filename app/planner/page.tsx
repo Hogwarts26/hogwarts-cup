@@ -5,14 +5,10 @@ import Link from 'next/link';
 
 type Todo = { id: string; subject: string; content: string; completed: boolean };
 type WeeklyData = { [key: string]: Todo[] };
-type Particle = { id: number; x: number; y: number; tx: number; ty: number; color: string; shape: string; size: number; delay: number };
+// 세련된 효과를 위한 Sparkle 타입 정의
+type Sparkle = { id: number; x: number; y: number; tx: number; ty: number; size: number; duration: number; delay: number };
 
 const DAYS_ORDER = ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"];
-const SHAPES = [
-  "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)", // 별
-  "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)", // 다이아몬드
-  "polygon(50% 0%, 80% 10%, 100% 35%, 100% 70%, 80% 90%, 50% 100%, 20% 90%, 0% 70%, 0% 35%, 20% 10%)" // 보석형
-];
 
 export default function PlannerPage() {
   const [selectedName, setSelectedName] = useState("");
@@ -28,7 +24,9 @@ export default function PlannerPage() {
   const [openDays, setOpenDays] = useState<{ [key: string]: boolean }>({});
   const [isPlaying, setIsPlaying] = useState(false);
   const [bgm, setBgm] = useState<HTMLAudioElement | null>(null);
-  const [particles, setParticles] = useState<Particle[]>([]);
+  
+  // 🔥 금빛 글리터 상태
+  const [sparkles, setSparkles] = useState<Sparkle[]>([]);
 
   useEffect(() => {
     if (typeof Audio !== 'undefined') {
@@ -39,41 +37,25 @@ export default function PlannerPage() {
     }
   }, []);
 
-  // 🎇 리듬감 있는 불꽃 발사 로직
+  // 🎇 세련된 금빛 피날레 실행 로직
   const fireCelebrate = useCallback(() => {
-    const colors = isDarkMode 
-      ? ['#FFD700', '#FF69B4', '#00BFFF', '#ADFF2F', '#FF4500', '#FFFFFF', '#BC8CF2']
-      : ['#D97706', '#DB2777', '#2563EB', '#059669', '#DC2626', '#4F46E5', '#7C3AED'];
-
-    let allParticles: Particle[] = [];
-    
-    // 5번의 폭죽을 시간차를 두고 생성
-    for (let f = 0; f < 5; f++) {
-      const startX = 15 + Math.random() * 70; // 15%~85% 사이 랜덤 위치
-      const startY = 20 + Math.random() * 40; // 높이 다양화
-      const burstDelay = f * 0.4; // 0.4초 간격으로 순차적 폭발
-      const burstSize = 0.5 + Math.random() * 1.5; // 폭죽 크기 랜덤
-
-      for (let i = 0; i < 25; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const distance = (Math.random() * 150 + 50) * burstSize;
-        allParticles.push({
-          id: Math.random(),
-          x: startX,
-          y: startY,
-          tx: Math.cos(angle) * distance,
-          ty: Math.sin(angle) * distance,
-          color: colors[Math.floor(Math.random() * colors.length)],
-          shape: SHAPES[Math.floor(Math.random() * SHAPES.length)],
-          size: (Math.random() * 6 + 4) * burstSize,
-          delay: burstDelay
-        });
-      }
+    const newSparkles: Sparkle[] = [];
+    // 150개의 미세한 금빛 입자가 화면 전체에서 쏟아짐
+    for (let i = 0; i < 150; i++) {
+      newSparkles.push({
+        id: Math.random(),
+        x: Math.random() * 100,
+        y: Math.random() * -20, // 화면 위쪽에서 시작
+        tx: (Math.random() - 0.5) * 200, // 좌우 흔들림 범위
+        ty: Math.random() * 500 + 500, // 아래로 떨어지는 거리
+        size: Math.random() * 3 + 1, // 아주 미세한 입자
+        duration: 3 + Math.random() * 2, // 떨어지는 속도 조절
+        delay: Math.random() * 0.8
+      });
     }
-
-    setParticles(allParticles);
-    setTimeout(() => setParticles([]), 5000); // 전체 애니메이션 여운을 위해 5초 후 제거
-  }, [isDarkMode]);
+    setSparkles(newSparkles);
+    setTimeout(() => setSparkles([]), 6000);
+  }, []);
 
   const getMonday = (offsetDays = 0) => {
     const now = new Date();
@@ -181,7 +163,7 @@ export default function PlannerPage() {
       const dayTasks = newData[day];
       const allDone = dayTasks.length > 0 && dayTasks.every(t => t.completed);
       if (allDone) {
-        fireCelebrate();
+        fireCelebrate(); // 완료 시 금빛 피날레 호출
       }
     }
 
@@ -216,49 +198,42 @@ export default function PlannerPage() {
   return (
     <div className={`min-h-screen pb-20 transition-colors duration-500 font-sans ${theme.bg} ${theme.textMain}`}>
       
-      {/* 🎇 리듬감 있는 폭발 애니메이션 */}
+      {/* 🎇 세련된 골드 글리터 애니메이션 스타일 */}
       <style jsx global>{`
-        .particle {
+        .gold-sparkle {
           position: fixed;
           top: var(--y);
           left: var(--x);
           width: var(--size);
           height: var(--size);
-          background: var(--color);
-          clip-path: var(--shape);
+          background: linear-gradient(45deg, #FFD700, #FFFACD, #F0E68C);
+          border-radius: 50%;
           pointer-events: none;
           z-index: 9999;
           opacity: 0;
-          animation: explode-realistic 2.5s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+          box-shadow: 0 0 8px 1px rgba(255, 215, 0, 0.6);
+          animation: gold-fall var(--duration) ease-out forwards;
           animation-delay: var(--delay);
-          filter: drop-shadow(0 0 5px var(--color));
         }
 
-        @keyframes explode-realistic {
-          0% { transform: translate(0, 0) scale(0) rotate(0deg); opacity: 0; }
-          5% { opacity: 1; transform: translate(0, 0) scale(1.2) rotate(0deg); }
-          80% { opacity: 1; }
+        @keyframes gold-fall {
+          0% { transform: translateY(0) rotate(0deg) scale(0); opacity: 0; }
+          10% { opacity: 1; transform: translateY(0) rotate(0deg) scale(1); }
           100% { 
-            transform: translate(var(--tx), calc(var(--ty) + 120px)) scale(0) rotate(450deg); 
+            transform: translate(var(--tx), var(--ty)) rotate(720deg) scale(0); 
             opacity: 0; 
           }
         }
       `}</style>
 
-      {/* 파편 렌더링 */}
-      {particles.map(p => (
+      {/* 글리터 렌더링 */}
+      {sparkles.map(s => (
         <div 
-          key={p.id} 
-          className="particle"
+          key={s.id} 
+          className="gold-sparkle"
           style={{ 
-            '--x': `${p.x}vw`, 
-            '--y': `${p.y}vh`, 
-            '--tx': `${p.tx}px`, 
-            '--ty': `${p.ty}px`, 
-            '--color': p.color, 
-            '--shape': p.shape,
-            '--size': `${p.size}px`,
-            '--delay': `${p.delay}s`
+            '--x': `${s.x}vw`, '--y': `${s.y}vh`, '--tx': `${s.tx}px`, '--ty': `${s.ty}px`, 
+            '--size': `${s.size}px`, '--duration': `${s.duration}s`, '--delay': `${s.delay}s`
           } as any}
         />
       ))}
@@ -267,7 +242,6 @@ export default function PlannerPage() {
       <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet" />
 
       <div className="max-w-4xl mx-auto p-4 md:p-8">
-        {/* Navigation */}
         <div className="flex justify-between items-center mb-8">
           <Link href="/" className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${theme.btn}`}>← BACK TO LOBBY</Link>
           <div className="flex gap-2">
@@ -280,7 +254,6 @@ export default function PlannerPage() {
           </div>
         </div>
 
-        {/* Weekly Header */}
         <div className="flex justify-center gap-3 mb-10">
           <button onClick={() => { const m = getMonday(-7); setViewingWeek(m); fetchPlannerData(selectedName, m); }} 
                   className={`px-5 py-2.5 rounded-2xl text-[11px] font-black border transition-all ${viewingWeek !== currentWeekMonday ? 'bg-blue-600 text-white border-blue-600 shadow-lg' : theme.btn + ' opacity-60 hover:opacity-100'}`}>
@@ -294,7 +267,6 @@ export default function PlannerPage() {
           )}
         </div>
 
-        {/* Info Area */}
         <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-8">
           <div className="w-full md:w-auto">
             <h1 className="text-6xl font-black italic tracking-tighter mb-1" style={{ fontFamily: 'Cinzel' }}>{calculateDDay()}</h1>
@@ -322,7 +294,6 @@ export default function PlannerPage() {
           </div>
         </div>
 
-        {/* Planner Body */}
         <div className="space-y-6">
           {DAYS_ORDER.map((day, idx) => {
             const dayTodos = weeklyData[day] || [];
