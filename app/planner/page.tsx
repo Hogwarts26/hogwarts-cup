@@ -145,8 +145,10 @@ export default function PlannerPage() {
 
     if (targetIndex < 0 || targetIndex >= list.length) return;
 
+    // 위치 스왑
     [list[index], list[targetIndex]] = [list[targetIndex], list[index]];
     newData[day] = list;
+    
     setWeeklyData(newData);
     saveAllToDB(newData, subjects, examDate);
   };
@@ -274,16 +276,23 @@ export default function PlannerPage() {
                     {dayTodos.map((todo, tIdx) => (
                       <div key={todo.id} className={`flex items-center gap-2 md:gap-3 p-2 rounded-xl transition-all ${todo.completed ? 'opacity-30' : ''}`}>
                         
-                        {/* 순서 변경 버튼 (맨 왼쪽) */}
+                        {/* 순서 변경 화살표 버튼 (맨 왼쪽) */}
                         {viewingWeek === currentWeekMonday && (
-                          <div className="flex flex-col opacity-20 hover:opacity-100 transition-opacity">
-                            <button onClick={() => moveTodo(day, tIdx, 'up')} disabled={tIdx === 0} className="text-[10px] leading-none hover:text-blue-500 disabled:opacity-0">▲</button>
-                            <div className="flex flex-col gap-[1px] my-1 items-center">
-                              <div className="w-3 h-[1px] bg-current"></div>
-                              <div className="w-3 h-[1px] bg-current"></div>
-                              <div className="w-3 h-[1px] bg-current"></div>
-                            </div>
-                            <button onClick={() => moveTodo(day, tIdx, 'down')} disabled={tIdx === dayTodos.length - 1} className="text-[10px] leading-none hover:text-blue-500 disabled:opacity-0">▼</button>
+                          <div className="flex flex-col items-center gap-0.5 min-w-[20px]">
+                            <button 
+                              onClick={() => moveTodo(day, tIdx, 'up')} 
+                              disabled={tIdx === 0} 
+                              className={`text-[10px] transition-all hover:scale-125 hover:text-blue-500 ${tIdx === 0 ? 'opacity-0 cursor-default' : 'opacity-30'}`}
+                            >
+                              ▲
+                            </button>
+                            <button 
+                              onClick={() => moveTodo(day, tIdx, 'down')} 
+                              disabled={tIdx === dayTodos.length - 1} 
+                              className={`text-[10px] transition-all hover:scale-125 hover:text-blue-500 ${tIdx === dayTodos.length - 1 ? 'opacity-0 cursor-default' : 'opacity-30'}`}
+                            >
+                              ▼
+                            </button>
                           </div>
                         )}
 
@@ -305,6 +314,9 @@ export default function PlannerPage() {
                         </div>
                       </div>
                     ))}
+                    {dayTodos.length === 0 && (
+                      <div className="text-center py-4 text-[10px] opacity-20 italic">입력된 계획이 없습니다.</div>
+                    )}
                   </div>
                 )}
               </div>
