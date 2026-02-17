@@ -162,8 +162,12 @@ export default function PlannerPage() {
     setViewingWeek(monday);
     const savedTheme = localStorage.getItem('planner_theme');
     if (savedTheme === 'light') setIsDarkMode(false);
-    const lastOpened = localStorage.getItem('last_edited_day') || "월요일";
-    setOpenDays({ [lastOpened]: true });
+
+    // --- 오늘 요일 인식하여 자동 펼침 로직 추가 ---
+    const today = new Date();
+    const dayNames = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"];
+    const todayName = dayNames[today.getDay()];
+    setOpenDays({ [todayName]: true }); // 오늘 요일만 true로 설정
     
     const authData = localStorage.getItem('hg_auth');
     if (authData) {
