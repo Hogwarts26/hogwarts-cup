@@ -140,7 +140,7 @@ export default function PlannerPage() {
       const allDone = dayTasks.length > 0 && dayTasks.every(t => t.completed);
       if (allDone) {
         setShowWinnerEffect(true);
-        setTimeout(() => setShowWinnerEffect(false), 4000); 
+        setTimeout(() => setShowWinnerEffect(false), 6000); // 여운을 위해 6초로 연장
       }
     }
 
@@ -175,53 +175,50 @@ export default function PlannerPage() {
   return (
     <div className={`min-h-screen pb-20 transition-colors duration-500 font-sans ${theme.bg} ${theme.textMain}`}>
       
-      {/* 🎇 테마별 최적화된 불꽃놀이 효과 */}
+      {/* 🎇 세련된 멀티 별 모양 + 슬로우 모션 불꽃놀이 */}
       <style jsx global>{`
         .firework-overlay {
           position: fixed;
           inset: 0;
           pointer-events: none;
           z-index: 9999;
-          overflow: hidden;
         }
 
         .firework {
           position: absolute;
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
+          width: 10px;
+          height: 10px;
           background: #fff;
-          /* 테마에 따른 불꽃 색상 변수 설정 */
-          --c1: ${isDarkMode ? '#fbbf24' : '#d97706'}; /* Gold */
-          --c2: ${isDarkMode ? '#60a5fa' : '#2563eb'}; /* Blue */
-          --c3: ${isDarkMode ? '#f472b6' : '#db2777'}; /* Pink */
-          --c4: ${isDarkMode ? '#34d399' : '#059669'}; /* Green */
+          /* 테마별 색상 */
+          --c1: ${isDarkMode ? '#fbbf24' : '#d97706'}; 
+          --c2: ${isDarkMode ? '#60a5fa' : '#2563eb'}; 
+          --c3: ${isDarkMode ? '#f472b6' : '#db2777'}; 
           
-          box-shadow: 0 0 15px 4px #fff, 0 0 25px 8px var(--c3);
-          animation: fireworks-launch 1.8s ease-out forwards;
+          /* 애니메이션 속도를 3초로 늦추고 부드러운 여운 추가 */
+          animation: fireworks-launch-complex 3s cubic-bezier(0.1, 0.7, 0.3, 1) forwards;
         }
 
-        @keyframes fireworks-launch {
-          0% { transform: translate(0, 100vh) scale(1); opacity: 1; }
-          35% { transform: translate(var(--x), var(--y)) scale(1.2); opacity: 1; }
+        /* 각 폭죽마다 다른 별 모양 적용 */
+        .fw-1 { clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); --x: 50vw; --y: 20vh; animation-delay: 0.1s; }
+        .fw-2 { clip-path: polygon(50% 0%, 63% 38%, 100% 50%, 63% 62%, 50% 100%, 37% 62%, 0% 50%, 37% 38%); --x: 25vw; --y: 40vh; animation-delay: 0.6s; }
+        .fw-3 { clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); --x: 75vw; --y: 30vh; animation-delay: 1.1s; }
+        .fw-4 { clip-path: polygon(50% 0%, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0% 50%, 40% 40%); --x: 35vw; --y: 60vh; animation-delay: 1.6s; }
+        .fw-5 { clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); --x: 65vw; --y: 50vh; animation-delay: 2.1s; }
+
+        @keyframes fireworks-launch-complex {
+          0% { transform: translate(0, 100vh) rotate(0deg) scale(0.3); opacity: 1; }
+          40% { transform: translate(var(--x), var(--y)) rotate(180deg) scale(1); opacity: 1; }
           100% {
-            background: transparent;
-            box-shadow: 
-              -140px -160px 0 3px var(--c1), 140px -160px 0 3px var(--c2),
-              -200px 0 0 3px var(--c3), 200px 0 0 3px var(--c4),
-              -140px 160px 0 3px var(--c1), 140px 160px 0 3px var(--c2),
-              0 -240px 0 4px var(--c1), 0 240px 0 4px var(--c2),
-              -110px -110px 0 3px #fff, 110px -110px 0 3px #fff;
+            /* 터지는 시점부터 서서히 아래로 떨어지는 느낌 추가 */
+            transform: translate(var(--x), calc(var(--y) + 100px)) rotate(360deg) scale(2);
             opacity: 0;
-            transform: translate(var(--x), var(--y)) scale(2.5);
+            box-shadow: 
+              -120px -120px 0 2px var(--c1), 120px -120px 0 2px var(--c2),
+              -180px 0 0 2px var(--c3), 180px 0 0 2px var(--c1),
+              -120px 120px 0 2px var(--c2), 120px 120px 0 2px var(--c3),
+              0 -200px 0 2px #fff, 0 200px 0 2px #fff;
           }
         }
-
-        .fw-1 { --x: 50vw; --y: 20vh; animation-delay: 0.1s; }
-        .fw-2 { --x: 20vw; --y: 40vh; animation-delay: 0.5s; }
-        .fw-3 { --x: 80vw; --y: 30vh; animation-delay: 0.9s; }
-        .fw-4 { --x: 35vw; --y: 65vh; animation-delay: 1.3s; }
-        .fw-5 { --x: 65vw; --y: 55vh; animation-delay: 1.7s; }
       `}</style>
 
       {showWinnerEffect && (
@@ -234,11 +231,11 @@ export default function PlannerPage() {
         </div>
       )}
 
+      {/* Font & Styles */}
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css" />
       <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet" />
 
       <div className="max-w-4xl mx-auto p-4 md:p-8">
-        {/* Top Navigation */}
         <div className="flex justify-between items-center mb-8">
           <Link href="/" className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${theme.btn}`}>← BACK TO LOBBY</Link>
           <div className="flex gap-2">
@@ -251,7 +248,6 @@ export default function PlannerPage() {
           </div>
         </div>
 
-        {/* Week Switcher */}
         <div className="flex justify-center gap-3 mb-10">
           <button onClick={() => { const m = getMonday(-7); setViewingWeek(m); fetchPlannerData(selectedName, m); }} 
                   className={`px-5 py-2.5 rounded-2xl text-[11px] font-black border transition-all ${viewingWeek !== currentWeekMonday ? 'bg-blue-600 text-white border-blue-600 shadow-lg' : theme.btn + ' opacity-60 hover:opacity-100'}`}>
@@ -265,7 +261,6 @@ export default function PlannerPage() {
           )}
         </div>
 
-        {/* Header Info */}
         <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-8">
           <div className="w-full md:w-auto">
             <h1 className="text-6xl font-black italic tracking-tighter mb-1" style={{ fontFamily: 'Cinzel' }}>{calculateDDay()}</h1>
@@ -293,7 +288,6 @@ export default function PlannerPage() {
           </div>
         </div>
 
-        {/* Daily Planners */}
         <div className="space-y-6">
           {DAYS_ORDER.map((day, idx) => {
             const dayTodos = weeklyData[day] || [];
