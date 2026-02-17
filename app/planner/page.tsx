@@ -22,8 +22,6 @@ export default function PlannerPage() {
   const [openDays, setOpenDays] = useState<{ [key: string]: boolean }>({});
   const [isPlaying, setIsPlaying] = useState(false);
   const [bgm, setBgm] = useState<HTMLAudioElement | null>(null);
-  
-  // ✅ 100% 축하 효과 상태
   const [showWinnerEffect, setShowWinnerEffect] = useState(false);
 
   useEffect(() => {
@@ -137,13 +135,12 @@ export default function PlannerPage() {
     const newData = { ...weeklyData };
     newData[day] = newData[day].map(t => t.id === id ? { ...t, [field]: value } : t);
     
-    // ✅ 100% 달성 체크 로직
     if (field === 'completed' && value === true) {
       const dayTasks = newData[day];
       const allDone = dayTasks.length > 0 && dayTasks.every(t => t.completed);
       if (allDone) {
         setShowWinnerEffect(true);
-        setTimeout(() => setShowWinnerEffect(false), 4000); // 4초 뒤 효과 제거
+        setTimeout(() => setShowWinnerEffect(false), 5000); // 5초간 지속
       }
     }
 
@@ -177,29 +174,40 @@ export default function PlannerPage() {
 
   return (
     <div className={`min-h-screen pb-20 transition-colors duration-500 font-sans ${theme.bg} ${theme.textMain} ${showWinnerEffect ? 'winner-sparkle' : ''}`} style={{ fontFamily: "'Pretendard Variable', sans-serif" }}>
-      {/* ✅ Pixie Dust 전용 스타일 태그 */}
+      {/* ✅ 업그레이드된 마법 반짝이 효과 */}
       <style jsx global>{`
-        .winner-sparkle { position: relative; overflow: hidden; }
         .winner-sparkle::before, .winner-sparkle::after {
-          content: ''; position: fixed; inset: -100px;
+          content: '';
+          position: fixed;
+          top: -10%; left: -10%; width: 120%; height: 120%;
           background-image: 
-            radial-gradient(2px 2px at 20px 30px, white, rgba(255,255,255,0)),
-            radial-gradient(3px 3px at 50px 80px, #60a5fa, rgba(255,255,255,0)),
-            radial-gradient(2px 2px at 90px 20px, white, rgba(255,255,255,0)),
-            radial-gradient(3px 3px at 130px 60px, #fbbf24, rgba(255,255,255,0)),
-            radial-gradient(2px 2px at 160px 110px, white, rgba(255,255,255,0)),
-            radial-gradient(3px 3px at 210px 40px, #60a5fa, rgba(255,255,255,0));
-          background-size: 300px 300px;
-          opacity: 0; pointer-events: none; z-index: 9999;
+            radial-gradient(4px 4px at 10% 20%, #fff, transparent),
+            radial-gradient(6px 6px at 30% 50%, #fbbf24, transparent),
+            radial-gradient(3px 3px at 50% 10%, #60a5fa, transparent),
+            radial-gradient(5px 5px at 70% 80%, #fff, transparent),
+            radial-gradient(4px 4px at 90% 30%, #fbbf24, transparent),
+            radial-gradient(6px 6px at 20% 70%, #60a5fa, transparent),
+            radial-gradient(3px 3px at 40% 90%, #fff, transparent),
+            radial-gradient(5px 5px at 80% 40%, #fbbf24, transparent);
+          background-size: 400px 400px;
+          opacity: 0;
+          pointer-events: none;
+          z-index: 9999;
         }
-        .winner-sparkle::before { animation: pixie-dust 3s infinite linear; }
-        .winner-sparkle::after { background-position: 150px 150px; animation: pixie-dust 4s infinite linear reverse; }
-        @keyframes pixie-dust {
-          0% { transform: scale(0.8) translateY(0); opacity: 0; }
-          20% { opacity: 0.7; }
-          50% { transform: scale(1.1) translateY(-20px); opacity: 1; filter: brightness(1.5) blur(1px); }
-          80% { opacity: 0.7; }
-          100% { transform: scale(1.3) translateY(-40px); opacity: 0; }
+
+        .winner-sparkle::before {
+          animation: magic-dust 2s infinite linear;
+        }
+
+        .winner-sparkle::after {
+          background-position: 200px 200px;
+          animation: magic-dust 3s infinite linear reverse;
+        }
+
+        @keyframes magic-dust {
+          0% { transform: translateY(-50px) scale(0.8); opacity: 0; filter: blur(0px); }
+          50% { opacity: 1; filter: blur(1px) brightness(1.8); }
+          100% { transform: translateY(100px) scale(1.2); opacity: 0; filter: blur(2px); }
         }
       `}</style>
 
@@ -278,19 +286,17 @@ export default function PlannerPage() {
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="w-24 h-1 bg-slate-800/20 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-500 transition-all duration-700" style={{ width: `${progress}%` }} />
+                          <div className={`h-full transition-all duration-700 ${progress === 100 ? 'bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.6)]' : 'bg-blue-500'}`} style={{ width: `${progress}%` }} />
                         </div>
-                        {/* 달성률 퍼센트 표시 */}
-                        <span className={`text-[10px] font-black ${progress === 100 ? 'text-blue-500' : 'opacity-40'}`}>{progress}%</span>
+                        <span className={`text-[10px] font-black ${progress === 100 ? 'text-yellow-500' : 'opacity-40'}`}>{progress}%</span>
                       </div>
                     </div>
                   </div>
                   
                   {viewingWeek === currentWeekMonday && (
                     <button onClick={(e) => { e.stopPropagation(); addTodo(day); }}
-                            className={`px-3 py-1.5 rounded-full border text-[9px] font-black transition-all flex items-center gap-1 active:scale-95
-                            ${isDarkMode ? 'border-blue-500/40 text-blue-400 bg-blue-500/5 hover:bg-blue-500/10' : 'border-blue-200 text-blue-600 bg-blue-50 hover:bg-blue-100 shadow-sm'}`}>
-                      <span className="text-xs">+</span>
+                            className="p-2 transition-all opacity-30 hover:opacity-100 hover:scale-125">
+                      <span className="text-xl font-light">+</span>
                     </button>
                   )}
                 </div>
@@ -310,7 +316,7 @@ export default function PlannerPage() {
                           <input type="checkbox" checked={todo.completed} onChange={(e) => updateTodo(day, todo.id, 'completed', e.target.checked)} disabled={viewingWeek !== currentWeekMonday}
                                  className="w-5 h-5 md:w-4 md:h-4 rounded border-2 border-slate-500 cursor-pointer accent-blue-500" />
                           {viewingWeek === currentWeekMonday && (
-                            <button onClick={() => deleteTodo(day, todo.id)} className="text-red-500/20 hover:text-red-500 transition-colors font-bold text-[10px] p-1">✕</button>
+                            <button onClick={() => deleteTodo(day, todo.id)} className="text-red-500/10 hover:text-red-500 transition-colors font-bold text-[10px] p-1">✕</button>
                           )}
                         </div>
                       </div>
