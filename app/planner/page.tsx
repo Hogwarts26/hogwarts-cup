@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import Link from 'next/link';
 
@@ -133,7 +133,20 @@ export default function PlannerPage() {
     recordEditDay(day);
     const newData = { ...weeklyData };
     newData[day] = newData[day].map(t => t.id === id ? { ...t, [field]: value } : t);
-    
+    setWeeklyData(newData);
+    saveAllToDB(newData, subjects, examDate);
+  };
+
+  const moveTodo = (day: string, index: number, direction: 'up' | 'down') => {
+    if (viewingWeek !== currentWeekMonday) return;
+    const newData = { ...weeklyData };
+    const list = [...newData[day]];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+
+    if (targetIndex < 0 || targetIndex >= list.length) return;
+
+    [list[index], list[targetIndex]] = [list[targetIndex], list[index]];
+    newData[day] = list;
     setWeeklyData(newData);
     saveAllToDB(newData, subjects, examDate);
   };
@@ -168,6 +181,7 @@ export default function PlannerPage() {
       <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet" />
 
       <div className="max-w-4xl mx-auto p-4 md:p-8">
+        {/* 상단 네비게이션 */}
         <div className="flex justify-between items-center mb-8">
           <Link href="/" className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${theme.btn}`}>← BACK TO LOBBY</Link>
           <div className="flex gap-2">
@@ -180,6 +194,7 @@ export default function PlannerPage() {
           </div>
         </div>
 
+        {/* 주간 이동 버튼 */}
         <div className="flex justify-center gap-3 mb-10">
           <button onClick={() => { const m = getMonday(-7); setViewingWeek(m); fetchPlannerData(selectedName, m); }} 
                   className={`px-5 py-2.5 rounded-2xl text-[11px] font-black border transition-all ${viewingWeek !== currentWeekMonday ? 'bg-blue-600 text-white border-blue-600 shadow-lg' : theme.btn + ' opacity-60 hover:opacity-100'}`}>
@@ -193,6 +208,7 @@ export default function PlannerPage() {
           )}
         </div>
 
+        {/* D-Day 및 과목 설정 */}
         <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-8">
           <div className="w-full md:w-auto">
             <h1 className="text-6xl font-black italic tracking-tighter mb-1" style={{ fontFamily: 'Cinzel' }}>{calculateDDay()}</h1>
@@ -220,6 +236,7 @@ export default function PlannerPage() {
           </div>
         </div>
 
+        {/* 플래너 본문 */}
         <div className="space-y-6">
           {DAYS_ORDER.map((day, idx) => {
             const dayTodos = weeklyData[day] || [];
@@ -254,15 +271,31 @@ export default function PlannerPage() {
 
                 {isOpen && (
                   <div className="px-4 md:px-6 pb-6 pt-0 space-y-2">
-                    {dayTodos.map((todo) => (
+                    {dayTodos.map((todo, tIdx) => (
                       <div key={todo.id} className={`flex items-center gap-2 md:gap-3 p-2 rounded-xl transition-all ${todo.completed ? 'opacity-30' : ''}`}>
+                        
+                        {/* 순서 변경 버튼 (맨 왼쪽) */}
+                        {viewingWeek === currentWeekMonday && (
+                          <div className="flex flex-col opacity-20 hover:opacity-100 transition-opacity">
+                            <button onClick={() => moveTodo(day, tIdx, 'up')} disabled={tIdx === 0} className="text-[10px] leading-none hover:text-blue-500 disabled:opacity-0">▲</button>
+                            <div className="flex flex-col gap-[1px] my-1 items-center">
+                              <div className="w-3 h-[1px] bg-current"></div>
+                              <div className="w-3 h-[1px] bg-current"></div>
+                              <div className="w-3 h-[1px] bg-current"></div>
+                            </div>
+                            <button onClick={() => moveTodo(day, tIdx, 'down')} disabled={tIdx === dayTodos.length - 1} className="text-[10px] leading-none hover:text-blue-500 disabled:opacity-0">▼</button>
+                          </div>
+                        )}
+
                         <select value={todo.subject} onChange={(e) => updateTodo(day, todo.id, 'subject', e.target.value)} disabled={viewingWeek !== currentWeekMonday}
                                 className={`text-[9px] md:text-[10px] font-black p-1.5 rounded-lg border outline-none ${theme.input} w-16 md:w-20`}>
                           {subjects.filter(s => s !== "").map((s, i) => <option key={i} value={s}>{s}</option>)}
                           {subjects.every(s => s === "") && <option>과목</option>}
                         </select>
+                        
                         <input type="text" value={todo.content} onChange={(e) => updateTodo(day, todo.id, 'content', e.target.value)} placeholder="계획을 입력하세요" disabled={viewingWeek !== currentWeekMonday}
                                className={`flex-1 bg-transparent px-1 py-1 text-sm outline-none ${todo.completed ? 'line-through text-slate-500' : theme.textMain}`} />
+                        
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <input type="checkbox" checked={todo.completed} onChange={(e) => updateTodo(day, todo.id, 'completed', e.target.checked)} disabled={viewingWeek !== currentWeekMonday}
                                  className="w-5 h-5 md:w-4 md:h-4 cursor-pointer accent-blue-500" />
