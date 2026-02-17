@@ -1,12 +1,18 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import Link from 'next/link';
 
 type Todo = { id: string; subject: string; content: string; completed: boolean };
 type WeeklyData = { [key: string]: Todo[] };
+type Particle = { id: number; x: number; y: number; tx: number; ty: number; color: string; shape: string; size: number };
 
 const DAYS_ORDER = ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"];
+const SHAPES = [
+  "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)", // 5각별
+  "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)", // 다이아몬드
+  "polygon(50% 0%, 90% 20%, 100% 60%, 75% 100%, 25% 100%, 0% 60%, 10% 20%)" // 다각형
+];
 
 export default function PlannerPage() {
   const [selectedName, setSelectedName] = useState("");
@@ -22,7 +28,9 @@ export default function PlannerPage() {
   const [openDays, setOpenDays] = useState<{ [key: string]: boolean }>({});
   const [isPlaying, setIsPlaying] = useState(false);
   const [bgm, setBgm] = useState<HTMLAudioElement | null>(null);
-  const [showWinnerEffect, setShowWinnerEffect] = useState(false);
+  
+  // 🔥 진짜 불꽃놀이를 위한 파편 상태
+  const [particles, setParticles] = useState<Particle[]>([]);
 
   useEffect(() => {
     if (typeof Audio !== 'undefined') {
@@ -32,6 +40,36 @@ export default function PlannerPage() {
       setBgm(audio);
     }
   }, []);
+
+  // 🎇 불꽃 터뜨리기 로직
+  const fireCelebrate = useCallback(() => {
+    const newParticles: Particle[] = [];
+    const colors = isDarkMode 
+      ? ['#FFD700', '#FF69B4', '#00BFFF', '#ADFF2F', '#FF4500', '#FFFFFF']
+      : ['#D97706', '#DB2777', '#2563EB', '#059669', '#DC2626', '#4F46E5'];
+
+    // 3군데서 터뜨림
+    [25, 50, 75].forEach((startX) => {
+      const startY = Math.random() * 20 + 30; // 30~50% 높이에서 터짐
+      for (let i = 0; i < 30; i++) { // 각 위치당 30개 파편
+        const angle = Math.random() * Math.PI * 2;
+        const distance = Math.random() * 200 + 50;
+        newParticles.push({
+          id: Math.random(),
+          x: startX,
+          y: startY,
+          tx: Math.cos(angle) * distance,
+          ty: Math.sin(angle) * distance,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          shape: SHAPES[Math.floor(Math.random() * SHAPES.length)],
+          size: Math.random() * 8 + 6
+        });
+      }
+    });
+
+    setParticles(newParticles);
+    setTimeout(() => setParticles([]), 3000); // 3초 후 제거
+  }, [isDarkMode]);
 
   const getMonday = (offsetDays = 0) => {
     const now = new Date();
@@ -139,8 +177,7 @@ export default function PlannerPage() {
       const dayTasks = newData[day];
       const allDone = dayTasks.length > 0 && dayTasks.every(t => t.completed);
       if (allDone) {
-        setShowWinnerEffect(true);
-        setTimeout(() => setShowWinnerEffect(false), 6000); // 여운을 위해 6초로 연장
+        fireCelebrate(); // 🔥 여기서 진짜 불꽃놀이 실행
       }
     }
 
@@ -175,63 +212,49 @@ export default function PlannerPage() {
   return (
     <div className={`min-h-screen pb-20 transition-colors duration-500 font-sans ${theme.bg} ${theme.textMain}`}>
       
-      {/* 🎇 세련된 멀티 별 모양 + 슬로우 모션 불꽃놀이 */}
+      {/* 🎇 진짜 파편들이 흩어지는 애니메이션 CSS */}
       <style jsx global>{`
-        .firework-overlay {
+        .particle {
           position: fixed;
-          inset: 0;
+          top: var(--y);
+          left: var(--x);
+          width: var(--size);
+          height: var(--size);
+          background: var(--color);
+          clip-path: var(--shape);
           pointer-events: none;
           z-index: 9999;
+          animation: explode 2.5s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+          box-shadow: 0 0 10px var(--color);
         }
 
-        .firework {
-          position: absolute;
-          width: 10px;
-          height: 10px;
-          background: #fff;
-          /* 테마별 색상 */
-          --c1: ${isDarkMode ? '#fbbf24' : '#d97706'}; 
-          --c2: ${isDarkMode ? '#60a5fa' : '#2563eb'}; 
-          --c3: ${isDarkMode ? '#f472b6' : '#db2777'}; 
-          
-          /* 애니메이션 속도를 3초로 늦추고 부드러운 여운 추가 */
-          animation: fireworks-launch-complex 3s cubic-bezier(0.1, 0.7, 0.3, 1) forwards;
-        }
-
-        /* 각 폭죽마다 다른 별 모양 적용 */
-        .fw-1 { clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); --x: 50vw; --y: 20vh; animation-delay: 0.1s; }
-        .fw-2 { clip-path: polygon(50% 0%, 63% 38%, 100% 50%, 63% 62%, 50% 100%, 37% 62%, 0% 50%, 37% 38%); --x: 25vw; --y: 40vh; animation-delay: 0.6s; }
-        .fw-3 { clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); --x: 75vw; --y: 30vh; animation-delay: 1.1s; }
-        .fw-4 { clip-path: polygon(50% 0%, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0% 50%, 40% 40%); --x: 35vw; --y: 60vh; animation-delay: 1.6s; }
-        .fw-5 { clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); --x: 65vw; --y: 50vh; animation-delay: 2.1s; }
-
-        @keyframes fireworks-launch-complex {
-          0% { transform: translate(0, 100vh) rotate(0deg) scale(0.3); opacity: 1; }
-          40% { transform: translate(var(--x), var(--y)) rotate(180deg) scale(1); opacity: 1; }
-          100% {
-            /* 터지는 시점부터 서서히 아래로 떨어지는 느낌 추가 */
-            transform: translate(var(--x), calc(var(--y) + 100px)) rotate(360deg) scale(2);
-            opacity: 0;
-            box-shadow: 
-              -120px -120px 0 2px var(--c1), 120px -120px 0 2px var(--c2),
-              -180px 0 0 2px var(--c3), 180px 0 0 2px var(--c1),
-              -120px 120px 0 2px var(--c2), 120px 120px 0 2px var(--c3),
-              0 -200px 0 2px #fff, 0 200px 0 2px #fff;
+        @keyframes explode {
+          0% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
+          80% { opacity: 1; }
+          100% { 
+            transform: translate(var(--tx), calc(var(--ty) + 150px)) scale(0) rotate(720deg); 
+            opacity: 0; 
           }
         }
       `}</style>
 
-      {showWinnerEffect && (
-        <div className="firework-overlay">
-          <div className="firework fw-1"></div>
-          <div className="firework fw-2"></div>
-          <div className="firework fw-3"></div>
-          <div className="firework fw-4"></div>
-          <div className="firework fw-5"></div>
-        </div>
-      )}
+      {/* 불꽃 파편들 렌더링 */}
+      {particles.map(p => (
+        <div 
+          key={p.id} 
+          className="particle"
+          style={{ 
+            '--x': `${p.x}vw`, 
+            '--y': `${p.y}vh`, 
+            '--tx': `${p.tx}px`, 
+            '--ty': `${p.ty}px`, 
+            '--color': p.color, 
+            '--shape': p.shape,
+            '--size': `${p.size}px`
+          } as any}
+        />
+      ))}
 
-      {/* Font & Styles */}
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css" />
       <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet" />
 
