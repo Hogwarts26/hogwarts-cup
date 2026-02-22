@@ -537,14 +537,39 @@ export default function PlannerPage() {
               </div>
             </div>
             <div className="grid grid-cols-4 gap-2">
-              {subjects.map((sub, i) => (
-                <input key={i} value={sub} onChange={(e) => {
-                  const newSubs = [...subjects];
-                  newSubs[i] = e.target.value;
-                  setSubjects(newSubs);
-                  saveAllToDB(weeklyData, newSubs, examDate);
-                }} placeholder={`과목 ${i+1}`} className={`text-[10px] font-bold p-2 rounded-xl border outline-none text-center transition-all ${theme.input}`} />
-              ))}
+              {subjects.map((sub, i) => {
+                const dotColor = DOT_COLORS[i % DOT_COLORS.length];
+                const borderColors = [
+                  'border-blue-400/60 focus:border-blue-400',
+                  'border-purple-400/60 focus:border-purple-400',
+                  'border-emerald-400/60 focus:border-emerald-400',
+                  'border-amber-400/60 focus:border-amber-400',
+                  'border-rose-400/60 focus:border-rose-400',
+                  'border-cyan-400/60 focus:border-cyan-400',
+                  'border-orange-400/60 focus:border-orange-400',
+                  'border-pink-400/60 focus:border-pink-400',
+                ];
+                const bgColors = [
+                  'bg-blue-500/10',
+                  'bg-purple-500/10',
+                  'bg-emerald-500/10',
+                  'bg-amber-500/10',
+                  'bg-rose-500/10',
+                  'bg-cyan-500/10',
+                  'bg-orange-500/10',
+                  'bg-pink-500/10',
+                ];
+                return (
+                  <input key={i} value={sub} onChange={(e) => {
+                    const newSubs = [...subjects];
+                    newSubs[i] = e.target.value;
+                    setSubjects(newSubs);
+                    saveAllToDB(weeklyData, newSubs, examDate);
+                  }} placeholder={`과목 ${i+1}`} className={`text-[10px] font-bold p-2 rounded-xl border-2 outline-none text-center transition-all
+                    ${sub ? `${borderColors[i % borderColors.length]} ${bgColors[i % bgColors.length]}` : (isDarkMode ? 'border-white/10 bg-white/5' : 'border-slate-200 bg-slate-100')}
+                    ${theme.textMain}`} />
+                );
+              })}
             </div>
           </div>
         </div>
@@ -647,10 +672,7 @@ export default function PlannerPage() {
                         <div className="flex items-baseline gap-2">
                           <span className="text-xl font-black italic tracking-tight">{day}</span>
                           <span className="text-[10px] font-bold opacity-30 tracking-tighter">{getFormattedDate(viewingWeek, idx)}</span>
-                          <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border opacity-60
-                            ${isDarkMode ? 'border-white/10 bg-white/5' : 'border-slate-200 bg-slate-100'}`}>
-                            TIME BLOCK
-                          </span>
+
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="w-24 h-1 bg-slate-800/20 rounded-full overflow-hidden">
