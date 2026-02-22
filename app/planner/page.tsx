@@ -122,7 +122,7 @@ function SortableTodoItem({
         value={todo.subject} 
         onChange={(e) => updateTodo(day, todo.id, 'subject', e.target.value)} 
         disabled={!isEditable}
-        className={`text-[9px] md:text-[10px] font-black p-1.5 rounded-lg border outline-none ${theme.input} w-16 md:w-20`}
+        className={`text-[9px] md:text-[10px] font-black p-1.5 rounded-lg border outline-none ${theme.select} w-16 md:w-20`}
       >
         {subjects.filter((s: string) => s !== "").map((s: string, i: number) => <option key={i} value={s}>{s}</option>)}
         {subjects.every((s: string) => s === "") && <option>과목</option>}
@@ -179,7 +179,7 @@ function TimeBlockCell({
         value={block.subject}
         onChange={(e) => onChange(blockKey, 'subject', e.target.value)}
         disabled={!isEditable}
-        className={`text-[9px] font-black p-1 rounded-lg border outline-none ${theme.input} w-14 md:w-[70px] flex-shrink-0`}
+        className={`text-[9px] font-black p-1 rounded-lg border outline-none ${theme.select} w-14 md:w-[70px] flex-shrink-0`}
       >
         <option value="__empty__">—</option>
         {subjects.filter(s => s !== '').map((s, i) => <option key={i} value={s}>{s}</option>)}
@@ -445,6 +445,7 @@ export default function PlannerPage() {
     textMain: isDarkMode ? 'text-white' : 'text-slate-900',
     btn: isDarkMode ? 'bg-slate-800/50 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-600 shadow-sm',
     input: isDarkMode ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-100 border-slate-200 text-slate-800',
+    select: isDarkMode ? 'bg-slate-700 border-white/10 text-slate-900' : 'bg-slate-100 border-slate-200 text-slate-800',
     accent: isDarkMode ? 'text-blue-400' : 'text-blue-600',
     timeHeader: isDarkMode ? 'text-slate-500' : 'text-slate-400',
     timeDivider: isDarkMode ? 'border-white/5' : 'border-slate-100',
