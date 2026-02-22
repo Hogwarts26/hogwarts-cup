@@ -499,13 +499,13 @@ export default function PlannerPage() {
         <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-8">
           <div className="w-full md:w-auto">
             <h1 className="text-6xl font-black italic tracking-tighter mb-1" style={{ fontFamily: 'Cinzel' }}>{calculateDDay()}</h1>
-            <p className={`text-[11px] font-black uppercase tracking-[0.3em] ${theme.accent}`}>결전의 날: {examDate || "결전의 날을 설정하세요"}</p>
+            <p className={`text-[11px] font-black uppercase tracking-[0.3em] ${theme.accent}`}>졸업시험: {examDate || "시험일을 등록하세요"}</p>
           </div>
           <div className={`p-6 rounded-[2rem] border w-full md:w-[400px] ${theme.card}`}>
             <div className="flex justify-between items-center mb-4 text-[10px] font-black uppercase opacity-40">
               <span>My Subjects</span>
               <div className="relative">
-                {!examDate && <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold pointer-events-none text-blue-500">결전의 날</span>}
+                {!examDate && <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold pointer-events-none text-blue-500">졸업 시험</span>}
                 <input type="date" value={examDate} onChange={(e) => { setExamDate(e.target.value); saveAllToDB(weeklyData, subjects, e.target.value); }} 
                        className={`font-bold p-1.5 rounded-lg outline-none border w-[120px] text-center ${theme.input} ${!examDate ? 'text-transparent' : ''}`} />
               </div>
