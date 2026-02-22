@@ -3,107 +3,226 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import Link from 'next/link';
 
+// --- dnd-kit 관련 임포트 추가 ---
+import {
+  DndContext, 
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+type Todo = { id: string; subject: string; content: string; completed: boolean };
+type WeeklyData = { [key: string]: Todo[] };
+
+const DAYS_ORDER = ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"];
+
+// --- 개별 투두 아이템 컴포넌트 (Sortable) ---
+function SortableTodoItem({ 
+  todo, day, viewingWeek, currentWeekMonday, subjects, theme, updateTodo, deleteTodo 
+}: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: todo.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : 'auto',
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div 
+      ref={setNodeRef} 
+      style={style} 
+      className={`flex items-center gap-2 md:gap-3 p-2 rounded-xl transition-all ${todo.completed ? 'opacity-30' : ''} ${isDragging ? 'bg-blue-500/10' : ''}`}
+    >
+      {/* 드래그 핸들 (모바일 대응: 패딩 키움) */}
+      {viewingWeek === currentWeekMonday && (
+        <div 
+          {...attributes} 
+          {...listeners} 
+          className="cursor-grab active:cursor-grabbing p-3 -ml-2 opacity-30 hover:opacity-100 transition-opacity touch-none"
+        >
+          <div className="flex flex-col gap-[2px]">
+            <div className="w-4 h-[1.5px] bg-current"></div>
+            <div className="w-4 h-[1.5px] bg-current"></div>
+            <div className="w-4 h-[1.5px] bg-current"></div>
+          </div>
+        </div>
+      )}
+
+      <select 
+        value={todo.subject} 
+        onChange={(e) => updateTodo(day, todo.id, 'subject', e.target.value)} 
+        disabled={viewingWeek !== currentWeekMonday}
+        className={`text-[9px] md:text-[10px] font-black p-1.5 rounded-lg border outline-none ${theme.input} w-16 md:w-20`}
+      >
+        {subjects.filter((s: string) => s !== "").map((s: string, i: number) => <option key={i} value={s}>{s}</option>)}
+        {subjects.every((s: string) => s === "") && <option>과목</option>}
+      </select>
+      
+      <input 
+        type="text" 
+        value={todo.content} 
+        onChange={(e) => updateTodo(day, todo.id, 'content', e.target.value)} 
+        placeholder="계획을 입력하세요" 
+        disabled={viewingWeek !== currentWeekMonday}
+        className={`flex-1 bg-transparent px-1 py-1 text-sm outline-none ${todo.completed ? 'line-through text-slate-500' : theme.textMain}`} 
+      />
+      
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <input 
+          type="checkbox" 
+          checked={todo.completed} 
+          onChange={(e) => updateTodo(day, todo.id, 'completed', e.target.checked)} 
+          disabled={viewingWeek !== currentWeekMonday}
+          className="w-5 h-5 md:w-4 md:h-4 cursor-pointer accent-blue-500" 
+        />
+        {viewingWeek === currentWeekMonday && (
+          <button onClick={() => deleteTodo(day, todo.id)} className="text-red-500/70 hover:text-red-500 transition-colors font-bold text-[10px] p-1">✕</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// --- 메인 페이지 ---
 export default function PlannerPage() {
   const [selectedName, setSelectedName] = useState("");
-  const [plannerData, setPlannerData] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(true);
-
-  // ==========================================
-  // 🎵 배경음악(BGM) 로직
-  // ==========================================
+  const [currentWeekMonday, setCurrentWeekMonday] = useState("");
+  const [viewingWeek, setViewingWeek] = useState(""); 
+  const [subjects, setSubjects] = useState<string[]>(Array(8).fill(""));
+  const [examDate, setExamDate] = useState("");
+  const [weeklyData, setWeeklyData] = useState<WeeklyData>({
+    "월요일": [], "화요일": [], "수요일": [], "목요일": [], "금요일": [], "토요일": [], "일요일": []
+  });
+  const [openDays, setOpenDays] = useState<{ [key: string]: boolean }>({});
   const [isPlaying, setIsPlaying] = useState(false);
-  const [bgm] = useState(() => typeof Audio !== 'undefined' ? new Audio('/hedwig.mp3') : null);
+  const [bgm, setBgm] = useState<HTMLAudioElement | null>(null);
 
-  const toggleMusic = () => {
-    if (!bgm) return;
-    if (isPlaying) {
-      bgm.pause();
-    } else {
-      bgm.loop = true;
-      bgm.volume = 0.4;
-      bgm.play().catch(e => console.log("음악 재생 실패:", e));
-    }
-    setIsPlaying(!isPlaying);
-  };
+  // --- 모바일 롱프레스(꾹 누르기) 대응 센서 설정 ---
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        delay: 250, // 0.25초 동안 꾹 눌러야 드래그 시작
+        tolerance: 5, // 누르는 동안 5px 이상 움직이면 취소 (스크롤 허용)
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
-  // 페이지를 떠날 때 음악 정지
   useEffect(() => {
-    return () => {
-      if (bgm) {
-        bgm.pause();
-        setIsPlaying(false);
-      }
-    };
-  }, [bgm]);
-  // ==========================================
+    if (typeof Audio !== 'undefined') {
+      const audio = new Audio('/hedwig.mp3');
+      audio.loop = true;
+      audio.volume = 0.4;
+      setBgm(audio);
+    }
+  }, []);
 
-  const timeSlots = [];
-  for (let h = 6; h < 24; h++) {
-    const hour = String(h).padStart(2, '0');
-    timeSlots.push(`${hour}:00`, `${hour}:30`);
-  }
-  timeSlots.push("00:00", "00:30", "01:00");
-
-  const getPlannerDate = () => {
+  const getMonday = (offsetDays = 0) => {
     const now = new Date();
-    if (now.getHours() < 4) {
-      now.setDate(now.getDate() - 1);
-    }
-    return now.toLocaleDateString('en-CA');
+    if (now.getHours() < 4) now.setDate(now.getDate() - 1);
+    const day = now.getDay();
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1); 
+    const monday = new Date(now.getFullYear(), now.getMonth(), diff + offsetDays);
+    return monday.toLocaleDateString('en-CA'); 
+  };
+
+  const getFormattedDate = (mondayString: string, dayIndex: number) => {
+    const date = new Date(mondayString);
+    date.setDate(date.getDate() + dayIndex);
+    return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}`;
   };
 
   useEffect(() => {
+    const monday = getMonday();
+    setCurrentWeekMonday(monday);
+    setViewingWeek(monday);
     const savedTheme = localStorage.getItem('planner_theme');
     if (savedTheme === 'light') setIsDarkMode(false);
 
+    // --- 오늘 요일 인식하여 자동 펼침 로직 추가 ---
+    const today = new Date();
+    const dayNames = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"];
+    const todayName = dayNames[today.getDay()];
+    setOpenDays({ [todayName]: true }); // 오늘 요일만 true로 설정
+    
     const authData = localStorage.getItem('hg_auth');
     if (authData) {
       try {
         const parsed = JSON.parse(authData);
-        if (parsed.name) {
-          setSelectedName(parsed.name);
-          fetchPlannerData(parsed.name);
-          return;
-        }
+        setSelectedName(parsed.name);
+        fetchPlannerData(parsed.name, monday);
       } catch (e) {
-        console.error("인증 데이터 파싱 에러:", e);
+        console.error("인증 에러", e);
+        setLoading(false);
       }
-    }
-    setLoading(false);
-  }, []);
-
-  const fetchPlannerData = async (name: string) => {
-    try {
-      const planDate = getPlannerDate(); 
-      const { data } = await supabase
-        .from('daily_planner')
-        .select('content_json')
-        .eq('student_name', name)
-        .eq('plan_date', planDate)
-        .maybeSingle();
-
-      if (data && data.content_json) {
-        setPlannerData(data.content_json);
-      }
-    } catch (err) {
-      console.error("플래너 로드 실패:", err);
-    } finally {
+    } else {
       setLoading(false);
     }
+  }, []);
+
+  const fetchPlannerData = async (name: string, mondayDate: string) => {
+    setLoading(true);
+    try {
+      const { data } = await supabase.from('daily_planner').select('*').eq('student_name', name).eq('plan_date', mondayDate).maybeSingle();
+      if (data) {
+        if (data.content_json) setWeeklyData(data.content_json);
+        if (data.subjects_json) setSubjects(data.subjects_json);
+        if (data.exam_date) setExamDate(data.exam_date);
+      } else {
+        setWeeklyData({ "월요일": [], "화요일": [], "수요일": [], "목요일": [], "금요일": [], "토요일": [], "일요일": [] });
+      }
+    } catch (err) { console.error("Fetch Error:", err); } finally { setLoading(false); }
   };
 
-  const saveEntry = async (time: string, text: string) => {
-    const updatedData = { ...plannerData, [time]: text };
-    setPlannerData(updatedData);
-    if (!selectedName) return;
-    const planDate = getPlannerDate();
-    await supabase.from('daily_planner').upsert({
-      student_name: selectedName,
-      plan_date: planDate,
-      content_json: updatedData,
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'student_name,plan_date' });
+  const saveAllToDB = async (updatedWeekly: WeeklyData, updatedSubjects: string[], updatedExamDate: string) => {
+    if (!selectedName || viewingWeek !== currentWeekMonday) return;
+    try {
+      await supabase.from('daily_planner').upsert({
+        student_name: selectedName, plan_date: viewingWeek, content_json: updatedWeekly,
+        subjects_json: updatedSubjects, exam_date: updatedExamDate, updated_at: new Date().toISOString()
+      }, { onConflict: 'student_name,plan_date' });
+    } catch (err) { console.error("Save Error:", err); }
+  };
+
+  const recordEditDay = (day: string) => { localStorage.setItem('last_edited_day', day); };
+
+  const calculateDDay = () => {
+    if (!examDate) return "D-?";
+    const target = new Date(examDate); target.setHours(0,0,0,0);
+    const today = new Date(); today.setHours(0,0,0,0);
+    const diff = target.getTime() - today.getTime();
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    return days === 0 ? "D-Day" : days > 0 ? `D-${days}` : `D+${Math.abs(days)}`;
+  };
+
+  const toggleMusic = () => {
+    if (!bgm) return;
+    if (isPlaying) { bgm.pause(); } else { bgm.play().catch(e => console.log("BGM Play Error", e)); }
+    setIsPlaying(!isPlaying);
   };
 
   const toggleTheme = () => {
@@ -112,100 +231,188 @@ export default function PlannerPage() {
     localStorage.setItem('planner_theme', newMode ? 'dark' : 'light');
   };
 
+  const addTodo = (day: string) => {
+    if (viewingWeek !== currentWeekMonday) return;
+    recordEditDay(day);
+    const newData = { ...weeklyData };
+    if (!newData[day]) newData[day] = [];
+    newData[day] = [...newData[day], { id: Date.now().toString(), subject: subjects.find(s => s !== "") || "과목", content: "", completed: false }];
+    setWeeklyData(newData);
+    saveAllToDB(newData, subjects, examDate);
+  };
+
+  const updateTodo = (day: string, id: string, field: keyof Todo, value: any) => {
+    if (viewingWeek !== currentWeekMonday) return;
+    recordEditDay(day);
+    const newData = { ...weeklyData };
+    newData[day] = newData[day].map(t => t.id === id ? { ...t, [field]: value } : t);
+    setWeeklyData(newData);
+    saveAllToDB(newData, subjects, examDate);
+  };
+
+  const deleteTodo = (day: string, id: string) => {
+    if (viewingWeek !== currentWeekMonday) return;
+    if (!confirm("정말 삭제하시겠습니까?")) return;
+    const newData = { ...weeklyData };
+    newData[day] = newData[day].filter(t => t.id !== id);
+    setWeeklyData(newData);
+    saveAllToDB(newData, subjects, examDate);
+  };
+
+  const handleDragEnd = (event: DragEndEvent, day: string) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setWeeklyData((prev) => {
+        const oldIndex = prev[day].findIndex((t) => t.id === active.id);
+        const newIndex = prev[day].findIndex((t) => t.id === over.id);
+        const newList = arrayMove(prev[day], oldIndex, newIndex);
+        const updated = { ...prev, [day]: newList };
+        saveAllToDB(updated, subjects, examDate);
+        return updated;
+      });
+    }
+  };
+
   const theme = {
     bg: isDarkMode ? 'bg-[#020617]' : 'bg-slate-50',
-    card: isDarkMode ? 'bg-slate-900/60 border-white/5 shadow-black' : 'bg-white border-slate-200 shadow-slate-200/50',
+    card: isDarkMode ? 'bg-slate-900/40 border-white/5 shadow-2xl' : 'bg-white border-slate-200 shadow-sm',
     textMain: isDarkMode ? 'text-white' : 'text-slate-900',
     btn: isDarkMode ? 'bg-slate-800/50 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-600 shadow-sm',
+    input: isDarkMode ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-100 border-slate-200 text-slate-800',
     accent: isDarkMode ? 'text-blue-400' : 'text-blue-600',
-    divider: isDarkMode ? 'divide-white/5' : 'divide-slate-100'
   };
 
   if (loading) return (
     <div className={`min-h-screen flex items-center justify-center ${theme.bg}`}>
-      <div className={`${theme.textMain} font-serif animate-pulse uppercase tracking-[0.3em]`}>Opening Your Scroll...</div>
+      <div className={`${theme.textMain} font-serif animate-pulse tracking-[0.3em]`}>REVEALING YOUR SCROLL...</div>
     </div>
   );
 
   return (
-    <div className={`min-h-screen transition-colors duration-500 p-4 md:p-8 font-sans ${theme.bg} ${theme.textMain}`} style={{ fontFamily: "'Pretendard Variable', sans-serif" }}>
+    <div className={`min-h-screen pb-20 transition-colors duration-500 font-sans ${theme.bg} ${theme.textMain}`}>
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css" />
-      
-      <div className="max-w-3xl mx-auto">
-        <div className="flex justify-between items-start mb-10">
-          <div className="flex flex-col gap-4">
-            <Link href="/" className={`inline-block px-4 py-2 rounded-xl text-xs font-bold border transition-all w-fit ${theme.btn}`}>
-              ← Back to Lobby
-            </Link>
-            <h1 className="text-3xl font-black italic uppercase tracking-wider" style={{ fontFamily: "'Cinzel', serif" }}>
-              Daily Planner
-            </h1>
-          </div>
-          <div className="flex flex-col items-end gap-3">
-            <div className="flex gap-2">
-              {/* 🎵 음악 토글 버튼 */}
-              <button 
-                onClick={toggleMusic} 
-                className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${
-                  isPlaying ? 'border-yellow-400 bg-yellow-400/10 animate-pulse' : theme.btn
-                }`}
-              >
-                {isPlaying ? '🎵' : '🔇'}
-              </button>
-              {/* 🌓 테마 토글 버튼 */}
-              <button onClick={toggleTheme} className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${theme.btn}`}>
-                {isDarkMode ? '🌝' : '🌞'}
-              </button>
-            </div>
-            <div className="text-right">
-              <p className={`text-[11px] font-bold uppercase tracking-tighter ${theme.accent}`}>
-                Wizard: {selectedName || "Unknown"}
-              </p>
-              <p className="text-[10px] font-medium opacity-40 uppercase">
-                {new Date(getPlannerDate()).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}
-              </p>
-            </div>
+      <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet" />
+
+      <div className="max-w-4xl mx-auto p-4 md:p-8">
+        <div className="flex justify-between items-center mb-8">
+          <Link href="/" className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${theme.btn}`}>← BACK TO LOBBY</Link>
+          <div className="flex gap-2">
+            <button onClick={toggleMusic} className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${isPlaying ? 'border-yellow-400 bg-yellow-400/10 animate-pulse' : theme.btn}`}>
+              {isPlaying ? '🎵' : '🔇'}
+            </button>
+            <button onClick={toggleTheme} className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${theme.btn}`}>
+              {isDarkMode ? '🌝' : '🌞'}
+            </button>
           </div>
         </div>
 
-        <div className={`border transition-all duration-500 rounded-[2rem] overflow-hidden backdrop-blur-md shadow-2xl ${theme.card}`}>
-          <div className={`grid grid-cols-1 divide-y ${theme.divider}`}>
-            {timeSlots.map((time) => (
-              <div key={time} className={`flex items-center group transition-colors ${isDarkMode ? 'hover:bg-white/[0.02]' : 'hover:bg-slate-50'}`}>
-                <div className={`w-20 md:w-24 py-4 px-6 text-[11px] font-black border-r text-center ${
-                  isDarkMode 
-                    ? `border-white/5 ${time.endsWith(':00') ? 'text-white/60' : 'text-white/20'}` 
-                    : `border-slate-100 ${time.endsWith(':00') ? 'text-slate-500' : 'text-slate-300'}`
-                }`}>
-                  {time}
-                </div>
-                
-                <div className="flex-1">
-                  <input 
-                    type="text"
-                    defaultValue={plannerData[time] || ""}
-                    onBlur={(e) => saveEntry(time, e.target.value)}
-                    placeholder="무엇을 학습했나요?"
-                    className={`w-full bg-transparent px-6 py-4 text-sm font-medium outline-none transition-all ${
-                      isDarkMode 
-                        ? 'text-white/80 placeholder:text-white/5 focus:bg-white/[0.05]'
-                        : 'text-slate-700 placeholder:text-slate-200 focus:bg-slate-50/50'
-                    }`}
-                  />
-                </div>
+        <div className="flex justify-center gap-3 mb-10">
+          <button onClick={() => { const m = getMonday(-7); setViewingWeek(m); fetchPlannerData(selectedName, m); }} 
+                  className={`px-5 py-2.5 rounded-2xl text-[11px] font-black border transition-all ${viewingWeek !== currentWeekMonday ? 'bg-blue-600 text-white border-blue-600 shadow-lg' : theme.btn + ' opacity-60 hover:opacity-100'}`}>
+            {viewingWeek !== currentWeekMonday ? '● 지난주 기록 확인 중' : '← 지난주 기록 보기'}
+          </button>
+          {viewingWeek !== currentWeekMonday && (
+            <button onClick={() => { setViewingWeek(currentWeekMonday); fetchPlannerData(selectedName, currentWeekMonday); }} 
+                    className="px-5 py-2.5 rounded-2xl text-[11px] font-black bg-emerald-600 text-white border border-emerald-500 shadow-lg animate-bounce">
+              이번 주로 돌아오기 →
+            </button>
+          )}
+        </div>
 
-                <div className="px-4 opacity-0 group-focus-within:opacity-100 transition-opacity">
-                  <div className={`w-1.5 h-1.5 rounded-full ${isDarkMode ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]' : 'bg-blue-400 shadow-[0_0_8px_rgba(59,130,246,0.3)]'}`} />
-                </div>
+        <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-8">
+          <div className="w-full md:w-auto">
+            <h1 className="text-6xl font-black italic tracking-tighter mb-1" style={{ fontFamily: 'Cinzel' }}>{calculateDDay()}</h1>
+            <p className={`text-[11px] font-black uppercase tracking-[0.3em] ${theme.accent}`}>결전의 날: {examDate || "결전의 날을 설정하세요"}</p>
+          </div>
+          <div className={`p-6 rounded-[2rem] border w-full md:w-[400px] ${theme.card}`}>
+            <div className="flex justify-between items-center mb-4 text-[10px] font-black uppercase opacity-40">
+              <span>My Subjects</span>
+              <div className="relative">
+                {!examDate && <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold pointer-events-none text-blue-500">결전의 날</span>}
+                <input type="date" value={examDate} onChange={(e) => { setExamDate(e.target.value); saveAllToDB(weeklyData, subjects, e.target.value); }} 
+                       className={`font-bold p-1.5 rounded-lg outline-none border w-[120px] text-center ${theme.input} ${!examDate ? 'text-transparent' : ''}`} />
               </div>
-            ))}
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {subjects.map((sub, i) => (
+                <input key={i} value={sub} onChange={(e) => {
+                  const newSubs = [...subjects];
+                  newSubs[i] = e.target.value;
+                  setSubjects(newSubs);
+                  saveAllToDB(weeklyData, newSubs, examDate);
+                }} placeholder={`과목 ${i+1}`} className={`text-[10px] font-bold p-2 rounded-xl border outline-none text-center transition-all ${theme.input}`} />
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="mt-8 text-center">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-30">
-            새벽 4시에 학습내역이 초기화됩니다.
-          </p>
+        <div className="space-y-6">
+          {DAYS_ORDER.map((day, idx) => {
+            const dayTodos = weeklyData[day] || [];
+            const completedCount = dayTodos.filter(t => t.completed).length;
+            const progress = dayTodos.length > 0 ? Math.round((completedCount / dayTodos.length) * 100) : 0;
+            const isOpen = openDays[day];
+
+            return (
+              <div key={day} className={`rounded-[2.5rem] border transition-all duration-500 overflow-hidden ${theme.card} ${isOpen ? 'ring-2 ring-blue-500/10' : ''}`}>
+                <div onClick={() => setOpenDays(prev => ({ ...prev, [day]: !prev[day] }))} className="p-5 flex items-center justify-between cursor-pointer group">
+                  <div className="flex items-center gap-3">
+                    <span className={`text-[9px] opacity-30 transition-transform duration-300 ${isOpen ? 'rotate-0' : '-rotate-90'}`}>▼</span>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-xl font-black italic tracking-tight">{day}</span>
+                        <span className="text-[10px] font-bold opacity-30 tracking-tighter">{getFormattedDate(viewingWeek, idx)}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-24 h-1 bg-slate-800/20 rounded-full overflow-hidden">
+                          <div className={`h-full transition-all duration-700 ${progress === 100 ? 'bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.6)]' : 'bg-blue-500'}`} style={{ width: `${progress}%` }} />
+                        </div>
+                        <span className={`text-[10px] font-black ${progress === 100 ? 'text-yellow-500' : 'opacity-40'}`}>{progress}%</span>
+                      </div>
+                    </div>
+                  </div>
+                  {viewingWeek === currentWeekMonday && (
+                    <button onClick={(e) => { e.stopPropagation(); addTodo(day); }} className="p-2 transition-all opacity-30 hover:opacity-100">
+                      <span className="text-xl font-light">+</span>
+                    </button>
+                  )}
+                </div>
+
+                {isOpen && (
+                  <div className="px-4 md:px-6 pb-6 pt-0 space-y-2">
+                    <DndContext 
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={(e) => handleDragEnd(e, day)}
+                    >
+                      <SortableContext 
+                        items={dayTodos.map(t => t.id)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        {dayTodos.map((todo) => (
+                          <SortableTodoItem 
+                            key={todo.id}
+                            todo={todo}
+                            day={day}
+                            viewingWeek={viewingWeek}
+                            currentWeekMonday={currentWeekMonday}
+                            subjects={subjects}
+                            theme={theme}
+                            updateTodo={updateTodo}
+                            deleteTodo={deleteTodo}
+                          />
+                        ))}
+                      </SortableContext>
+                    </DndContext>
+                    
+                    {dayTodos.length === 0 && (
+                      <div className="text-center py-4 text-[10px] opacity-20 italic">입력된 계획이 없습니다.</div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
