@@ -1174,6 +1174,15 @@ const handleSaveName = async () => {
                                 <div key={n} onClick={() => isAdmin && handleChange(name, '월', 'monthly_off_count', offCount >= (5-n) ? (5-n)-1 : offCount)} 
                                      className={`w-7 h-5 rounded-md border-2 ${isAdmin ? 'cursor-pointer' : ''} ${offCount >= (5-n) ? info.accent : 'bg-slate-50 border-slate-200'}`} />
                               ))}
+                              {isAdmin && (
+                               <button
+                                 onClick={() => handleChange(name, '월', 'monthly_off_count', 4)}
+                                 className="mt-0.5 text-[8px] font-black text-slate-300 hover:text-orange-500 uppercase tracking-widest transition-colors leading-none"
+                                 title="월휴 초기화"
+                               >
+                                 reset
+                               </button>
+                             )}
                             </div>
                           </td>
                         )}
