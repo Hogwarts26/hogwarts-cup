@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import Link from 'next/link';
 
@@ -55,9 +55,25 @@ const SUBJECT_COLORS = [
 ];
 const DOT_COLORS = ['bg-blue-400','bg-purple-400','bg-emerald-400','bg-amber-400','bg-rose-400','bg-cyan-400','bg-orange-400','bg-pink-400'];
 
+// --- 과목 색상 범례 (공통) ---
+function SubjectLegend({ subjects }: { subjects: string[] }) {
+  const filtered = subjects.filter(s => s !== '');
+  if (filtered.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-2 pb-3">
+      {filtered.map((s, i) => (
+        <span key={i} className="text-[9px] font-black flex items-center gap-1 opacity-60">
+          <span className={`w-2 h-2 rounded-full ${DOT_COLORS[i % DOT_COLORS.length]}`}></span>
+          {s}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 // --- 개별 투두 아이템 컴포넌트 (Sortable) ---
 function SortableTodoItem({ 
-  todo, day, viewingWeek, currentWeekMonday, subjects, theme, updateTodo, deleteTodo 
+  todo, day, isEditable, subjects, theme, updateTodo, deleteTodo 
 }: any) {
   const {
     attributes,
@@ -88,8 +104,7 @@ function SortableTodoItem({
         ${todo.completed ? 'opacity-30' : ''} 
         ${isDragging ? 'bg-blue-500/10' : ''}`}
     >
-      {viewingWeek === currentWeekMonday && (
-
+      {isEditable && (
         <div 
           {...attributes} 
           {...listeners} 
@@ -106,7 +121,7 @@ function SortableTodoItem({
       <select 
         value={todo.subject} 
         onChange={(e) => updateTodo(day, todo.id, 'subject', e.target.value)} 
-        disabled={viewingWeek !== currentWeekMonday}
+        disabled={!isEditable}
         className={`text-[9px] md:text-[10px] font-black p-1.5 rounded-lg border outline-none ${theme.input} w-16 md:w-20`}
       >
         {subjects.filter((s: string) => s !== "").map((s: string, i: number) => <option key={i} value={s}>{s}</option>)}
@@ -118,7 +133,7 @@ function SortableTodoItem({
         value={todo.content} 
         onChange={(e) => updateTodo(day, todo.id, 'content', e.target.value)} 
         placeholder="계획을 입력하세요" 
-        disabled={viewingWeek !== currentWeekMonday}
+        disabled={!isEditable}
         className={`flex-1 bg-transparent px-1 py-1 text-sm outline-none ${todo.completed ? 'line-through text-slate-500' : theme.textMain}`} 
       />
       
@@ -127,10 +142,10 @@ function SortableTodoItem({
           type="checkbox" 
           checked={todo.completed} 
           onChange={(e) => updateTodo(day, todo.id, 'completed', e.target.checked)} 
-          disabled={viewingWeek !== currentWeekMonday}
+          disabled={!isEditable}
           className="w-5 h-5 md:w-4 md:h-4 cursor-pointer accent-blue-500" 
         />
-        {viewingWeek === currentWeekMonday && (
+        {isEditable && (
           <button onClick={() => deleteTodo(day, todo.id)} className="text-red-500/70 hover:text-red-500 transition-colors font-bold text-[10px] p-1">✕</button>
         )}
       </div>
@@ -160,19 +175,16 @@ function TimeBlockCell({
       ${(hasContent && color) ? `${color.bar} ${color.bg}` : 'border-l-transparent'}
       ${block.completed && hasContent ? 'opacity-40' : ''}
     `}>
-      {/* 과목 선택 */}
       <select
         value={block.subject}
         onChange={(e) => onChange(blockKey, 'subject', e.target.value)}
         disabled={!isEditable}
         className={`text-[9px] font-black p-1 rounded-lg border outline-none ${theme.input} w-14 md:w-[70px] flex-shrink-0`}
       >
-        {/* 아직 과목을 선택하지 않은 빈 기본 상태 */}
         <option value="__empty__">—</option>
         {subjects.filter(s => s !== '').map((s, i) => <option key={i} value={s}>{s}</option>)}
       </select>
 
-      {/* 내용 입력 */}
       <input
         type="text"
         value={block.content}
@@ -184,7 +196,6 @@ function TimeBlockCell({
           placeholder:opacity-20`}
       />
 
-      {/* 체크박스 */}
       <input
         type="checkbox"
         checked={block.completed}
@@ -201,7 +212,7 @@ export default function PlannerPage() {
   const [selectedName, setSelectedName] = useState("");
   const [loading, setLoading] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const [viewMode, setViewMode] = useState<'todo' | 'timeblock'>('todo'); // ← 뷰 전환 상태
+  const [viewMode, setViewMode] = useState<'todo' | 'timeblock'>('todo');
   const [currentWeekMonday, setCurrentWeekMonday] = useState("");
   const [viewingWeek, setViewingWeek] = useState(""); 
   const [subjects, setSubjects] = useState<string[]>(Array(8).fill(""));
@@ -299,7 +310,10 @@ export default function PlannerPage() {
     updatedExamDate: string,
     updatedTimeBlock?: TimeBlockData
   ) => {
-    if (!selectedName || viewingWeek !== currentWeekMonday) return;
+    if (!selectedName) return;
+    // 이번 주 또는 다음 주만 편집 가능
+    const nextWeekMonday = getMonday(7);
+    if (viewingWeek !== currentWeekMonday && viewingWeek !== nextWeekMonday) return;
     try {
       await supabase.from('daily_planner').upsert({
         student_name: selectedName, 
@@ -344,7 +358,8 @@ export default function PlannerPage() {
 
   // --- Todo 관련 ---
   const addTodo = (day: string) => {
-    if (viewingWeek !== currentWeekMonday) return;
+    const _editableWeeks = [currentWeekMonday, getMonday(7)];
+    if (!_editableWeeks.includes(viewingWeek)) return;
     recordEditDay(day);
     const newData = { ...weeklyData };
     if (!newData[day]) newData[day] = [];
@@ -354,7 +369,8 @@ export default function PlannerPage() {
   };
 
   const updateTodo = (day: string, id: string, field: keyof Todo, value: any) => {
-    if (viewingWeek !== currentWeekMonday) return;
+    const _editableWeeks = [currentWeekMonday, getMonday(7)];
+    if (!_editableWeeks.includes(viewingWeek)) return;
     recordEditDay(day);
     const newData = { ...weeklyData };
     newData[day] = newData[day].map(t => t.id === id ? { ...t, [field]: value } : t);
@@ -363,7 +379,8 @@ export default function PlannerPage() {
   };
 
   const deleteTodo = (day: string, id: string) => {
-    if (viewingWeek !== currentWeekMonday) return;
+    const _editableWeeks = [currentWeekMonday, getMonday(7)];
+    if (!_editableWeeks.includes(viewingWeek)) return;
     if (!confirm("정말 삭제하시겠습니까?")) return;
     const newData = { ...weeklyData };
     newData[day] = newData[day].filter(t => t.id !== id);
@@ -398,7 +415,8 @@ export default function PlannerPage() {
   };
 
   const updateTimeBlock = (blockKey: string, field: keyof TimeBlock, value: any) => {
-    if (viewingWeek !== currentWeekMonday) return;
+    const _editableWeeks = [currentWeekMonday, getMonday(7)];
+    if (!_editableWeeks.includes(viewingWeek)) return;
     const newData = { 
       ...timeBlockData, 
       [blockKey]: { 
@@ -411,7 +429,6 @@ export default function PlannerPage() {
     saveAllToDB(weeklyData, subjects, examDate, newData);
   };
 
-  // 타임블록 뷰에서 진척도 계산 (내용이 있는 슬롯 기준)
   const calcTimeBlockProgress = (day: string) => {
     const filledSlots = TIME_SLOTS.filter(slot => {
       const b = getTimeBlock(day, slot.key);
@@ -482,17 +499,26 @@ export default function PlannerPage() {
         </div>
 
         {/* ── 주간 이동 ── */}
-        <div className="flex justify-center gap-3 mb-10">
+        <div className="flex justify-center gap-3 mb-10 flex-wrap">
+          {/* 지난주 */}
           <button onClick={() => { const m = getMonday(-7); setViewingWeek(m); fetchPlannerData(selectedName, m); }} 
-                  className={`px-5 py-2.5 rounded-2xl text-[11px] font-black border transition-all ${viewingWeek !== currentWeekMonday ? 'bg-blue-600 text-white border-blue-600 shadow-lg' : theme.btn + ' opacity-60 hover:opacity-100'}`}>
-            {viewingWeek !== currentWeekMonday ? '● 지난주 기록 확인 중' : '← 지난주 기록 보기'}
+                  className={`px-5 py-2.5 rounded-2xl text-[11px] font-black border transition-all ${viewingWeek === getMonday(-7) ? 'bg-blue-600 text-white border-blue-600 shadow-lg' : theme.btn + ' opacity-60 hover:opacity-100'}`}>
+            {viewingWeek === getMonday(-7) ? '● 지난주 기록 확인 중' : '← 지난주 기록 보기'}
           </button>
+
+          {/* 이번 주로 돌아오기 (이번 주가 아닐 때만) */}
           {viewingWeek !== currentWeekMonday && (
             <button onClick={() => { setViewingWeek(currentWeekMonday); fetchPlannerData(selectedName, currentWeekMonday); }} 
                     className="px-5 py-2.5 rounded-2xl text-[11px] font-black bg-emerald-600 text-white border border-emerald-500 shadow-lg animate-bounce">
-              이번 주로 돌아오기 →
+              이번 주로 →
             </button>
           )}
+
+          {/* 다음주 */}
+          <button onClick={() => { const m = getMonday(7); setViewingWeek(m); fetchPlannerData(selectedName, m); }} 
+                  className={`px-5 py-2.5 rounded-2xl text-[11px] font-black border transition-all ${viewingWeek === getMonday(7) ? 'bg-purple-600 text-white border-purple-600 shadow-lg' : theme.btn + ' opacity-60 hover:opacity-100'}`}>
+            {viewingWeek === getMonday(7) ? '● 다음주 미리 작성 중' : '다음주 미리 보기 →'}
+          </button>
         </div>
 
         {/* ── D-Day & 과목 입력 ── */}
@@ -552,7 +578,7 @@ export default function PlannerPage() {
                         </div>
                       </div>
                     </div>
-                    {viewingWeek === currentWeekMonday && (
+                    {(viewingWeek === currentWeekMonday || viewingWeek === getMonday(7)) && (
                       <button onClick={(e) => { e.stopPropagation(); addTodo(day); }} className="p-2 transition-all opacity-30 hover:opacity-100">
                         <span className="text-xl font-light">+</span>
                       </button>
@@ -561,6 +587,9 @@ export default function PlannerPage() {
 
                   {isOpen && (
                     <div className="px-4 md:px-6 pb-6 pt-0 space-y-2">
+                      {/* ── 과목 색상 범례 ── */}
+                      <SubjectLegend subjects={subjects} />
+
                       <DndContext 
                         sensors={sensors}
                         collisionDetection={closestCenter}
@@ -575,8 +604,7 @@ export default function PlannerPage() {
                               key={todo.id}
                               todo={todo}
                               day={day}
-                              viewingWeek={viewingWeek}
-                              currentWeekMonday={currentWeekMonday}
+                              isEditable={viewingWeek === currentWeekMonday || viewingWeek === getMonday(7)}
                               subjects={subjects}
                               theme={theme}
                               updateTodo={updateTodo}
@@ -637,26 +665,16 @@ export default function PlannerPage() {
                   {/* 타임블록 슬롯 목록 */}
                   {isOpen && (
                     <div className="pb-5">
-                      {/* 범례: 과목별 색상 미리보기 */}
-                      {subjects.some(s => s !== '') && (
-                        <div className="flex flex-wrap gap-2 px-5 pb-4">
-                          {subjects.filter(s => s !== '').map((s, i) => {
-                            return (
-                              <span key={i} className={`text-[9px] font-black flex items-center gap-1 opacity-60`}>
-                                <span className={`w-2 h-2 rounded-full ${DOT_COLORS[i % DOT_COLORS.length]}`}></span>
-                                {s}
-                              </span>
-                            );
-                          })}
-                        </div>
-                      )}
+                      {/* ── 과목 색상 범례 ── */}
+                      <div className="px-5 pb-1">
+                        <SubjectLegend subjects={subjects} />
+                      </div>
 
                       {/* AM / PM / 새벽 구분 렌더 */}
-                      {TIME_SLOTS.map((slot, slotIdx) => {
+                      {TIME_SLOTS.map((slot) => {
                         const blockKey = getTimeBlockKey(day, slot.key);
                         const block = getTimeBlock(day, slot.key);
 
-                        // 구분선: 정오(12:00), 자정(24:00) 앞에 섹션 레이블
                         const showAmLabel = slot.hour === 5;
                         const showPmLabel = slot.hour === 12;
                         const showMidnightLabel = slot.hour === 24;
@@ -664,19 +682,19 @@ export default function PlannerPage() {
                         return (
                           <React.Fragment key={slot.key}>
                             {showAmLabel && (
-                              <div className={`flex items-center gap-3 px-5 py-2`}>
+                              <div className="flex items-center gap-3 px-5 py-2">
                                 <span className={`text-[9px] font-black tracking-widest uppercase ${theme.timeHeader}`}>오전 AM</span>
                                 <div className={`flex-1 border-t ${theme.timeDivider}`}></div>
                               </div>
                             )}
                             {showPmLabel && (
-                              <div className={`flex items-center gap-3 px-5 py-2 mt-1`}>
+                              <div className="flex items-center gap-3 px-5 py-2 mt-1">
                                 <span className={`text-[9px] font-black tracking-widest uppercase ${theme.timeHeader}`}>오후 PM</span>
                                 <div className={`flex-1 border-t ${theme.timeDivider}`}></div>
                               </div>
                             )}
                             {showMidnightLabel && (
-                              <div className={`flex items-center gap-3 px-5 py-2 mt-1`}>
+                              <div className="flex items-center gap-3 px-5 py-2 mt-1">
                                 <span className={`text-[9px] font-black tracking-widest uppercase ${theme.timeHeader}`}>자정 MIDNIGHT</span>
                                 <div className={`flex-1 border-t ${theme.timeDivider}`}></div>
                               </div>
@@ -695,7 +713,7 @@ export default function PlannerPage() {
                                   block={block}
                                   subjects={subjects}
                                   theme={theme}
-                                  isEditable={viewingWeek === currentWeekMonday}
+                                  isEditable={viewingWeek === currentWeekMonday || viewingWeek === getMonday(7)}
                                   onChange={updateTimeBlock}
                                 />
                               </div>
