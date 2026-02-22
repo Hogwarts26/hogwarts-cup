@@ -42,6 +42,19 @@ const TIME_SLOTS = Array.from({ length: 21 }, (_, i) => {
   return { hour, displayHour, label, key, isPM, isMidnight };
 });
 
+// 과목 색상 공통 상수
+const SUBJECT_COLORS = [
+  { bar: 'border-l-blue-400',    bg: 'bg-blue-500/10' },
+  { bar: 'border-l-purple-400',  bg: 'bg-purple-500/10' },
+  { bar: 'border-l-emerald-400', bg: 'bg-emerald-500/10' },
+  { bar: 'border-l-amber-400',   bg: 'bg-amber-500/10' },
+  { bar: 'border-l-rose-400',    bg: 'bg-rose-500/10' },
+  { bar: 'border-l-cyan-400',    bg: 'bg-cyan-500/10' },
+  { bar: 'border-l-orange-400',  bg: 'bg-orange-500/10' },
+  { bar: 'border-l-pink-400',    bg: 'bg-pink-500/10' },
+];
+const DOT_COLORS = ['bg-blue-400','bg-purple-400','bg-emerald-400','bg-amber-400','bg-rose-400','bg-cyan-400','bg-orange-400','bg-pink-400'];
+
 // --- 개별 투두 아이템 컴포넌트 (Sortable) ---
 function SortableTodoItem({ 
   todo, day, viewingWeek, currentWeekMonday, subjects, theme, updateTodo, deleteTodo 
@@ -62,11 +75,18 @@ function SortableTodoItem({
     opacity: isDragging ? 0.5 : 1,
   };
 
+  // 과목 색상 계산
+  const subjectIndex = subjects.findIndex((s: string) => s === todo.subject);
+  const color = subjectIndex >= 0 ? SUBJECT_COLORS[subjectIndex % SUBJECT_COLORS.length] : null;
+
   return (
     <div 
       ref={setNodeRef} 
       style={style} 
-      className={`flex items-center gap-2 md:gap-3 p-2 rounded-xl transition-all ${todo.completed ? 'opacity-30' : ''} ${isDragging ? 'bg-blue-500/10' : ''}`}
+      className={`flex items-center gap-2 md:gap-3 p-2 rounded-xl border-l-2 transition-all
+        ${color ? `${color.bar} ${color.bg}` : 'border-l-transparent'}
+        ${todo.completed ? 'opacity-30' : ''} 
+        ${isDragging ? 'bg-blue-500/10' : ''}`}
     >
       {viewingWeek === currentWeekMonday && (
         <div 
@@ -436,64 +456,13 @@ export default function PlannerPage() {
       <div className="max-w-4xl mx-auto p-4 md:p-8">
         {/* ── 상단 헤더 ── */}
         <div className="flex justify-between items-center mb-8">
-          <Link href="/" className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${theme.btn}`}>← BACK TO LOBBY</Link>
-          <div className="flex gap-2">
-            <button onClick={toggleMusic} className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${isPlaying ? 'border-yellow-400 bg-yellow-400/10 animate-pulse' : theme.btn}`}>
-              {isPlaying ? '🎵' : '🔇'}
-            </button>
-
-            {/* ── Time Block 전환 버튼 ── */}
-            <button 
-              onClick={toggleViewMode} 
-              className={`px-3 h-9 rounded-xl border flex items-center gap-1.5 text-[10px] font-black transition-all
-                ${viewMode === 'timeblock' 
-                  ? 'border-blue-500 bg-blue-500/20 text-blue-400' 
-                  : theme.btn}`}
-            >
-              {viewMode === 'timeblock' ? (
-                <>
-                  <span className="text-[13px] leading-none">☰</span>
-                  <span className="hidden md:inline">TODO</span>
-                </>
-              ) : (
-                <>
-                  <span className="text-[13px] leading-none">⏱</span>
-                  <span className="hidden md:inline">TIME BLOCK</span>
-                </>
-              )}
-            </button>
-
-            <button onClick={toggleTheme} className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${theme.btn}`}>
-              {isDarkMode ? '🌝' : '🌞'}
-            </button>
-          </div>
-        </div>
-
-        {/* ── 주간 이동 ── */}
-        <div className="flex justify-center gap-3 mb-10">
-          <button onClick={() => { const m = getMonday(-7); setViewingWeek(m); fetchPlannerData(selectedName, m); }} 
-                  className={`px-5 py-2.5 rounded-2xl text-[11px] font-black border transition-all ${viewingWeek !== currentWeekMonday ? 'bg-blue-600 text-white border-blue-600 shadow-lg' : theme.btn + ' opacity-60 hover:opacity-100'}`}>
-            {viewingWeek !== currentWeekMonday ? '● 지난주 기록 확인 중' : '← 지난주 기록 보기'}
-          </button>
-          {viewingWeek !== currentWeekMonday && (
-            <button onClick={() => { setViewingWeek(currentWeekMonday); fetchPlannerData(selectedName, currentWeekMonday); }} 
-                    className="px-5 py-2.5 rounded-2xl text-[11px] font-black bg-emerald-600 text-white border border-emerald-500 shadow-lg animate-bounce">
-              이번 주로 돌아오기 →
-            </button>
-          )}
-        </div>
-
-        {/* ── D-Day & 과목 입력 ── */}
-        <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-8">
-          <div className="w-full md:w-auto">
-            <h1 className="text-6xl font-black italic tracking-tighter mb-1" style={{ fontFamily: 'Cinzel' }}>{calculateDDay()}</h1>
-            <p className={`text-[11px] font-black uppercase tracking-[0.3em] ${theme.accent}`}>결전의 날: {examDate || "결전의 날을 설정하세요"}</p>
+          <Link href="/" className={`px-4 py-2 rounded-xl text-[10px] font-bold border transit요"}</p>
           </div>
           <div className={`p-6 rounded-[2rem] border w-full md:w-[400px] ${theme.card}`}>
             <div className="flex justify-between items-center mb-4 text-[10px] font-black uppercase opacity-40">
               <span>My Subjects</span>
               <div className="relative">
-                {!examDate && <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold pointer-events-none text-blue-500">결전의 날</span>}
+                {!examDate && <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold pointer-events-none text-blue-500"졸업 시험</span>}
                 <input type="date" value={examDate} onChange={(e) => { setExamDate(e.target.value); saveAllToDB(weeklyData, subjects, e.target.value); }} 
                        className={`font-bold p-1.5 rounded-lg outline-none border w-[120px] text-center ${theme.input} ${!examDate ? 'text-transparent' : ''}`} />
               </div>
