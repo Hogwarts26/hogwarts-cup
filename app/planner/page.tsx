@@ -1,9 +1,8 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import Link from 'next/link';
 
-// --- dnd-kit 관련 임포트 추가 ---
 import {
   DndContext, 
   closestCenter,
@@ -25,7 +24,23 @@ import { CSS } from '@dnd-kit/utilities';
 type Todo = { id: string; subject: string; content: string; completed: boolean };
 type WeeklyData = { [key: string]: Todo[] };
 
+// 타임블록: 각 시간 슬롯(1시간 단위)에 저장되는 데이터
+type TimeBlock = { subject: string; content: string; completed: boolean };
+// key: "월요일_05", "월요일_06", ...
+type TimeBlockData = { [key: string]: TimeBlock };
+
 const DAYS_ORDER = ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"];
+
+// 오전 5시(05) ~ 새벽 1시(25, 즉 다음날 01:00) → 총 21개 슬롯
+const TIME_SLOTS = Array.from({ length: 21 }, (_, i) => {
+  const hour = i + 5; // 5 ~ 25
+  const displayHour = hour >= 24 ? hour - 24 : hour;
+  const label = `${displayHour.toString().padStart(2, '0')}:00`;
+  const key = hour.toString().padStart(2, '0'); // "05" ~ "25"
+  const isPM = hour >= 12 && hour < 24;
+  const isMidnight = hour >= 24;
+  return { hour, displayHour, label, key, isPM, isMidnight };
+});
 
 // --- 개별 투두 아이템 컴포넌트 (Sortable) ---
 function SortableTodoItem({ 
@@ -53,7 +68,6 @@ function SortableTodoItem({
       style={style} 
       className={`flex items-center gap-2 md:gap-3 p-2 rounded-xl transition-all ${todo.completed ? 'opacity-30' : ''} ${isDragging ? 'bg-blue-500/10' : ''}`}
     >
-      {/* 드래그 핸들 (모바일 대응: 패딩 키움) */}
       {viewingWeek === currentWeekMonday && (
         <div 
           {...attributes} 
@@ -103,11 +117,79 @@ function SortableTodoItem({
   );
 }
 
+// --- 타임블록 셀 컴포넌트 ---
+function TimeBlockCell({
+  blockKey, block, subjects, theme, isEditable, onChange
+}: {
+  blockKey: string;
+  block: TimeBlock;
+  subjects: string[];
+  theme: any;
+  isEditable: boolean;
+  onChange: (key: string, field: keyof TimeBlock, value: any) => void;
+}) {
+  const hasContent = block.content.trim() !== '';
+
+  // 과목 색상 매핑 (최대 8개 과목)
+  const subjectColors = [
+    'border-l-blue-400 bg-blue-500/10',
+    'border-l-purple-400 bg-purple-500/10',
+    'border-l-emerald-400 bg-emerald-500/10',
+    'border-l-amber-400 bg-amber-500/10',
+    'border-l-rose-400 bg-rose-500/10',
+    'border-l-cyan-400 bg-cyan-500/10',
+    'border-l-orange-400 bg-orange-500/10',
+    'border-l-pink-400 bg-pink-500/10',
+  ];
+  const subjectIndex = subjects.findIndex(s => s === block.subject);
+  const colorClass = subjectIndex >= 0 ? subjectColors[subjectIndex % subjectColors.length] : 'border-l-slate-400 bg-transparent';
+
+  return (
+    <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border-l-2 transition-all min-h-[52px]
+      ${hasContent ? colorClass : 'border-l-transparent'}
+      ${block.completed && hasContent ? 'opacity-40' : ''}
+    `}>
+      {/* 과목 선택 */}
+      <select
+        value={block.subject}
+        onChange={(e) => onChange(blockKey, 'subject', e.target.value)}
+        disabled={!isEditable}
+        className={`text-[9px] font-black p-1 rounded-lg border outline-none ${theme.input} w-14 md:w-[70px] flex-shrink-0`}
+      >
+        {subjects.filter(s => s !== '').map((s, i) => <option key={i} value={s}>{s}</option>)}
+        {subjects.every(s => s === '') && <option>과목</option>}
+      </select>
+
+      {/* 내용 입력 */}
+      <input
+        type="text"
+        value={block.content}
+        onChange={(e) => onChange(blockKey, 'content', e.target.value)}
+        placeholder="계획 입력..."
+        disabled={!isEditable}
+        className={`flex-1 bg-transparent text-xs outline-none px-1 
+          ${block.completed && hasContent ? 'line-through text-slate-500' : theme.textMain}
+          placeholder:opacity-20`}
+      />
+
+      {/* 체크박스 */}
+      <input
+        type="checkbox"
+        checked={block.completed}
+        onChange={(e) => onChange(blockKey, 'completed', e.target.checked)}
+        disabled={!isEditable}
+        className="w-4 h-4 cursor-pointer accent-blue-500 flex-shrink-0"
+      />
+    </div>
+  );
+}
+
 // --- 메인 페이지 ---
 export default function PlannerPage() {
   const [selectedName, setSelectedName] = useState("");
   const [loading, setLoading] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [viewMode, setViewMode] = useState<'todo' | 'timeblock'>('todo'); // ← 뷰 전환 상태
   const [currentWeekMonday, setCurrentWeekMonday] = useState("");
   const [viewingWeek, setViewingWeek] = useState(""); 
   const [subjects, setSubjects] = useState<string[]>(Array(8).fill(""));
@@ -115,17 +197,14 @@ export default function PlannerPage() {
   const [weeklyData, setWeeklyData] = useState<WeeklyData>({
     "월요일": [], "화요일": [], "수요일": [], "목요일": [], "금요일": [], "토요일": [], "일요일": []
   });
+  const [timeBlockData, setTimeBlockData] = useState<TimeBlockData>({});
   const [openDays, setOpenDays] = useState<{ [key: string]: boolean }>({});
   const [isPlaying, setIsPlaying] = useState(false);
   const [bgm, setBgm] = useState<HTMLAudioElement | null>(null);
 
-  // --- 모바일 롱프레스(꾹 누르기) 대응 센서 설정 ---
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: {
-        delay: 250, // 0.25초 동안 꾹 눌러야 드래그 시작
-        tolerance: 5, // 누르는 동안 5px 이상 움직이면 취소 (스크롤 허용)
-      },
+      activationConstraint: { delay: 250, tolerance: 5 },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
@@ -162,12 +241,13 @@ export default function PlannerPage() {
     setViewingWeek(monday);
     const savedTheme = localStorage.getItem('planner_theme');
     if (savedTheme === 'light') setIsDarkMode(false);
+    const savedView = localStorage.getItem('planner_view');
+    if (savedView === 'timeblock') setViewMode('timeblock');
 
-    // --- 오늘 요일 인식하여 자동 펼침 로직 추가 ---
     const today = new Date();
     const dayNames = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"];
     const todayName = dayNames[today.getDay()];
-    setOpenDays({ [todayName]: true }); // 오늘 요일만 true로 설정
+    setOpenDays({ [todayName]: true });
     
     const authData = localStorage.getItem('hg_auth');
     if (authData) {
@@ -192,18 +272,31 @@ export default function PlannerPage() {
         if (data.content_json) setWeeklyData(data.content_json);
         if (data.subjects_json) setSubjects(data.subjects_json);
         if (data.exam_date) setExamDate(data.exam_date);
+        if (data.timeblock_json) setTimeBlockData(data.timeblock_json);
+        else setTimeBlockData({});
       } else {
         setWeeklyData({ "월요일": [], "화요일": [], "수요일": [], "목요일": [], "금요일": [], "토요일": [], "일요일": [] });
+        setTimeBlockData({});
       }
     } catch (err) { console.error("Fetch Error:", err); } finally { setLoading(false); }
   };
 
-  const saveAllToDB = async (updatedWeekly: WeeklyData, updatedSubjects: string[], updatedExamDate: string) => {
+  const saveAllToDB = async (
+    updatedWeekly: WeeklyData, 
+    updatedSubjects: string[], 
+    updatedExamDate: string,
+    updatedTimeBlock?: TimeBlockData
+  ) => {
     if (!selectedName || viewingWeek !== currentWeekMonday) return;
     try {
       await supabase.from('daily_planner').upsert({
-        student_name: selectedName, plan_date: viewingWeek, content_json: updatedWeekly,
-        subjects_json: updatedSubjects, exam_date: updatedExamDate, updated_at: new Date().toISOString()
+        student_name: selectedName, 
+        plan_date: viewingWeek, 
+        content_json: updatedWeekly,
+        subjects_json: updatedSubjects, 
+        exam_date: updatedExamDate, 
+        timeblock_json: updatedTimeBlock ?? timeBlockData,
+        updated_at: new Date().toISOString()
       }, { onConflict: 'student_name,plan_date' });
     } catch (err) { console.error("Save Error:", err); }
   };
@@ -231,6 +324,13 @@ export default function PlannerPage() {
     localStorage.setItem('planner_theme', newMode ? 'dark' : 'light');
   };
 
+  const toggleViewMode = () => {
+    const newMode = viewMode === 'todo' ? 'timeblock' : 'todo';
+    setViewMode(newMode);
+    localStorage.setItem('planner_view', newMode);
+  };
+
+  // --- Todo 관련 ---
   const addTodo = (day: string) => {
     if (viewingWeek !== currentWeekMonday) return;
     recordEditDay(day);
@@ -273,6 +373,43 @@ export default function PlannerPage() {
     }
   };
 
+  // --- TimeBlock 관련 ---
+  const getTimeBlockKey = (day: string, hourKey: string) => `${day}_${hourKey}`;
+
+  const getTimeBlock = (day: string, hourKey: string): TimeBlock => {
+    const key = getTimeBlockKey(day, hourKey);
+    return timeBlockData[key] ?? { 
+      subject: subjects.find(s => s !== '') || '과목', 
+      content: '', 
+      completed: false 
+    };
+  };
+
+  const updateTimeBlock = (blockKey: string, field: keyof TimeBlock, value: any) => {
+    if (viewingWeek !== currentWeekMonday) return;
+    const newData = { 
+      ...timeBlockData, 
+      [blockKey]: { 
+        ...getTimeBlock('', ''), 
+        ...timeBlockData[blockKey], 
+        [field]: value 
+      } 
+    };
+    setTimeBlockData(newData);
+    saveAllToDB(weeklyData, subjects, examDate, newData);
+  };
+
+  // 타임블록 뷰에서 진척도 계산 (내용이 있는 슬롯 기준)
+  const calcTimeBlockProgress = (day: string) => {
+    const filledSlots = TIME_SLOTS.filter(slot => {
+      const b = getTimeBlock(day, slot.key);
+      return b.content.trim() !== '';
+    });
+    if (filledSlots.length === 0) return 0;
+    const completedSlots = filledSlots.filter(slot => getTimeBlock(day, slot.key).completed);
+    return Math.round((completedSlots.length / filledSlots.length) * 100);
+  };
+
   const theme = {
     bg: isDarkMode ? 'bg-[#020617]' : 'bg-slate-50',
     card: isDarkMode ? 'bg-slate-900/40 border-white/5 shadow-2xl' : 'bg-white border-slate-200 shadow-sm',
@@ -280,6 +417,9 @@ export default function PlannerPage() {
     btn: isDarkMode ? 'bg-slate-800/50 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-600 shadow-sm',
     input: isDarkMode ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-100 border-slate-200 text-slate-800',
     accent: isDarkMode ? 'text-blue-400' : 'text-blue-600',
+    timeHeader: isDarkMode ? 'text-slate-500' : 'text-slate-400',
+    timeDivider: isDarkMode ? 'border-white/5' : 'border-slate-100',
+    timeHighlight: isDarkMode ? 'bg-white/[0.02]' : 'bg-slate-50/80',
   };
 
   if (loading) return (
@@ -294,18 +434,42 @@ export default function PlannerPage() {
       <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet" />
 
       <div className="max-w-4xl mx-auto p-4 md:p-8">
+        {/* ── 상단 헤더 ── */}
         <div className="flex justify-between items-center mb-8">
           <Link href="/" className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${theme.btn}`}>← BACK TO LOBBY</Link>
           <div className="flex gap-2">
             <button onClick={toggleMusic} className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${isPlaying ? 'border-yellow-400 bg-yellow-400/10 animate-pulse' : theme.btn}`}>
               {isPlaying ? '🎵' : '🔇'}
             </button>
+
+            {/* ── Time Block 전환 버튼 ── */}
+            <button 
+              onClick={toggleViewMode} 
+              className={`px-3 h-9 rounded-xl border flex items-center gap-1.5 text-[10px] font-black transition-all
+                ${viewMode === 'timeblock' 
+                  ? 'border-blue-500 bg-blue-500/20 text-blue-400' 
+                  : theme.btn}`}
+            >
+              {viewMode === 'timeblock' ? (
+                <>
+                  <span className="text-[13px] leading-none">☰</span>
+                  <span className="hidden md:inline">TODO</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-[13px] leading-none">⏱</span>
+                  <span className="hidden md:inline">TIME BLOCK</span>
+                </>
+              )}
+            </button>
+
             <button onClick={toggleTheme} className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${theme.btn}`}>
               {isDarkMode ? '🌝' : '🌞'}
             </button>
           </div>
         </div>
 
+        {/* ── 주간 이동 ── */}
         <div className="flex justify-center gap-3 mb-10">
           <button onClick={() => { const m = getMonday(-7); setViewingWeek(m); fetchPlannerData(selectedName, m); }} 
                   className={`px-5 py-2.5 rounded-2xl text-[11px] font-black border transition-all ${viewingWeek !== currentWeekMonday ? 'bg-blue-600 text-white border-blue-600 shadow-lg' : theme.btn + ' opacity-60 hover:opacity-100'}`}>
@@ -319,6 +483,7 @@ export default function PlannerPage() {
           )}
         </div>
 
+        {/* ── D-Day & 과목 입력 ── */}
         <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-8">
           <div className="w-full md:w-auto">
             <h1 className="text-6xl font-black italic tracking-tighter mb-1" style={{ fontFamily: 'Cinzel' }}>{calculateDDay()}</h1>
@@ -346,74 +511,194 @@ export default function PlannerPage() {
           </div>
         </div>
 
-        <div className="space-y-6">
-          {DAYS_ORDER.map((day, idx) => {
-            const dayTodos = weeklyData[day] || [];
-            const completedCount = dayTodos.filter(t => t.completed).length;
-            const progress = dayTodos.length > 0 ? Math.round((completedCount / dayTodos.length) * 100) : 0;
-            const isOpen = openDays[day];
+        {/* ════════════════════════════════════════
+            TODO 뷰
+        ════════════════════════════════════════ */}
+        {viewMode === 'todo' && (
+          <div className="space-y-6">
+            {DAYS_ORDER.map((day, idx) => {
+              const dayTodos = weeklyData[day] || [];
+              const completedCount = dayTodos.filter(t => t.completed).length;
+              const progress = dayTodos.length > 0 ? Math.round((completedCount / dayTodos.length) * 100) : 0;
+              const isOpen = openDays[day];
 
-            return (
-              <div key={day} className={`rounded-[2.5rem] border transition-all duration-500 overflow-hidden ${theme.card} ${isOpen ? 'ring-2 ring-blue-500/10' : ''}`}>
-                <div onClick={() => setOpenDays(prev => ({ ...prev, [day]: !prev[day] }))} className="p-5 flex items-center justify-between cursor-pointer group">
-                  <div className="flex items-center gap-3">
-                    <span className={`text-[9px] opacity-30 transition-transform duration-300 ${isOpen ? 'rotate-0' : '-rotate-90'}`}>▼</span>
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-xl font-black italic tracking-tight">{day}</span>
-                        <span className="text-[10px] font-bold opacity-30 tracking-tighter">{getFormattedDate(viewingWeek, idx)}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-24 h-1 bg-slate-800/20 rounded-full overflow-hidden">
-                          <div className={`h-full transition-all duration-700 ${progress === 100 ? 'bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.6)]' : 'bg-blue-500'}`} style={{ width: `${progress}%` }} />
+              return (
+                <div key={day} className={`rounded-[2.5rem] border transition-all duration-500 overflow-hidden ${theme.card} ${isOpen ? 'ring-2 ring-blue-500/10' : ''}`}>
+                  <div onClick={() => setOpenDays(prev => ({ ...prev, [day]: !prev[day] }))} className="p-5 flex items-center justify-between cursor-pointer group">
+                    <div className="flex items-center gap-3">
+                      <span className={`text-[9px] opacity-30 transition-transform duration-300 ${isOpen ? 'rotate-0' : '-rotate-90'}`}>▼</span>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-xl font-black italic tracking-tight">{day}</span>
+                          <span className="text-[10px] font-bold opacity-30 tracking-tighter">{getFormattedDate(viewingWeek, idx)}</span>
                         </div>
-                        <span className={`text-[10px] font-black ${progress === 100 ? 'text-yellow-500' : 'opacity-40'}`}>{progress}%</span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-24 h-1 bg-slate-800/20 rounded-full overflow-hidden">
+                            <div className={`h-full transition-all duration-700 ${progress === 100 ? 'bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.6)]' : 'bg-blue-500'}`} style={{ width: `${progress}%` }} />
+                          </div>
+                          <span className={`text-[10px] font-black ${progress === 100 ? 'text-yellow-500' : 'opacity-40'}`}>{progress}%</span>
+                        </div>
+                      </div>
+                    </div>
+                    {viewingWeek === currentWeekMonday && (
+                      <button onClick={(e) => { e.stopPropagation(); addTodo(day); }} className="p-2 transition-all opacity-30 hover:opacity-100">
+                        <span className="text-xl font-light">+</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {isOpen && (
+                    <div className="px-4 md:px-6 pb-6 pt-0 space-y-2">
+                      <DndContext 
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={(e) => handleDragEnd(e, day)}
+                      >
+                        <SortableContext 
+                          items={dayTodos.map(t => t.id)}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          {dayTodos.map((todo) => (
+                            <SortableTodoItem 
+                              key={todo.id}
+                              todo={todo}
+                              day={day}
+                              viewingWeek={viewingWeek}
+                              currentWeekMonday={currentWeekMonday}
+                              subjects={subjects}
+                              theme={theme}
+                              updateTodo={updateTodo}
+                              deleteTodo={deleteTodo}
+                            />
+                          ))}
+                        </SortableContext>
+                      </DndContext>
+                      
+                      {dayTodos.length === 0 && (
+                        <div className="text-center py-4 text-[10px] opacity-20 italic">입력된 계획이 없습니다.</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ════════════════════════════════════════
+            TIME BLOCK 뷰
+        ════════════════════════════════════════ */}
+        {viewMode === 'timeblock' && (
+          <div className="space-y-6">
+            {DAYS_ORDER.map((day, idx) => {
+              const progress = calcTimeBlockProgress(day);
+              const isOpen = openDays[day];
+
+              return (
+                <div key={day} className={`rounded-[2.5rem] border transition-all duration-500 overflow-hidden ${theme.card} ${isOpen ? 'ring-2 ring-blue-500/10' : ''}`}>
+                  {/* 요일 헤더 */}
+                  <div 
+                    onClick={() => setOpenDays(prev => ({ ...prev, [day]: !prev[day] }))} 
+                    className="p-5 flex items-center justify-between cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className={`text-[9px] opacity-30 transition-transform duration-300 ${isOpen ? 'rotate-0' : '-rotate-90'}`}>▼</span>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-xl font-black italic tracking-tight">{day}</span>
+                          <span className="text-[10px] font-bold opacity-30 tracking-tighter">{getFormattedDate(viewingWeek, idx)}</span>
+                          <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border opacity-60
+                            ${isDarkMode ? 'border-white/10 bg-white/5' : 'border-slate-200 bg-slate-100'}`}>
+                            TIME BLOCK
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-24 h-1 bg-slate-800/20 rounded-full overflow-hidden">
+                            <div className={`h-full transition-all duration-700 ${progress === 100 ? 'bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.6)]' : 'bg-blue-500'}`} style={{ width: `${progress}%` }} />
+                          </div>
+                          <span className={`text-[10px] font-black ${progress === 100 ? 'text-yellow-500' : 'opacity-40'}`}>{progress}%</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                  {viewingWeek === currentWeekMonday && (
-                    <button onClick={(e) => { e.stopPropagation(); addTodo(day); }} className="p-2 transition-all opacity-30 hover:opacity-100">
-                      <span className="text-xl font-light">+</span>
-                    </button>
+
+                  {/* 타임블록 슬롯 목록 */}
+                  {isOpen && (
+                    <div className="pb-5">
+                      {/* 범례: 과목별 색상 미리보기 */}
+                      {subjects.some(s => s !== '') && (
+                        <div className="flex flex-wrap gap-2 px-5 pb-4">
+                          {subjects.filter(s => s !== '').map((s, i) => {
+                            const dotColors = ['bg-blue-400','bg-purple-400','bg-emerald-400','bg-amber-400','bg-rose-400','bg-cyan-400','bg-orange-400','bg-pink-400'];
+                            return (
+                              <span key={i} className={`text-[9px] font-black flex items-center gap-1 opacity-60`}>
+                                <span className={`w-2 h-2 rounded-full ${dotColors[i % dotColors.length]}`}></span>
+                                {s}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* AM / PM / 새벽 구분 렌더 */}
+                      {TIME_SLOTS.map((slot, slotIdx) => {
+                        const blockKey = getTimeBlockKey(day, slot.key);
+                        const block = getTimeBlock(day, slot.key);
+
+                        // 구분선: 정오(12:00), 자정(24:00) 앞에 섹션 레이블
+                        const showAmLabel = slot.hour === 5;
+                        const showPmLabel = slot.hour === 12;
+                        const showMidnightLabel = slot.hour === 24;
+
+                        return (
+                          <React.Fragment key={slot.key}>
+                            {showAmLabel && (
+                              <div className={`flex items-center gap-3 px-5 py-2`}>
+                                <span className={`text-[9px] font-black tracking-widest uppercase ${theme.timeHeader}`}>오전 AM</span>
+                                <div className={`flex-1 border-t ${theme.timeDivider}`}></div>
+                              </div>
+                            )}
+                            {showPmLabel && (
+                              <div className={`flex items-center gap-3 px-5 py-2 mt-1`}>
+                                <span className={`text-[9px] font-black tracking-widest uppercase ${theme.timeHeader}`}>오후 PM</span>
+                                <div className={`flex-1 border-t ${theme.timeDivider}`}></div>
+                              </div>
+                            )}
+                            {showMidnightLabel && (
+                              <div className={`flex items-center gap-3 px-5 py-2 mt-1`}>
+                                <span className={`text-[9px] font-black tracking-widest uppercase ${theme.timeHeader}`}>자정 MIDNIGHT</span>
+                                <div className={`flex-1 border-t ${theme.timeDivider}`}></div>
+                              </div>
+                            )}
+
+                            <div className={`flex items-stretch gap-0 mx-3 rounded-xl overflow-hidden
+                              ${slot.hour % 2 === 0 ? theme.timeHighlight : ''}`}>
+                              {/* 시간 레이블 */}
+                              <div className={`w-14 flex-shrink-0 flex items-center justify-center text-[10px] font-black ${theme.timeHeader} border-r ${theme.timeDivider} py-1`}>
+                                {slot.label}
+                              </div>
+                              {/* 블록 셀 */}
+                              <div className="flex-1 py-1 px-2">
+                                <TimeBlockCell
+                                  blockKey={blockKey}
+                                  block={block}
+                                  subjects={subjects}
+                                  theme={theme}
+                                  isEditable={viewingWeek === currentWeekMonday}
+                                  onChange={updateTimeBlock}
+                                />
+                              </div>
+                            </div>
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
-
-                {isOpen && (
-                  <div className="px-4 md:px-6 pb-6 pt-0 space-y-2">
-                    <DndContext 
-                      sensors={sensors}
-                      collisionDetection={closestCenter}
-                      onDragEnd={(e) => handleDragEnd(e, day)}
-                    >
-                      <SortableContext 
-                        items={dayTodos.map(t => t.id)}
-                        strategy={verticalListSortingStrategy}
-                      >
-                        {dayTodos.map((todo) => (
-                          <SortableTodoItem 
-                            key={todo.id}
-                            todo={todo}
-                            day={day}
-                            viewingWeek={viewingWeek}
-                            currentWeekMonday={currentWeekMonday}
-                            subjects={subjects}
-                            theme={theme}
-                            updateTodo={updateTodo}
-                            deleteTodo={deleteTodo}
-                          />
-                        ))}
-                      </SortableContext>
-                    </DndContext>
-                    
-                    {dayTodos.length === 0 && (
-                      <div className="text-center py-4 text-[10px] opacity-20 italic">입력된 계획이 없습니다.</div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
