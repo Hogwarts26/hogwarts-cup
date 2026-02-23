@@ -9,6 +9,7 @@ export default function ReviewPage() {
   const [subjects, setSubjects] = useState<any[]>([]);
   const [currentId, setCurrentId] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [newName, setNewName] = useState("");
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
   const [todayInput, setTodayInput] = useState("");
@@ -21,18 +22,18 @@ export default function ReviewPage() {
 
   // 테마
   const theme = {
-    page:       isDarkMode ? '#0f172a' : '#f0ede8',
-    card:       isDarkMode ? '#1e293b' : '#ffffff',
-    cardBorder: isDarkMode ? '#334155' : '#e0dcd6',
-    text:       isDarkMode ? '#f1f5f9' : '#1a1a2e',
-    muted:      isDarkMode ? '#94a3b8' : '#6b7280',
-    input:      isDarkMode ? '#0f172a' : '#f0ede8',
-    inputBorder:isDarkMode ? '#475569' : '#e0dcd6',
-    logBg:      isDarkMode ? '#0f172a' : '#f0ede8',
-    groupCard:  isDarkMode ? '#0f172a' : '#1a1a2e',
-    btnBg:      isDarkMode ? '#1e293b' : '#ffffff',
-    btnBorder:  isDarkMode ? '#475569' : '#e0dcd6',
-    btnText:    isDarkMode ? '#94a3b8' : '#6b7280',
+    page:        isDarkMode ? '#0f172a' : '#f0ede8',
+    card:        isDarkMode ? '#1e293b' : '#ffffff',
+    cardBorder:  isDarkMode ? '#334155' : '#e0dcd6',
+    text:        isDarkMode ? '#f1f5f9' : '#1a1a2e',
+    muted:       isDarkMode ? '#94a3b8' : '#6b7280',
+    input:       isDarkMode ? '#0f172a' : '#f0ede8',
+    inputBorder: isDarkMode ? '#475569' : '#e0dcd6',
+    logBg:       isDarkMode ? '#0f172a' : '#f0ede8',
+    groupCard:   isDarkMode ? '#0f172a' : '#1a1a2e',
+    btnBg:       isDarkMode ? '#1e293b' : '#ffffff',
+    btnBorder:   isDarkMode ? '#475569' : '#e0dcd6',
+    btnText:     isDarkMode ? '#94a3b8' : '#6b7280',
   };
 
   // 로그인 정보 + 테마 저장값 불러오기
@@ -189,7 +190,9 @@ export default function ReviewPage() {
         deadline: deadline.toISOString().slice(0, 10),
         holidays: 0,
         total_pages: 100,
-        logs: []
+        logs: [],
+        round: 1,
+        history: [],
       })
       .select()
       .single();
@@ -232,6 +235,56 @@ export default function ReviewPage() {
   };
 
   // =============================================
+  // 회독 차수 완료 → 다음 회독 시작
+  // =============================================
+  const startNextRound = async () => {
+    const subj = getCurrentSubject();
+    if (!subj) return;
+    if (!confirm(`${subj.round || 1}회독을 완료하고 ${(subj.round || 1) + 1}회독을 시작할까요?`)) return;
+
+    const s = calcStats(subj);
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const completedAt = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+
+    // 히스토리에 이번 회독 기록 저장
+    const startDate = subj.logs?.[0]?.date || completedAt;
+    const diffDays = subj.logs?.length > 0
+      ? Math.ceil((now.getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24))
+      : 0;
+
+    const newHistory = [
+      ...(subj.history || []),
+      {
+        round: subj.round || 1,
+        totalPages: s.totalDone,
+        days: diffDays,
+        completedAt,
+        startDate,
+      }
+    ];
+
+    // DB 업데이트: 로그 초기화 + 차수 +1 + 히스토리 저장
+    if (!currentId) return;
+    const { error } = await supabase
+      .from('review_subjects')
+      .update({
+        logs: [],
+        round: (subj.round || 1) + 1,
+        history: newHistory,
+      })
+      .eq('id', currentId);
+
+    if (!error) {
+      setSubjects(prev => prev.map(s =>
+        s.id === currentId
+          ? { ...s, logs: [], round: (s.round || 1) + 1, history: newHistory }
+          : s
+      ));
+    }
+  };
+
+  // =============================================
   // 시계 문자열
   // =============================================
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -257,7 +310,6 @@ export default function ReviewPage() {
   };
   const sc = statusColors[statusClass];
 
-  // 다크모드일 때 결과 카드 배경을 어둡게 보정
   const resultBg = isDarkMode
     ? statusClass === 'safe'   ? '#0d2b1e'
       : statusClass === 'warn' ? '#2b2208'
@@ -271,36 +323,28 @@ export default function ReviewPage() {
       : '#1a2a6e'
     : sc.border;
 
-  // 공통 인풋 스타일
-const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '9px 12px',
-  border: `1.5px solid ${theme.inputBorder}`, borderRadius: 10,
-  fontSize: '0.9rem', fontFamily: 'inherit',
-  background: theme.input, color: theme.text,
-  outline: 'none', boxSizing: 'border-box',
-  minWidth: 0
-};
-  
-  // 공통 카드 스타일
+  // 공통 스타일
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '9px 12px',
+    border: `1.5px solid ${theme.inputBorder}`, borderRadius: 10,
+    fontSize: '0.9rem', fontFamily: 'inherit',
+    background: theme.input, color: theme.text,
+    outline: 'none', boxSizing: 'border-box', minWidth: 0
+  };
   const cardStyle: React.CSSProperties = {
     background: theme.card, borderRadius: 16,
     padding: 20, marginBottom: 14,
     border: `1px solid ${theme.cardBorder}`
   };
-
   const labelStyle: React.CSSProperties = {
     display: 'block', fontSize: '0.75rem', fontWeight: 700,
     color: theme.muted, marginBottom: 5
   };
-
   const sectionTitleStyle: React.CSSProperties = {
     fontSize: '0.75rem', fontWeight: 700, color: theme.muted,
     marginBottom: 12, textTransform: 'uppercase' as const, letterSpacing: 0.5
   };
 
-  // =============================================
-  // 렌더링
-  // =============================================
   return (
     <div style={{
       background: theme.page, minHeight: '100vh',
@@ -322,14 +366,12 @@ const inputStyle: React.CSSProperties = {
         alignItems: 'center', marginBottom: 20,
         flexWrap: 'wrap', gap: 10
       }}>
-        {/* 좌측: 돌아가기 + 타이틀 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <Link href="/" style={{
             fontSize: '0.78rem', fontWeight: 700, color: theme.muted,
             textDecoration: 'none', background: theme.btnBg,
             border: `1.5px solid ${theme.btnBorder}`,
-            borderRadius: 999, padding: '6px 12px',
-            transition: 'all 0.2s'
+            borderRadius: 999, padding: '6px 12px', transition: 'all 0.2s'
           }}>
             ← BACK TO LOBBY
           </Link>
@@ -338,10 +380,7 @@ const inputStyle: React.CSSProperties = {
             기출회독 시뮬레이터
           </h1>
         </div>
-
-        {/* 우측: BGM + 다크모드 + 시계 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {/* BGM 버튼 */}
           <button onClick={toggleMusic} style={{
             width: 36, height: 36, borderRadius: 12,
             border: `1.5px solid ${isPlaying ? '#facc15' : theme.btnBorder}`,
@@ -352,20 +391,15 @@ const inputStyle: React.CSSProperties = {
           }}>
             {isPlaying ? '🎵' : '🔇'}
           </button>
-
-          {/* 다크모드 버튼 */}
           <button onClick={toggleTheme} style={{
             width: 36, height: 36, borderRadius: 12,
             border: `1.5px solid ${theme.btnBorder}`,
-            background: theme.btnBg,
-            cursor: 'pointer', fontSize: '1rem',
+            background: theme.btnBg, cursor: 'pointer', fontSize: '1rem',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'all 0.2s'
           }}>
             {isDarkMode ? '🌝' : '🌞'}
           </button>
-
-          {/* 시계 */}
           <div style={{
             fontFamily: "'JetBrains Mono', monospace", fontSize: '0.78rem',
             color: theme.muted, background: theme.btnBg, padding: '6px 12px',
@@ -396,6 +430,15 @@ const inputStyle: React.CSSProperties = {
               marginRight: 5, verticalAlign: 'middle'
             }} />
             {s.name}
+            {(s.round || 1) > 1 && (
+              <span style={{
+                marginLeft: 5, fontSize: '0.68rem', fontWeight: 900,
+                background: 'rgba(255,255,255,0.25)', borderRadius: 999,
+                padding: '1px 5px'
+              }}>
+                {s.round}회독
+              </span>
+            )}
           </button>
         ))}
         {subjects.length < 8 && (
@@ -488,7 +531,36 @@ const inputStyle: React.CSSProperties = {
 
           {/* ── 설정 카드 ── */}
           <div style={cardStyle}>
-            <div style={sectionTitleStyle}>⚙️ 과목 설정 — {subj.name}</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div style={sectionTitleStyle}>⚙️ 과목 설정 — {subj.name}</div>
+              {/* 회독 히스토리 버튼 (히스토리 있을 때만) */}
+              {(subj.history || []).length > 0 && (
+                <button onClick={() => setShowHistoryModal(true)} style={{
+                  padding: '5px 10px', borderRadius: 8, border: `1px solid ${theme.cardBorder}`,
+                  background: theme.input, color: theme.muted,
+                  fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer'
+                }}>
+                  📜 히스토리
+                </button>
+              )}
+            </div>
+
+            {/* 현재 회독 차수 표시 */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              marginBottom: 14, padding: '8px 12px', borderRadius: 10,
+              background: theme.input, border: `1px solid ${theme.inputBorder}`
+            }}>
+              <span style={{ fontSize: '0.82rem', color: theme.muted, fontWeight: 700 }}>현재 회독 차수</span>
+              <span style={{
+                fontSize: '1rem', fontWeight: 900, color: subj.color,
+                background: `${subj.color}20`, borderRadius: 999,
+                padding: '2px 10px'
+              }}>
+                {subj.round || 1}회독
+              </span>
+            </div>
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
               {[
                 { label: '마감 날짜', type: 'date',   field: 'deadline',    value: subj.deadline },
@@ -533,15 +605,15 @@ const inputStyle: React.CSSProperties = {
                 : s.dday <= 0 ? '목표 날짜가 지났습니다!'
                 : '목표 안심 구간 진입하려면'}
             </div>
-           <div style={{ lineHeight: 1.3, marginBottom: 6 }}>
-          <span style={{ fontSize: '1.1rem', fontWeight: 700, color: theme.text }}>오늘 </span>
-          <strong style={{ fontSize: '2.5rem', fontWeight: 900, color: '#1a9e5c', letterSpacing: -1 }}>
-          {s.remaining === 0 ? 0 : s.safePace}
-          </strong>
-          <span style={{ fontSize: '1.1rem', fontWeight: 700, color: theme.text, marginLeft: 6 }}>
-           페이지 풀어야 합니다.
-          </span>
-        </div>
+            <div style={{ lineHeight: 1.3, marginBottom: 6 }}>
+              <span style={{ fontSize: '1.1rem', fontWeight: 700, color: theme.text }}>오늘 </span>
+              <strong style={{ fontSize: '2.5rem', fontWeight: 900, color: '#1a9e5c', letterSpacing: -1 }}>
+                {s.remaining === 0 ? 0 : s.safePace}
+              </strong>
+              <span style={{ fontSize: '1.1rem', fontWeight: 700, color: theme.text, marginLeft: 6 }}>
+                페이지 풀어야 합니다.
+              </span>
+            </div>
             <div style={{ fontSize: '0.8rem', color: theme.muted, marginBottom: 10 }}>
               {s.remaining === 0 ? '오늘 목표 달성! 🎊'
                 : `남은 페이지: ${s.remaining}p / 전체 ${subj.total_pages}p`}
@@ -592,6 +664,28 @@ const inputStyle: React.CSSProperties = {
                 transition: 'width 0.5s ease'
               }} />
             </div>
+
+            {/* ── 100% 달성 시 다음 회독 버튼 ── */}
+            {s.pct >= 100 && (
+              <div style={{
+                marginTop: 16, padding: '14px 16px', borderRadius: 12,
+                background: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.6)',
+                border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)'}`,
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: theme.text, marginBottom: 10 }}>
+                  🎊 {subj.round || 1}회독 완료! 다음 회독을 시작할까요?
+                </div>
+                <button onClick={startNextRound} style={{
+                  padding: '10px 24px', borderRadius: 10, border: 'none',
+                  background: subj.color, color: '#fff',
+                  fontFamily: 'inherit', fontSize: '0.9rem', fontWeight: 900,
+                  cursor: 'pointer', letterSpacing: -0.3
+                }}>
+                  {(subj.round || 1) + 1}회독 시작하기 →
+                </button>
+              </div>
+            )}
           </div>
 
           {/* ── 오늘 회독 입력 ── */}
@@ -675,21 +769,15 @@ const inputStyle: React.CSSProperties = {
 
       {/* ── 과목 추가 모달 ── */}
       {showModal && (
-        <div
-          onClick={() => setShowModal(false)}
-          style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
-            zIndex: 100, display: 'flex', alignItems: 'center',
-            justifyContent: 'center', padding: 20
-          }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              background: theme.card, borderRadius: 20, padding: 24,
-              width: '100%', maxWidth: 380, border: `1px solid ${theme.cardBorder}`
-            }}
-          >
+        <div onClick={() => setShowModal(false)} style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+          zIndex: 100, display: 'flex', alignItems: 'center',
+          justifyContent: 'center', padding: 20
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: theme.card, borderRadius: 20, padding: 24,
+            width: '100%', maxWidth: 380, border: `1px solid ${theme.cardBorder}`
+          }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 900, marginBottom: 16, color: theme.text }}>
               📝 과목 추가
             </h2>
@@ -708,39 +796,89 @@ const inputStyle: React.CSSProperties = {
               <label style={labelStyle}>색상</label>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {COLORS.map(c => (
-                  <div
-                    key={c} onClick={() => setSelectedColor(c)}
-                    style={{
-                      width: 28, height: 28, borderRadius: '50%', background: c,
-                      cursor: 'pointer',
-                      border: selectedColor === c ? `3px solid ${theme.text}` : '2px solid transparent',
-                      transition: 'border 0.15s'
-                    }}
-                  />
+                  <div key={c} onClick={() => setSelectedColor(c)} style={{
+                    width: 28, height: 28, borderRadius: '50%', background: c,
+                    cursor: 'pointer',
+                    border: selectedColor === c ? `3px solid ${theme.text}` : '2px solid transparent',
+                    transition: 'border 0.15s'
+                  }} />
                 ))}
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                onClick={() => { setShowModal(false); setNewName(""); }}
-                style={{
-                  flex: 1, padding: '9px 18px', borderRadius: 10,
-                  border: 'none', background: theme.input, color: theme.muted,
-                  fontFamily: 'inherit', fontWeight: 700, cursor: 'pointer'
-                }}
-              >
+              <button onClick={() => { setShowModal(false); setNewName(""); }} style={{
+                flex: 1, padding: '9px 18px', borderRadius: 10,
+                border: 'none', background: theme.input, color: theme.muted,
+                fontFamily: 'inherit', fontWeight: 700, cursor: 'pointer'
+              }}>
                 취소
               </button>
-              <button
-                onClick={addSubject}
-                style={{
-                  flex: 1, padding: '9px 18px', borderRadius: 10,
-                  border: 'none', background: selectedColor, color: '#fff',
-                  fontFamily: 'inherit', fontWeight: 700, cursor: 'pointer'
-                }}
-              >
+              <button onClick={addSubject} style={{
+                flex: 1, padding: '9px 18px', borderRadius: 10,
+                border: 'none', background: selectedColor, color: '#fff',
+                fontFamily: 'inherit', fontWeight: 700, cursor: 'pointer'
+              }}>
                 추가하기
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 회독 히스토리 모달 ── */}
+      {showHistoryModal && subj && (
+        <div onClick={() => setShowHistoryModal(false)} style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+          zIndex: 100, display: 'flex', alignItems: 'center',
+          justifyContent: 'center', padding: 20
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: theme.card, borderRadius: 20, padding: 24,
+            width: '100%', maxWidth: 400, border: `1px solid ${theme.cardBorder}`,
+            maxHeight: '80vh', overflowY: 'auto'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: theme.text }}>
+                📜 {subj.name} 회독 히스토리
+              </h2>
+              <button onClick={() => setShowHistoryModal(false)} style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: theme.muted, fontSize: '1.2rem'
+              }}>✕</button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {(subj.history || []).map((h: any, i: number) => (
+                <div key={i} style={{
+                  padding: '14px 16px', borderRadius: 12,
+                  background: theme.input, border: `1px solid ${theme.inputBorder}`
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <span style={{
+                      fontSize: '0.9rem', fontWeight: 900, color: subj.color,
+                      background: `${subj.color}20`, borderRadius: 999, padding: '2px 10px'
+                    }}>
+                      {h.round}회독 완료
+                    </span>
+                    <span style={{ fontSize: '0.75rem', color: theme.muted }}>
+                      {h.completedAt}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 16 }}>
+                    <div>
+                      <div style={{ fontSize: '0.7rem', color: theme.muted, marginBottom: 2 }}>총 회독 페이지</div>
+                      <div style={{ fontSize: '1rem', fontWeight: 900, color: theme.text }}>{h.totalPages}p</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.7rem', color: theme.muted, marginBottom: 2 }}>소요 기간</div>
+                      <div style={{ fontSize: '1rem', fontWeight: 900, color: theme.text }}>{h.days}일</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.7rem', color: theme.muted, marginBottom: 2 }}>시작일</div>
+                      <div style={{ fontSize: '1rem', fontWeight: 900, color: theme.text }}>{h.startDate}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
