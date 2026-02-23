@@ -538,7 +538,7 @@ const inputStyle: React.CSSProperties = {
               letterSpacing: -1, lineHeight: 1, marginBottom: 6
             }}>
               오늘 <strong>{s.remaining === 0 ? 0 : s.safePace}</strong>
-              <span style={{ fontSize: '1rem', marginLeft: 4 }}>페이지</span>
+              <span style={{ fontSize: '1rem', marginLeft: 4 }}>페이지 풀어야 합니다.</span>
             </div>
             <div style={{ fontSize: '0.8rem', color: theme.muted, marginBottom: 10 }}>
               {s.remaining === 0 ? '오늘 목표 달성! 🎊'
