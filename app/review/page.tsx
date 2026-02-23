@@ -272,14 +272,15 @@ export default function ReviewPage() {
     : sc.border;
 
   // 공통 인풋 스타일
-  const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '9px 12px',
-    border: `1.5px solid ${theme.inputBorder}`, borderRadius: 10,
-    fontSize: '0.9rem', fontFamily: 'inherit',
-    background: theme.input, color: theme.text,
-    outline: 'none', boxSizing: 'border-box'
-  };
-
+const inputStyle: React.CSSProperties = {
+  width: '100%', padding: '9px 12px',
+  border: `1.5px solid ${theme.inputBorder}`, borderRadius: 10,
+  fontSize: '0.9rem', fontFamily: 'inherit',
+  background: theme.input, color: theme.text,
+  outline: 'none', boxSizing: 'border-box',
+  minWidth: 0
+};
+  
   // 공통 카드 스타일
   const cardStyle: React.CSSProperties = {
     background: theme.card, borderRadius: 16,
@@ -529,8 +530,8 @@ export default function ReviewPage() {
             <div style={{ fontSize: '1.5rem', marginBottom: 8 }}>{sc.icon}</div>
             <div style={{ fontSize: '0.95rem', fontWeight: 700, color: theme.text, marginBottom: 4 }}>
               {s.remaining === 0 ? '목표 달성 완료!'
-                : s.dday <= 0 ? '마감이 지났습니다!'
-                : '마감 안심 구간 진입하려면'}
+                : s.dday <= 0 ? '목표 날짜가 지났습니다!'
+                : '목표 안심 구간 진입하려면'}
             </div>
             <div style={{
               fontSize: '2rem', fontWeight: 900, color: sc.text,
@@ -544,7 +545,7 @@ export default function ReviewPage() {
                 : `남은 페이지: ${s.remaining}p / 전체 ${subj.total_pages}p`}
             </div>
             <div style={{ fontSize: '0.82rem', color: theme.text, marginBottom: 3 }}>
-              • D-Day: {s.dday <= 0 ? '마감 초과' : s.dday}
+              • D-Day: {s.dday <= 0 ? '목표 기간 초과' : s.dday}
             </div>
             <div style={{ fontSize: '0.82rem', color: theme.text, marginBottom: 16 }}>
               • 오늘 입력: {s.todayDone}p
