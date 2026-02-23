@@ -14,7 +14,7 @@ type StudentInfo = {
   text: string;
 };
 
-type Record = {
+type StudyRecord = {
   student_name: string;
   day_of_week: string;
   off_type?: string;
