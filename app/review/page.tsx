@@ -533,13 +533,15 @@ const inputStyle: React.CSSProperties = {
                 : s.dday <= 0 ? '목표 날짜가 지났습니다!'
                 : '목표 안심 구간 진입하려면'}
             </div>
-            <div style={{
-              fontSize: '2rem', fontWeight: 900, color: sc.text,
-              letterSpacing: -1, lineHeight: 1, marginBottom: 6
-            }}>
-              오늘 <strong>{s.remaining === 0 ? 0 : s.safePace}</strong>
-              <span style={{ fontSize: '1rem', marginLeft: 4 }}>페이지 풀어야 합니다.</span>
-            </div>
+           <div style={{ lineHeight: 1.3, marginBottom: 6 }}>
+          <span style={{ fontSize: '1.1rem', fontWeight: 700, color: theme.text }}>오늘 </span>
+          <strong style={{ fontSize: '2.5rem', fontWeight: 900, color: '#1a9e5c', letterSpacing: -1 }}>
+          {s.remaining === 0 ? 0 : s.safePace}
+          </strong>
+          <span style={{ fontSize: '1.1rem', fontWeight: 700, color: theme.text, marginLeft: 6 }}>
+           페이지 풀어야 합니다.
+          </span>
+        </div>
             <div style={{ fontSize: '0.8rem', color: theme.muted, marginBottom: 10 }}>
               {s.remaining === 0 ? '오늘 목표 달성! 🎊'
                 : `남은 페이지: ${s.remaining}p / 전체 ${subj.total_pages}p`}
