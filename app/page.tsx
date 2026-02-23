@@ -985,20 +985,32 @@ const handleSaveName = async () => {
             </button>
 
                {/* 2. ✅ 플래너 버튼 (진한 테두리로 강조) */}
-               <Link 
-                 href="/planner" 
-                 className="text-[10px] font-black text-slate-700 bg-slate-100 border-slate-400 border-2 px-3 py-1.5 rounded-full shadow-sm hover:bg-slate-200 transition-all active:scale-95 flex items-center gap-1 whitespace-nowrap"
-               >
-                 플래너
-               </Link>
+               {!isAdmin && (
+                <Link 
+                href="/planner" 
+                className="text-[10px] font-black text-slate-700 bg-slate-100 border-slate-400 border-2 px-3 py-1.5 rounded-full shadow-sm hover:bg-slate-200 transition-all active:scale-95 flex items-center gap-1 whitespace-nowrap"
+                >
+                플래너
+                </Link>
+                )}
                            {!isAdmin && (
                   <Link 
-    href="/timer" 
-    className="text-[10px] font-black text-slate-700 bg-slate-100 border-slate-400 border-2 px-3 py-1.5 rounded-full shadow-sm hover:bg-slate-200 transition-all active:scale-95 flex items-center gap-1 whitespace-nowrap"
-  >
-    교시제
+               href="/timer" 
+               className="text-[10px] font-black text-slate-700 bg-slate-100 border-slate-400 border-2 px-3 py-1.5 rounded-full shadow-sm hover:bg-slate-200 transition-all active:scale-95 flex items-center gap-1 whitespace-nowrap"
+             >
+               교시제
                   </Link>
                 )}
+
+            {/* 회독 버튼 */}
+            {!isAdmin && (
+              <Link 
+                href="/review" 
+                className="text-[10px] font-black text-slate-700 bg-slate-100 border-slate-400 border-2 px-3 py-1.5 rounded-full shadow-sm hover:bg-slate-200 transition-all active:scale-95 flex items-center gap-1 whitespace-nowrap"
+              >
+                회독
+              </Link>
+            )}
 
             {isAdmin && <button onClick={() => setShowSummary(true)} className="text-[10px] font-black text-white bg-indigo-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-indigo-700 whitespace-nowrap">요약</button>}
             {isAdmin && <button onClick={resetWeeklyData} className="text-[10px] font-black text-white bg-red-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-red-700 whitespace-nowrap">주간 리셋</button>}
