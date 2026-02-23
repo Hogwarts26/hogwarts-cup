@@ -488,7 +488,7 @@ export default function ReviewPage() {
           {/* ── 설정 카드 ── */}
           <div style={cardStyle}>
             <div style={sectionTitleStyle}>⚙️ 과목 설정 — {subj.name}</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '130px 70px 1fr', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
               {[
                 { label: '마감 날짜', type: 'date',   field: 'deadline',    value: subj.deadline },
                 { label: '휴일 수',   type: 'number', field: 'holidays',    value: subj.holidays },
