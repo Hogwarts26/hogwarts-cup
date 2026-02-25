@@ -4,45 +4,43 @@ import { supabase } from '../../lib/supabase';
 import Link from 'next/link';
 
 import {
-  DndContext, 
+  DndContext,
   closestCenter,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
-  DragEndEvent
+  DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
 } from '@dnd-kit/core';
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
-  useSortable
+  useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
 type Todo = { id: string; subject: string; content: string; completed: boolean };
 type WeeklyData = { [key: string]: Todo[] };
 
-// 타임블록: 각 시간 슬롯(1시간 단위)에 저장되는 데이터
 type TimeBlock = { subject: string; content: string; completed: boolean };
-// key: "월요일_05", "월요일_06", ...
 type TimeBlockData = { [key: string]: TimeBlock };
 
 const DAYS_ORDER = ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"];
 
-// 오전 5시(05) ~ 새벽 1시(25, 즉 다음날 01:00) → 총 21개 슬롯
 const TIME_SLOTS = Array.from({ length: 21 }, (_, i) => {
-  const hour = i + 5; // 5 ~ 25
+  const hour = i + 5;
   const displayHour = hour >= 24 ? hour - 24 : hour;
   const label = `${displayHour.toString().padStart(2, '0')}:00`;
-  const key = hour.toString().padStart(2, '0'); // "05" ~ "25"
+  const key = hour.toString().padStart(2, '0');
   const isPM = hour >= 12 && hour < 24;
   const isMidnight = hour >= 24;
   return { hour, displayHour, label, key, isPM, isMidnight };
 });
 
-// 과목 색상 공통 상수
 const SUBJECT_COLORS = [
   { bar: 'border-l-blue-400',    bg: 'bg-blue-500/10' },
   { bar: 'border-l-purple-400',  bg: 'bg-purple-500/10' },
@@ -55,7 +53,7 @@ const SUBJECT_COLORS = [
 ];
 const DOT_COLORS = ['bg-blue-400','bg-purple-400','bg-emerald-400','bg-amber-400','bg-rose-400','bg-cyan-400','bg-orange-400','bg-pink-400'];
 
-// --- 과목 색상 범례 (공통) ---
+// --- 과목 색상 범례 ---
 function SubjectLegend({ subjects }: { subjects: string[] }) {
   const filtered = subjects.filter(s => s !== '');
   if (filtered.length === 0) return null;
@@ -71,43 +69,33 @@ function SubjectLegend({ subjects }: { subjects: string[] }) {
   );
 }
 
-// --- 개별 투두 아이템 컴포넌트 (Sortable) ---
-function SortableTodoItem({ 
-  todo, day, isEditable, subjects, theme, updateTodo, deleteTodo 
+// --- 투두 아이템 ---
+function SortableTodoItem({
+  todo, day, isEditable, subjects, theme, updateTodo, deleteTodo
 }: any) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id: todo.id });
-
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: todo.id });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     zIndex: isDragging ? 50 : 'auto',
     opacity: isDragging ? 0.5 : 1,
   };
-
-  // 과목 색상 계산
   const subjectIndex = subjects.findIndex((s: string) => s === todo.subject);
   const color = subjectIndex >= 0 ? SUBJECT_COLORS[subjectIndex % SUBJECT_COLORS.length] : null;
 
   return (
-    <div 
-      ref={setNodeRef} 
-      style={style} 
+    <div
+      ref={setNodeRef}
+      style={style}
       className={`flex items-center gap-2 md:gap-3 p-2 rounded-xl border-l-2 transition-all
         ${color ? `${color.bar} ${color.bg}` : 'border-l-transparent'}
-        ${todo.completed ? 'opacity-30' : ''} 
+        ${todo.completed ? 'opacity-30' : ''}
         ${isDragging ? 'bg-blue-500/10' : ''}`}
     >
       {isEditable && (
-        <div 
-          {...attributes} 
-          {...listeners} 
+        <div
+          {...attributes}
+          {...listeners}
           className="cursor-grab active:cursor-grabbing p-3 -ml-2 opacity-30 hover:opacity-100 transition-opacity touch-none"
         >
           <div className="flex flex-col gap-[2px]">
@@ -117,33 +105,30 @@ function SortableTodoItem({
           </div>
         </div>
       )}
-
-      <select 
-        value={todo.subject} 
-        onChange={(e) => updateTodo(day, todo.id, 'subject', e.target.value)} 
+      <select
+        value={todo.subject}
+        onChange={(e) => updateTodo(day, todo.id, 'subject', e.target.value)}
         disabled={!isEditable}
         className={`text-[9px] md:text-[10px] font-black p-1.5 rounded-lg border outline-none ${theme.select} w-16 md:w-20`}
       >
         {subjects.filter((s: string) => s !== "").map((s: string, i: number) => <option key={i} value={s}>{s}</option>)}
         {subjects.every((s: string) => s === "") && <option>과목</option>}
       </select>
-      
-      <input 
-        type="text" 
-        value={todo.content} 
-        onChange={(e) => updateTodo(day, todo.id, 'content', e.target.value)} 
-        placeholder="계획을 입력하세요" 
+      <input
+        type="text"
+        value={todo.content}
+        onChange={(e) => updateTodo(day, todo.id, 'content', e.target.value)}
+        placeholder="계획을 입력하세요"
         disabled={!isEditable}
-        className={`flex-1 bg-transparent px-1 py-1 text-sm outline-none ${todo.completed ? 'line-through text-slate-500' : theme.textMain}`} 
+        className={`flex-1 bg-transparent px-1 py-1 text-sm outline-none ${todo.completed ? 'line-through text-slate-500' : theme.textMain}`}
       />
-      
       <div className="flex items-center gap-2 flex-shrink-0">
-        <input 
-          type="checkbox" 
-          checked={todo.completed} 
-          onChange={(e) => updateTodo(day, todo.id, 'completed', e.target.checked)} 
+        <input
+          type="checkbox"
+          checked={todo.completed}
+          onChange={(e) => updateTodo(day, todo.id, 'completed', e.target.checked)}
           disabled={!isEditable}
-          className="w-5 h-5 md:w-4 md:h-4 cursor-pointer accent-blue-500" 
+          className="w-5 h-5 md:w-4 md:h-4 cursor-pointer accent-blue-500"
         />
         {isEditable && (
           <button onClick={() => deleteTodo(day, todo.id)} className="text-red-500/70 hover:text-red-500 transition-colors font-bold text-[10px] p-1">✕</button>
@@ -153,56 +138,107 @@ function SortableTodoItem({
   );
 }
 
-// --- 타임블록 셀 컴포넌트 ---
-function TimeBlockCell({
-  blockKey, block, subjects, theme, isEditable, onChange
+// --- 타임블록 셀 (드래그 가능) ---
+function SortableTimeBlockCell({
+  blockKey, slotLabel, block, subjects, theme, isEditable, onChange, isDarkMode
 }: {
   blockKey: string;
+  slotLabel: string;
   block: TimeBlock;
   subjects: string[];
   theme: any;
   isEditable: boolean;
   onChange: (key: string, field: keyof TimeBlock, value: any) => void;
+  isDarkMode: boolean;
 }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: blockKey });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+
   const hasContent = block.content.trim() !== '';
   const hasSubject = block.subject !== '' && block.subject !== '__empty__';
-
   const subjectIndex = subjects.findIndex(s => s === block.subject);
   const color = (hasSubject && subjectIndex >= 0) ? SUBJECT_COLORS[subjectIndex % SUBJECT_COLORS.length] : null;
 
   return (
-    <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border-l-2 transition-all min-h-[52px]
+    <div ref={setNodeRef} style={style} className="flex items-stretch gap-0">
+      {/* 드래그 핸들 + 시간 레이블 */}
+      <div className={`w-14 flex-shrink-0 flex items-center justify-center gap-1 text-[10px] font-black ${theme.timeHeader} border-r ${theme.timeDivider} py-1 relative`}>
+        {isEditable && (
+          <div
+            {...attributes}
+            {...listeners}
+            className="absolute left-0.5 opacity-0 hover:opacity-40 active:opacity-70 cursor-grab active:cursor-grabbing touch-none transition-opacity p-1"
+          >
+            <div className="flex flex-col gap-[2px]">
+              <div className="w-3 h-[1.5px] bg-current"></div>
+              <div className="w-3 h-[1.5px] bg-current"></div>
+              <div className="w-3 h-[1.5px] bg-current"></div>
+            </div>
+          </div>
+        )}
+        {slotLabel}
+      </div>
+
+      {/* 블록 내용 */}
+      <div className="flex-1 py-1 px-2">
+        <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border-l-2 transition-all min-h-[52px]
+          ${(hasContent && color) ? `${color.bar} ${color.bg}` : 'border-l-transparent'}
+          ${block.completed && hasContent ? 'opacity-40' : ''}
+        `}>
+          <select
+            value={block.subject}
+            onChange={(e) => onChange(blockKey, 'subject', e.target.value)}
+            disabled={!isEditable}
+            className={`text-[9px] font-black p-1 rounded-lg border outline-none ${theme.select} w-14 md:w-[70px] flex-shrink-0`}
+          >
+            <option value="__empty__">—</option>
+            {subjects.filter(s => s !== '').map((s, i) => <option key={i} value={s}>{s}</option>)}
+          </select>
+          <input
+            type="text"
+            value={block.content}
+            onChange={(e) => onChange(blockKey, 'content', e.target.value)}
+            placeholder="계획 입력..."
+            disabled={!isEditable}
+            className={`flex-1 bg-transparent text-xs outline-none px-1
+              ${block.completed && hasContent ? 'line-through text-slate-500' : theme.textMain}
+              placeholder:opacity-20`}
+          />
+          <input
+            type="checkbox"
+            checked={block.completed}
+            onChange={(e) => onChange(blockKey, 'completed', e.target.checked)}
+            disabled={!isEditable}
+            className="w-4 h-4 cursor-pointer accent-blue-500 flex-shrink-0"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- 타임블록 드래그 오버레이 미리보기 ---
+function TimeBlockDragPreview({ block, subjects, theme }: { block: TimeBlock; subjects: string[]; theme: any }) {
+  const hasContent = block.content.trim() !== '';
+  const hasSubject = block.subject !== '' && block.subject !== '__empty__';
+  const subjectIndex = subjects.findIndex(s => s === block.subject);
+  const color = (hasSubject && subjectIndex >= 0) ? SUBJECT_COLORS[subjectIndex % SUBJECT_COLORS.length] : null;
+
+  return (
+    <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border-l-2 shadow-2xl min-h-[52px] opacity-90 w-64
       ${(hasContent && color) ? `${color.bar} ${color.bg}` : 'border-l-transparent'}
-      ${block.completed && hasContent ? 'opacity-40' : ''}
-    `}>
-      <select
-        value={block.subject}
-        onChange={(e) => onChange(blockKey, 'subject', e.target.value)}
-        disabled={!isEditable}
-        className={`text-[9px] font-black p-1 rounded-lg border outline-none ${theme.select} w-14 md:w-[70px] flex-shrink-0`}
-      >
-        <option value="__empty__">—</option>
-        {subjects.filter(s => s !== '').map((s, i) => <option key={i} value={s}>{s}</option>)}
-      </select>
-
-      <input
-        type="text"
-        value={block.content}
-        onChange={(e) => onChange(blockKey, 'content', e.target.value)}
-        placeholder="계획 입력..."
-        disabled={!isEditable}
-        className={`flex-1 bg-transparent text-xs outline-none px-1 
-          ${block.completed && hasContent ? 'line-through text-slate-500' : theme.textMain}
-          placeholder:opacity-20`}
-      />
-
-      <input
-        type="checkbox"
-        checked={block.completed}
-        onChange={(e) => onChange(blockKey, 'completed', e.target.checked)}
-        disabled={!isEditable}
-        className="w-4 h-4 cursor-pointer accent-blue-500 flex-shrink-0"
-      />
+      ${theme.card}`}
+    >
+      <span className={`text-[9px] font-black px-2 py-1 rounded-lg ${theme.select} w-14 text-center`}>
+        {block.subject === '__empty__' ? '—' : block.subject}
+      </span>
+      <span className={`flex-1 text-xs ${theme.textMain} ${!hasContent ? 'opacity-30 italic' : ''}`}>
+        {block.content || '계획 입력...'}
+      </span>
     </div>
   );
 }
@@ -214,7 +250,7 @@ export default function PlannerPage() {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [viewMode, setViewMode] = useState<'todo' | 'timeblock'>('todo');
   const [currentWeekMonday, setCurrentWeekMonday] = useState("");
-  const [viewingWeek, setViewingWeek] = useState(""); 
+  const [viewingWeek, setViewingWeek] = useState("");
   const [subjects, setSubjects] = useState<string[]>(Array(8).fill(""));
   const [examDate, setExamDate] = useState("");
   const [weeklyData, setWeeklyData] = useState<WeeklyData>({
@@ -224,6 +260,9 @@ export default function PlannerPage() {
   const [openDays, setOpenDays] = useState<{ [key: string]: boolean }>({});
   const [isPlaying, setIsPlaying] = useState(false);
   const [bgm, setBgm] = useState<HTMLAudioElement | null>(null);
+
+  // 타임블록 드래그 중인 아이템 추적
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -247,9 +286,9 @@ export default function PlannerPage() {
     const now = new Date();
     if (now.getHours() < 4) now.setDate(now.getDate() - 1);
     const day = now.getDay();
-    const diff = now.getDate() - day + (day === 0 ? -6 : 1); 
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1);
     const monday = new Date(now.getFullYear(), now.getMonth(), diff + offsetDays);
-    return monday.toLocaleDateString('en-CA'); 
+    return monday.toLocaleDateString('en-CA');
   };
 
   const getFormattedDate = (mondayString: string, dayIndex: number) => {
@@ -266,12 +305,10 @@ export default function PlannerPage() {
     if (savedTheme === 'light') setIsDarkMode(false);
     const savedView = localStorage.getItem('planner_view');
     if (savedView === 'timeblock') setViewMode('timeblock');
-
     const today = new Date();
     const dayNames = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"];
     const todayName = dayNames[today.getDay()];
     setOpenDays({ [todayName]: true });
-    
     const authData = localStorage.getItem('hg_auth');
     if (authData) {
       try {
@@ -305,22 +342,21 @@ export default function PlannerPage() {
   };
 
   const saveAllToDB = async (
-    updatedWeekly: WeeklyData, 
-    updatedSubjects: string[], 
+    updatedWeekly: WeeklyData,
+    updatedSubjects: string[],
     updatedExamDate: string,
     updatedTimeBlock?: TimeBlockData
   ) => {
     if (!selectedName) return;
-    // 이번 주 또는 다음 주만 편집 가능
     const nextWeekMonday = getMonday(7);
     if (viewingWeek !== currentWeekMonday && viewingWeek !== nextWeekMonday) return;
     try {
       await supabase.from('daily_planner').upsert({
-        student_name: selectedName, 
-        plan_date: viewingWeek, 
+        student_name: selectedName,
+        plan_date: viewingWeek,
         content_json: updatedWeekly,
-        subjects_json: updatedSubjects, 
-        exam_date: updatedExamDate, 
+        subjects_json: updatedSubjects,
+        exam_date: updatedExamDate,
         timeblock_json: updatedTimeBlock ?? timeBlockData,
         updated_at: new Date().toISOString()
       }, { onConflict: 'student_name,plan_date' });
@@ -407,26 +443,48 @@ export default function PlannerPage() {
 
   const getTimeBlock = (day: string, hourKey: string): TimeBlock => {
     const key = getTimeBlockKey(day, hourKey);
-    return timeBlockData[key] ?? { 
-      subject: '__empty__', 
-      content: '', 
-      completed: false 
-    };
+    return timeBlockData[key] ?? { subject: '__empty__', content: '', completed: false };
   };
 
   const updateTimeBlock = (blockKey: string, field: keyof TimeBlock, value: any) => {
     const _editableWeeks = [currentWeekMonday, getMonday(7)];
     if (!_editableWeeks.includes(viewingWeek)) return;
-    const newData = { 
-      ...timeBlockData, 
-      [blockKey]: { 
-        ...getTimeBlock('', ''), 
-        ...timeBlockData[blockKey], 
-        [field]: value 
-      } 
+    const newData = {
+      ...timeBlockData,
+      [blockKey]: {
+        ...getTimeBlock('', ''),
+        ...timeBlockData[blockKey],
+        [field]: value
+      }
     };
     setTimeBlockData(newData);
     saveAllToDB(weeklyData, subjects, examDate, newData);
+  };
+
+  // 타임블록 드래그 앤 드롭: 슬롯 내용을 서로 교환(swap)
+  const handleTimeBlockDragEnd = (event: DragEndEvent) => {
+    setActiveDragId(null);
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const activeKey = active.id as string;
+    const overKey = over.id as string;
+
+    // 두 슬롯의 내용을 swap
+    const activeBlock = timeBlockData[activeKey] ?? { subject: '__empty__', content: '', completed: false };
+    const overBlock = timeBlockData[overKey] ?? { subject: '__empty__', content: '', completed: false };
+
+    const newData = {
+      ...timeBlockData,
+      [activeKey]: overBlock,
+      [overKey]: activeBlock,
+    };
+    setTimeBlockData(newData);
+    saveAllToDB(weeklyData, subjects, examDate, newData);
+  };
+
+  const handleTimeBlockDragStart = (event: DragStartEvent) => {
+    setActiveDragId(event.active.id as string);
   };
 
   const calcTimeBlockProgress = (day: string) => {
@@ -438,6 +496,8 @@ export default function PlannerPage() {
     const completedSlots = filledSlots.filter(slot => getTimeBlock(day, slot.key).completed);
     return Math.round((completedSlots.length / filledSlots.length) * 100);
   };
+
+  const isEditable = viewingWeek === currentWeekMonday || viewingWeek === getMonday(7);
 
   const theme = {
     bg: isDarkMode ? 'bg-[#020617]' : 'bg-slate-50',
@@ -458,12 +518,16 @@ export default function PlannerPage() {
     </div>
   );
 
+  // 드래그 중인 타임블록 데이터
+  const activeDragBlock = activeDragId ? (timeBlockData[activeDragId] ?? { subject: '__empty__', content: '', completed: false }) : null;
+
   return (
     <div className={`min-h-screen pb-20 transition-colors duration-500 font-sans ${theme.bg} ${theme.textMain}`}>
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css" />
       <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet" />
 
       <div className="max-w-4xl mx-auto p-4 md:p-8">
+
         {/* ── 상단 헤더 ── */}
         <div className="flex justify-between items-center mb-8">
           <Link href="/" className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${theme.btn}`}>← BACK TO LOBBY</Link>
@@ -471,28 +535,17 @@ export default function PlannerPage() {
             <button onClick={toggleMusic} className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${isPlaying ? 'border-yellow-400 bg-yellow-400/10 animate-pulse' : theme.btn}`}>
               {isPlaying ? '🎵' : '🔇'}
             </button>
-
-            {/* ── Time Block 전환 버튼 ── */}
-            <button 
-              onClick={toggleViewMode} 
+            <button
+              onClick={toggleViewMode}
               className={`px-3 h-9 rounded-xl border flex items-center gap-1.5 text-[10px] font-black transition-all
-                ${viewMode === 'timeblock' 
-                  ? 'border-blue-500 bg-blue-500/20 text-blue-400' 
-                  : theme.btn}`}
+                ${viewMode === 'timeblock' ? 'border-blue-500 bg-blue-500/20 text-blue-400' : theme.btn}`}
             >
               {viewMode === 'timeblock' ? (
-                <>
-                  <span className="text-[13px] leading-none">☰</span>
-                  <span className="hidden md:inline">TODO</span>
-                </>
+                <><span className="text-[13px] leading-none">☰</span><span className="hidden md:inline">TODO</span></>
               ) : (
-                <>
-                  <span className="text-[13px] leading-none">⏱</span>
-                  <span className="hidden md:inline">TIME BLOCK</span>
-                </>
+                <><span className="text-[13px] leading-none">⏱</span><span className="hidden md:inline">TIME BLOCK</span></>
               )}
             </button>
-
             <button onClick={toggleTheme} className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${theme.btn}`}>
               {isDarkMode ? '🌝' : '🌞'}
             </button>
@@ -501,23 +554,18 @@ export default function PlannerPage() {
 
         {/* ── 주간 이동 ── */}
         <div className="flex justify-center gap-3 mb-10 flex-wrap">
-          {/* 지난주 */}
-          <button onClick={() => { const m = getMonday(-7); setViewingWeek(m); fetchPlannerData(selectedName, m); }} 
-                  className={`px-5 py-2.5 rounded-2xl text-[11px] font-black border transition-all ${viewingWeek === getMonday(-7) ? 'bg-blue-600 text-white border-blue-600 shadow-lg' : theme.btn + ' opacity-60 hover:opacity-100'}`}>
+          <button onClick={() => { const m = getMonday(-7); setViewingWeek(m); fetchPlannerData(selectedName, m); }}
+            className={`px-5 py-2.5 rounded-2xl text-[11px] font-black border transition-all ${viewingWeek === getMonday(-7) ? 'bg-blue-600 text-white border-blue-600 shadow-lg' : theme.btn + ' opacity-60 hover:opacity-100'}`}>
             {viewingWeek === getMonday(-7) ? '● 지난주 기록 확인 중' : '← 지난주 기록 보기'}
           </button>
-
-          {/* 이번 주로 돌아오기 (이번 주가 아닐 때만) */}
           {viewingWeek !== currentWeekMonday && (
-            <button onClick={() => { setViewingWeek(currentWeekMonday); fetchPlannerData(selectedName, currentWeekMonday); }} 
-                    className="px-5 py-2.5 rounded-2xl text-[11px] font-black bg-emerald-600 text-white border border-emerald-500 shadow-lg animate-bounce">
+            <button onClick={() => { setViewingWeek(currentWeekMonday); fetchPlannerData(selectedName, currentWeekMonday); }}
+              className="px-5 py-2.5 rounded-2xl text-[11px] font-black bg-emerald-600 text-white border border-emerald-500 shadow-lg animate-bounce">
               이번 주로 →
             </button>
           )}
-
-          {/* 다음주 */}
-          <button onClick={() => { const m = getMonday(7); setViewingWeek(m); fetchPlannerData(selectedName, m); }} 
-                  className={`px-5 py-2.5 rounded-2xl text-[11px] font-black border transition-all ${viewingWeek === getMonday(7) ? 'bg-purple-600 text-white border-purple-600 shadow-lg' : theme.btn + ' opacity-60 hover:opacity-100'}`}>
+          <button onClick={() => { const m = getMonday(7); setViewingWeek(m); fetchPlannerData(selectedName, m); }}
+            className={`px-5 py-2.5 rounded-2xl text-[11px] font-black border transition-all ${viewingWeek === getMonday(7) ? 'bg-purple-600 text-white border-purple-600 shadow-lg' : theme.btn + ' opacity-60 hover:opacity-100'}`}>
             {viewingWeek === getMonday(7) ? '● 다음주 미리 작성 중' : '다음주 미리 보기 →'}
           </button>
         </div>
@@ -533,13 +581,12 @@ export default function PlannerPage() {
               <span>My Subjects</span>
               <div className="relative">
                 {!examDate && <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold pointer-events-none text-blue-500">졸업 시험</span>}
-                <input type="date" value={examDate} onChange={(e) => { setExamDate(e.target.value); saveAllToDB(weeklyData, subjects, e.target.value); }} 
-                       className={`font-bold p-1.5 rounded-lg outline-none border w-[120px] text-center ${theme.input} ${!examDate ? 'text-transparent' : ''}`} />
+                <input type="date" value={examDate} onChange={(e) => { setExamDate(e.target.value); saveAllToDB(weeklyData, subjects, e.target.value); }}
+                  className={`font-bold p-1.5 rounded-lg outline-none border w-[120px] text-center ${theme.input} ${!examDate ? 'text-transparent' : ''}`} />
               </div>
             </div>
             <div className="grid grid-cols-4 gap-2">
               {subjects.map((sub, i) => {
-                const dotColor = DOT_COLORS[i % DOT_COLORS.length];
                 const borderColors = [
                   'border-blue-400/60 focus:border-blue-400',
                   'border-purple-400/60 focus:border-purple-400',
@@ -551,14 +598,8 @@ export default function PlannerPage() {
                   'border-pink-400/60 focus:border-pink-400',
                 ];
                 const bgColors = [
-                  'bg-blue-500/10',
-                  'bg-purple-500/10',
-                  'bg-emerald-500/10',
-                  'bg-amber-500/10',
-                  'bg-rose-500/10',
-                  'bg-cyan-500/10',
-                  'bg-orange-500/10',
-                  'bg-pink-500/10',
+                  'bg-blue-500/10', 'bg-purple-500/10', 'bg-emerald-500/10', 'bg-amber-500/10',
+                  'bg-rose-500/10', 'bg-cyan-500/10', 'bg-orange-500/10', 'bg-pink-500/10',
                 ];
                 return (
                   <input key={i} value={sub} onChange={(e) => {
@@ -575,9 +616,7 @@ export default function PlannerPage() {
           </div>
         </div>
 
-        {/* ════════════════════════════════════════
-            TODO 뷰
-        ════════════════════════════════════════ */}
+        {/* ════════════ TODO 뷰 ════════════ */}
         {viewMode === 'todo' && (
           <div className="space-y-6">
             {DAYS_ORDER.map((day, idx) => {
@@ -585,7 +624,6 @@ export default function PlannerPage() {
               const completedCount = dayTodos.filter(t => t.completed).length;
               const progress = dayTodos.length > 0 ? Math.round((completedCount / dayTodos.length) * 100) : 0;
               const isOpen = openDays[day];
-
               return (
                 <div key={day} className={`rounded-[2.5rem] border transition-all duration-500 overflow-hidden ${theme.card} ${isOpen ? 'ring-2 ring-blue-500/10' : ''}`}>
                   <div onClick={() => setOpenDays(prev => ({ ...prev, [day]: !prev[day] }))} className="p-5 flex items-center justify-between cursor-pointer group">
@@ -604,33 +642,23 @@ export default function PlannerPage() {
                         </div>
                       </div>
                     </div>
-                    {(viewingWeek === currentWeekMonday || viewingWeek === getMonday(7)) && (
+                    {isEditable && (
                       <button onClick={(e) => { e.stopPropagation(); addTodo(day); }} className="p-2 transition-all opacity-30 hover:opacity-100">
                         <span className="text-xl font-light">+</span>
                       </button>
                     )}
                   </div>
-
                   {isOpen && (
                     <div className="px-4 md:px-6 pb-6 pt-0 space-y-2">
-                      {/* ── 과목 색상 범례 ── */}
                       <SubjectLegend subjects={subjects} />
-
-                      <DndContext 
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragEnd={(e) => handleDragEnd(e, day)}
-                      >
-                        <SortableContext 
-                          items={dayTodos.map(t => t.id)}
-                          strategy={verticalListSortingStrategy}
-                        >
+                      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => handleDragEnd(e, day)}>
+                        <SortableContext items={dayTodos.map(t => t.id)} strategy={verticalListSortingStrategy}>
                           {dayTodos.map((todo) => (
-                            <SortableTodoItem 
+                            <SortableTodoItem
                               key={todo.id}
                               todo={todo}
                               day={day}
-                              isEditable={viewingWeek === currentWeekMonday || viewingWeek === getMonday(7)}
+                              isEditable={isEditable}
                               subjects={subjects}
                               theme={theme}
                               updateTodo={updateTodo}
@@ -639,7 +667,6 @@ export default function PlannerPage() {
                           ))}
                         </SortableContext>
                       </DndContext>
-                      
                       {dayTodos.length === 0 && (
                         <div className="text-center py-4 text-[10px] opacity-20 italic">입력된 계획이 없습니다.</div>
                       )}
@@ -651,20 +678,20 @@ export default function PlannerPage() {
           </div>
         )}
 
-        {/* ════════════════════════════════════════
-            TIME BLOCK 뷰
-        ════════════════════════════════════════ */}
+        {/* ════════════ TIME BLOCK 뷰 ════════════ */}
         {viewMode === 'timeblock' && (
           <div className="space-y-6">
             {DAYS_ORDER.map((day, idx) => {
               const progress = calcTimeBlockProgress(day);
               const isOpen = openDays[day];
+              // 이 요일의 슬롯 key 목록
+              const slotKeys = TIME_SLOTS.map(slot => getTimeBlockKey(day, slot.key));
 
               return (
                 <div key={day} className={`rounded-[2.5rem] border transition-all duration-500 overflow-hidden ${theme.card} ${isOpen ? 'ring-2 ring-blue-500/10' : ''}`}>
                   {/* 요일 헤더 */}
-                  <div 
-                    onClick={() => setOpenDays(prev => ({ ...prev, [day]: !prev[day] }))} 
+                  <div
+                    onClick={() => setOpenDays(prev => ({ ...prev, [day]: !prev[day] }))}
                     className="p-5 flex items-center justify-between cursor-pointer"
                   >
                     <div className="flex items-center gap-3">
@@ -673,7 +700,6 @@ export default function PlannerPage() {
                         <div className="flex items-baseline gap-2">
                           <span className="text-xl font-black italic tracking-tight">{day}</span>
                           <span className="text-[10px] font-bold opacity-30 tracking-tighter">{getFormattedDate(viewingWeek, idx)}</span>
-
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="w-24 h-1 bg-slate-800/20 rounded-full overflow-hidden">
@@ -685,65 +711,75 @@ export default function PlannerPage() {
                     </div>
                   </div>
 
-                  {/* 타임블록 슬롯 목록 */}
                   {isOpen && (
                     <div className="pb-5">
-                      {/* ── 과목 색상 범례 ── */}
                       <div className="px-5 pb-1">
                         <SubjectLegend subjects={subjects} />
                       </div>
 
-                      {/* AM / PM / 새벽 구분 렌더 */}
-                      {TIME_SLOTS.map((slot) => {
-                        const blockKey = getTimeBlockKey(day, slot.key);
-                        const block = getTimeBlock(day, slot.key);
+                      {/* DndContext: 이 요일 전체를 감쌈 */}
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragStart={handleTimeBlockDragStart}
+                        onDragEnd={handleTimeBlockDragEnd}
+                      >
+                        <SortableContext items={slotKeys} strategy={verticalListSortingStrategy}>
+                          {TIME_SLOTS.map((slot) => {
+                            const blockKey = getTimeBlockKey(day, slot.key);
+                            const block = getTimeBlock(day, slot.key);
+                            const showAmLabel = slot.hour === 5;
+                            const showPmLabel = slot.hour === 12;
+                            const showMidnightLabel = slot.hour === 24;
 
-                        const showAmLabel = slot.hour === 5;
-                        const showPmLabel = slot.hour === 12;
-                        const showMidnightLabel = slot.hour === 24;
+                            return (
+                              <React.Fragment key={slot.key}>
+                                {showAmLabel && (
+                                  <div className="flex items-center gap-3 px-5 py-2">
+                                    <span className={`text-[9px] font-black tracking-widest uppercase ${theme.timeHeader}`}>오전 AM</span>
+                                    <div className={`flex-1 border-t ${theme.timeDivider}`}></div>
+                                  </div>
+                                )}
+                                {showPmLabel && (
+                                  <div className="flex items-center gap-3 px-5 py-2 mt-1">
+                                    <span className={`text-[9px] font-black tracking-widest uppercase ${theme.timeHeader}`}>오후 PM</span>
+                                    <div className={`flex-1 border-t ${theme.timeDivider}`}></div>
+                                  </div>
+                                )}
+                                {showMidnightLabel && (
+                                  <div className="flex items-center gap-3 px-5 py-2 mt-1">
+                                    <span className={`text-[9px] font-black tracking-widest uppercase ${theme.timeHeader}`}>자정 MIDNIGHT</span>
+                                    <div className={`flex-1 border-t ${theme.timeDivider}`}></div>
+                                  </div>
+                                )}
+                                <div className={`mx-3 rounded-xl overflow-hidden ${slot.hour % 2 === 0 ? theme.timeHighlight : ''}`}>
+                                  <SortableTimeBlockCell
+                                    blockKey={blockKey}
+                                    slotLabel={slot.label}
+                                    block={block}
+                                    subjects={subjects}
+                                    theme={theme}
+                                    isEditable={isEditable}
+                                    onChange={updateTimeBlock}
+                                    isDarkMode={isDarkMode}
+                                  />
+                                </div>
+                              </React.Fragment>
+                            );
+                          })}
+                        </SortableContext>
 
-                        return (
-                          <React.Fragment key={slot.key}>
-                            {showAmLabel && (
-                              <div className="flex items-center gap-3 px-5 py-2">
-                                <span className={`text-[9px] font-black tracking-widest uppercase ${theme.timeHeader}`}>오전 AM</span>
-                                <div className={`flex-1 border-t ${theme.timeDivider}`}></div>
-                              </div>
-                            )}
-                            {showPmLabel && (
-                              <div className="flex items-center gap-3 px-5 py-2 mt-1">
-                                <span className={`text-[9px] font-black tracking-widest uppercase ${theme.timeHeader}`}>오후 PM</span>
-                                <div className={`flex-1 border-t ${theme.timeDivider}`}></div>
-                              </div>
-                            )}
-                            {showMidnightLabel && (
-                              <div className="flex items-center gap-3 px-5 py-2 mt-1">
-                                <span className={`text-[9px] font-black tracking-widest uppercase ${theme.timeHeader}`}>자정 MIDNIGHT</span>
-                                <div className={`flex-1 border-t ${theme.timeDivider}`}></div>
-                              </div>
-                            )}
-
-                            <div className={`flex items-stretch gap-0 mx-3 rounded-xl overflow-hidden
-                              ${slot.hour % 2 === 0 ? theme.timeHighlight : ''}`}>
-                              {/* 시간 레이블 */}
-                              <div className={`w-14 flex-shrink-0 flex items-center justify-center text-[10px] font-black ${theme.timeHeader} border-r ${theme.timeDivider} py-1`}>
-                                {slot.label}
-                              </div>
-                              {/* 블록 셀 */}
-                              <div className="flex-1 py-1 px-2">
-                                <TimeBlockCell
-                                  blockKey={blockKey}
-                                  block={block}
-                                  subjects={subjects}
-                                  theme={theme}
-                                  isEditable={viewingWeek === currentWeekMonday || viewingWeek === getMonday(7)}
-                                  onChange={updateTimeBlock}
-                                />
-                              </div>
-                            </div>
-                          </React.Fragment>
-                        );
-                      })}
+                        {/* 드래그 중 미리보기 오버레이 */}
+                        <DragOverlay>
+                          {activeDragBlock ? (
+                            <TimeBlockDragPreview
+                              block={activeDragBlock}
+                              subjects={subjects}
+                              theme={theme}
+                            />
+                          ) : null}
+                        </DragOverlay>
+                      </DndContext>
                     </div>
                   )}
                 </div>
