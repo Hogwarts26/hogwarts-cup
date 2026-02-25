@@ -165,21 +165,13 @@ function SortableTimeBlockCell({
 
   return (
     <div ref={setNodeRef} style={style} className="flex items-stretch gap-0">
-      {/* 드래그 핸들 + 시간 레이블 */}
-      <div className={`w-14 flex-shrink-0 flex items-center justify-center gap-1 text-[10px] font-black ${theme.timeHeader} border-r ${theme.timeDivider} py-1 relative`}>
-        {isEditable && (
-          <div
-            {...attributes}
-            {...listeners}
-            className="absolute left-0.5 opacity-0 hover:opacity-40 active:opacity-70 cursor-grab active:cursor-grabbing touch-none transition-opacity p-1"
-          >
-            <div className="flex flex-col gap-[2px]">
-              <div className="w-3 h-[1.5px] bg-current"></div>
-              <div className="w-3 h-[1.5px] bg-current"></div>
-              <div className="w-3 h-[1.5px] bg-current"></div>
-            </div>
-          </div>
-        )}
+      {/* 시간 레이블 전체가 드래그 핸들 */}
+      <div
+        {...(isEditable ? attributes : {})}
+        {...(isEditable ? listeners : {})}
+        className={`w-14 flex-shrink-0 flex items-center justify-center text-[10px] font-black ${theme.timeHeader} border-r ${theme.timeDivider} py-1
+          ${isEditable ? 'cursor-grab active:cursor-grabbing touch-none select-none hover:opacity-60' : ''}`}
+      >
         {slotLabel}
       </div>
 
