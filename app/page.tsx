@@ -357,8 +357,8 @@ function DragonSlot({
   const baseUrl    = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public";
   const finalUrl   = `${baseUrl}/${fileName}.webp`;
 
-  // 배경 이미지: 첫 번째 용은 해당 지역, 두 번째 이후는 x.jpg
-  const bgFile = dragonIndex === 0 ? eggToBackground(dragon.egg) : 'x.jpg';
+  // 배경 이미지: 성룡(4단계) 달성한 용만 해당 지역 배경, 나머지는 x.jpg
+  const bgFile = stage === 4 ? eggToBackground(dragon.egg) : 'x.jpg';
 
   const stageMsgs = DRAGON_MESSAGES[stage] || DRAGON_MESSAGES[1];
   const randomMsg = (() => {
