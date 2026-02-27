@@ -463,6 +463,13 @@ export default function HogwartsApp() {
   const [namingDragonIdx, setNamingDragonIdx] = useState<number | null>(null);
   const [tempName, setTempName] = useState("");
 
+  // 학생 입력 팝업
+  const [studentInputPopup, setStudentInputPopup] = useState<{ name: string; day: string } | null>(null);
+  const [popupOffType,   setPopupOffType]   = useState('-');
+  const [popupStudyTime, setPopupStudyTime] = useState('');
+  const [popupIsLate,    setPopupIsLate]    = useState(false);
+  const [popupAm3h,      setPopupAm3h]      = useState(false);
+
   // UI
   const [currentTime,           setCurrentTime]           = useState(getAdjustedToday());
   const [selectedHouseNotice,   setSelectedHouseNotice]   = useState<string | null>(null);
@@ -702,6 +709,76 @@ export default function HogwartsApp() {
     const { error } = await supabase.from('study_records').upsert(resetData, { onConflict: 'student_name,day_of_week' });
     if (!error) { setRecords(resetData); alert("월휴 개수가 초기화되었습니다."); }
     setIsSaving(false);
+  };
+
+  // ── 학생 입력 팝업 열기 ──
+  const openStudentInput = (name: string, day: string) => {
+    if (isAdmin) return; // 관리자는 기존 방식 사용
+    const rec = records.find(r => r.student_name === name && r.day_of_week === day) || {};
+    setPopupOffType(rec.off_type || '-');
+    setPopupStudyTime(rec.study_time || '');
+    setPopupIsLate(!!rec.is_late);
+    setPopupAm3h(!!rec.am_3h);
+    setStudentInputPopup({ name, day });
+  };
+
+  // ── 학생 입력 팝업 저장 ──
+  const saveStudentInput = async () => {
+    if (!studentInputPopup) return;
+    const { name, day } = studentInputPopup;
+    setIsSaving(true);
+
+    // 월휴 자동 차감 계산
+    const monRec = records.find(r => r.student_name === name && r.day_of_week === '월') || {};
+    const prevRec = records.find(r => r.student_name === name && r.day_of_week === day) || {};
+    const prevOff = prevRec.off_type || '-';
+    const currentOffCount = monRec.monthly_off_count ?? 4;
+
+    // 이전 월휴 차감 복원
+    const prevDeduct =
+      ['월휴', '늦월휴'].includes(prevOff) ? 2 :
+      ['월반휴', '늦월반휴'].includes(prevOff) ? 1 : 0;
+
+    // 새 월휴 차감
+    const newDeduct =
+      ['월휴', '늦월휴'].includes(popupOffType) ? 2 :
+      ['월반휴', '늦월반휴'].includes(popupOffType) ? 1 : 0;
+
+    const newOffCount = Math.max(0, Math.min(4, currentOffCount + prevDeduct - newDeduct));
+
+    // 레코드 업데이트
+    const newRecords = [...records];
+    const recIdx = newRecords.findIndex(r => r.student_name === name && r.day_of_week === day);
+    const updatedData = {
+      ...(recIdx > -1 ? newRecords[recIdx] : {}),
+      student_name: name, day_of_week: day,
+      off_type: popupOffType,
+      study_time: popupStudyTime,
+      is_late: popupIsLate,
+      am_3h: popupAm3h,
+      password: (recIdx > -1 ? newRecords[recIdx].password : null) || '0000',
+      monthly_off_count: newOffCount,
+    };
+    if (recIdx > -1) newRecords[recIdx] = updatedData; else newRecords.push(updatedData);
+
+    // 월 레코드 monthly_off_count도 업데이트
+    const monIdx = newRecords.findIndex(r => r.student_name === name && r.day_of_week === '월');
+    if (monIdx > -1) newRecords[monIdx] = { ...newRecords[monIdx], monthly_off_count: newOffCount };
+
+    setRecords(newRecords);
+
+    await supabase.from('study_records').upsert(updatedData, { onConflict: 'student_name,day_of_week' });
+
+    // 월 레코드도 monthly_off_count 갱신
+    if (newDeduct !== prevDeduct) {
+      await supabase.from('study_records').upsert(
+        { ...newRecords[monIdx], monthly_off_count: newOffCount },
+        { onConflict: 'student_name,day_of_week' }
+      );
+    }
+
+    setIsSaving(false);
+    setStudentInputPopup(null);
   };
 
   // ── Dragon Cave 이미지 전환 ──
@@ -954,17 +1031,31 @@ export default function HogwartsApp() {
                           return (
                             <td key={day} className={`p-1.5 text-center border-r border-slate-50 ${row.f === 'off_type' ? offBg : ''}`}>
                               {row.f === 'off_type' ? (
-                                <select className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-[10px]" value={rec.off_type || '-'} onChange={e => handleChange(name, day, 'off_type', e.target.value)} disabled={!isAdmin}>
-                                  {OFF_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
-                                </select>
+                                isAdmin ? (
+                                  <select className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-[10px]" value={rec.off_type || '-'} onChange={e => handleChange(name, day, 'off_type', e.target.value)}>
+                                    {OFF_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
+                                  </select>
+                                ) : (
+                                  <button
+                                    onClick={() => openStudentInput(name, day)}
+                                    className={`w-full text-center font-black text-[10px] py-1 rounded transition-all hover:opacity-70 active:scale-95
+                                      ${rec.off_type && rec.off_type !== '-' ? 'text-slate-900' : 'text-slate-300'}`}
+                                  >
+                                    {rec.off_type && rec.off_type !== '-' ? rec.off_type : '터치'}
+                                  </button>
+                                )
                               ) : row.f === 'is_late' ? (
                                 <input type="checkbox" className="late-checkbox" checked={!!rec.is_late} onChange={e => handleChange(name, day, 'is_late', e.target.checked)} disabled={!isAdmin} />
                               ) : row.f === 'am_3h' ? (
                                 <input type="checkbox" className="w-3.5 h-3.5 accent-slate-800 mx-auto block" checked={!!rec.am_3h} onChange={e => handleChange(name, day, 'am_3h', e.target.checked)} disabled={!isAdmin} />
                               ) : row.f === 'study_time' ? (
-                                <input type="text" placeholder="-" className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-sm" value={rec.study_time || ''}
-                                  onChange={e => setRecords(prev => prev.map(r => (r.student_name === name && r.day_of_week === day) ? { ...r, study_time: e.target.value } : r))}
-                                  onBlur={e => handleChange(name, day, 'study_time', e.target.value)} disabled={!isAdmin} />
+                                isAdmin ? (
+                                  <input type="text" placeholder="-" className="w-full text-center bg-transparent font-black text-slate-900 outline-none text-sm" value={rec.study_time || ''}
+                                    onChange={e => setRecords(prev => prev.map(r => (r.student_name === name && r.day_of_week === day) ? { ...r, study_time: e.target.value } : r))}
+                                    onBlur={e => handleChange(name, day, 'study_time', e.target.value)} />
+                                ) : (
+                                  <span className="font-black text-sm text-slate-900">{rec.study_time || '-'}</span>
+                                )
                               ) : (
                                 <span className={`font-black text-sm ${row.f === 'penalty' && res.penalty < 0 ? 'text-red-500' : row.f === 'bonus' && res.bonus > 0 ? 'text-blue-600' : 'text-slate-900'}`}>
                                   {res[row.f as keyof typeof res] || (row.f === 'total' ? 0 : '')}
@@ -1113,6 +1204,114 @@ export default function HogwartsApp() {
           </div>
         )}
       </div>
+
+      {/* 학생 입력 팝업 */}
+      {studentInputPopup && !isAdmin && (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setStudentInputPopup(null)}>
+          <div className="bg-white rounded-[2rem] w-full max-w-sm shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            {/* 팝업 헤더 */}
+            <div className="bg-slate-900 px-6 py-4 flex items-center justify-between">
+              <div>
+                <div className="text-yellow-500 font-black text-xs tracking-widest uppercase">{studentInputPopup.day}요일 기록</div>
+                <div className="text-white/40 text-[10px] font-bold mt-0.5">{getDayDate(studentInputPopup.day)}</div>
+              </div>
+              <button onClick={() => setStudentInputPopup(null)} className="text-white/40 hover:text-white text-xl transition-colors">✕</button>
+            </div>
+
+            <div className="p-6 space-y-5">
+
+              {/* 출결 선택 */}
+              <div>
+                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">출결 유형</div>
+                <div className="grid grid-cols-3 gap-2">
+                  {['-', '출석', '반휴', '주휴', '월반휴', '월휴', '늦반휴', '늦휴', '늦월반휴', '늦월휴', '자율', '결석'].map(opt => (
+                    <button
+                      key={opt}
+                      onClick={() => setPopupOffType(opt)}
+                      className={`py-2 px-1 rounded-xl text-[11px] font-black border-2 transition-all active:scale-95
+                        ${popupOffType === opt
+                          ? opt === '결석' ? 'bg-red-500 border-red-500 text-white'
+                          : ['월휴','월반휴','늦월휴','늦월반휴'].includes(opt) ? 'bg-cyan-500 border-cyan-500 text-white'
+                          : ['반휴','늦반휴','주휴','늦휴'].includes(opt) ? 'bg-emerald-500 border-emerald-500 text-white'
+                          : 'bg-slate-900 border-slate-900 text-white'
+                          : 'bg-slate-50 border-slate-100 text-slate-500 hover:border-slate-300'
+                        }`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+                {/* 월휴 차감 안내 */}
+                {(['월휴','늦월휴'].includes(popupOffType)) && (
+                  <div className="mt-2 text-[10px] font-bold text-cyan-600 bg-cyan-50 rounded-lg px-3 py-1.5">
+                    ✦ 월휴 2칸이 차감됩니다
+                  </div>
+                )}
+                {(['월반휴','늦월반휴'].includes(popupOffType)) && (
+                  <div className="mt-2 text-[10px] font-bold text-cyan-600 bg-cyan-50 rounded-lg px-3 py-1.5">
+                    ✦ 월휴 1칸이 차감됩니다
+                  </div>
+                )}
+              </div>
+
+              {/* 공부 시간 */}
+              {popupOffType !== '-' && popupOffType !== '결석' && (
+                <div>
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">공부 시간</div>
+                  <input
+                    type="text"
+                    value={popupStudyTime}
+                    onChange={e => setPopupStudyTime(e.target.value)}
+                    placeholder="예: 9:30"
+                    className="w-full border-2 border-slate-100 rounded-xl p-3 text-center font-black text-slate-900 text-lg focus:border-slate-400 outline-none transition-colors"
+                  />
+                </div>
+              )}
+
+              {/* 체크박스 옵션 */}
+              {popupOffType !== '-' && popupOffType !== '결석' && !['주휴','월휴','늦휴','늦월휴'].includes(popupOffType) && (
+                <div className="space-y-3">
+                  <label className="flex items-center gap-3 p-3 rounded-xl border-2 border-slate-100 cursor-pointer hover:border-amber-200 hover:bg-amber-50 transition-all">
+                    <input
+                      type="checkbox"
+                      checked={popupIsLate}
+                      onChange={e => setPopupIsLate(e.target.checked)}
+                      className="w-5 h-5 accent-amber-500 cursor-pointer"
+                    />
+                    <div>
+                      <div className="text-sm font-black text-slate-800">지각했어요</div>
+                      <div className="text-[10px] text-slate-400">마감 시간 이후 인증한 경우</div>
+                    </div>
+                  </label>
+                  {!['반휴','월반휴','늦반휴','늦월반휴'].includes(popupOffType) && (
+                    <label className="flex items-center gap-3 p-3 rounded-xl border-2 border-slate-100 cursor-pointer hover:border-slate-300 hover:bg-slate-50 transition-all">
+                      <input
+                        type="checkbox"
+                        checked={popupAm3h}
+                        onChange={e => setPopupAm3h(e.target.checked)}
+                        className="w-5 h-5 accent-slate-800 cursor-pointer"
+                      />
+                      <div>
+                        <div className="text-sm font-black text-slate-800">오전 3시간 인증 완료</div>
+                        <div className="text-[10px] text-slate-400">오전 시간대 3시간 이상 공부한 경우</div>
+                      </div>
+                    </label>
+                  )}
+                </div>
+              )}
+
+              {/* 저장 버튼 */}
+              <button
+                onClick={saveStudentInput}
+                disabled={isSaving}
+                className="w-full py-4 bg-slate-900 text-white font-black rounded-2xl text-sm uppercase tracking-widest hover:bg-slate-700 active:scale-95 transition-all disabled:opacity-50"
+              >
+                {isSaving ? 'Saving...' : '✓ 저장하기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 알 선택 확인 팝업 */}
       {eggStep > 0 && tempEgg && (
