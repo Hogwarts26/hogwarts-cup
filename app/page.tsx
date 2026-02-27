@@ -1223,24 +1223,41 @@ export default function HogwartsApp() {
               {/* 출결 선택 */}
               <div>
                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">출결 유형</div>
-                <div className="grid grid-cols-3 gap-2">
-                  {['-', '출석', '반휴', '주휴', '월반휴', '월휴', '늦반휴', '늦휴', '늦월반휴', '늦월휴', '자율', '결석'].map(opt => (
-                    <button
-                      key={opt}
-                      onClick={() => setPopupOffType(opt)}
-                      className={`py-2 px-1 rounded-xl text-[11px] font-black border-2 transition-all active:scale-95
-                        ${popupOffType === opt
-                          ? opt === '결석' ? 'bg-red-500 border-red-500 text-white'
-                          : ['월휴','월반휴','늦월휴','늦월반휴'].includes(opt) ? 'bg-cyan-500 border-cyan-500 text-white'
-                          : ['반휴','늦반휴','주휴','늦휴'].includes(opt) ? 'bg-emerald-500 border-emerald-500 text-white'
-                          : 'bg-slate-900 border-slate-900 text-white'
-                          : 'bg-slate-50 border-slate-100 text-slate-500 hover:border-slate-300'
-                        }`}
-                    >
-                      {opt}
-                    </button>
-                  ))}
-                </div>
+                {(() => {
+                  const monRec = records.find(r => r.student_name === studentInputPopup?.name && r.day_of_week === '월') || {};
+                  const offCount = monRec.monthly_off_count ?? 4;
+                  // 현재 선택한 날의 기존 월휴 차감 복원 고려
+                  const prevRec = records.find(r => r.student_name === studentInputPopup?.name && r.day_of_week === studentInputPopup?.day) || {};
+                  const prevDeduct = ['월휴','늦월휴'].includes(prevRec.off_type) ? 2 : ['월반휴','늦월반휴'].includes(prevRec.off_type) ? 1 : 0;
+                  const availableCount = Math.min(4, offCount + prevDeduct); // 이미 차감된 만큼 복원해서 계산
+                  return (
+                    <div className="grid grid-cols-3 gap-2">
+                      {['-', '출석', '반휴', '주휴', '월반휴', '월휴', '늦반휴', '늦휴', '늦월반휴', '늦월휴', '자율', '결석'].map(opt => {
+                        const needsCount = ['월휴','늦월휴'].includes(opt) ? 2 : ['월반휴','늦월반휴'].includes(opt) ? 1 : 0;
+                        const isDisabled = needsCount > 0 && availableCount < needsCount;
+                        return (
+                          <button
+                            key={opt}
+                            onClick={() => !isDisabled && setPopupOffType(opt)}
+                            disabled={isDisabled}
+                            className={`py-2 px-1 rounded-xl text-[11px] font-black border-2 transition-all active:scale-95
+                              ${isDisabled
+                                ? 'bg-slate-100 border-slate-100 text-slate-300 cursor-not-allowed line-through'
+                                : popupOffType === opt
+                                  ? opt === '결석' ? 'bg-red-500 border-red-500 text-white'
+                                  : ['월휴','월반휴','늦월휴','늦월반휴'].includes(opt) ? 'bg-cyan-500 border-cyan-500 text-white'
+                                  : ['반휴','늦반휴','주휴','늦휴'].includes(opt) ? 'bg-emerald-500 border-emerald-500 text-white'
+                                  : 'bg-slate-900 border-slate-900 text-white'
+                                  : 'bg-slate-50 border-slate-100 text-slate-500 hover:border-slate-300'
+                              }`}
+                          >
+                            {opt}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
                 {/* 월휴 차감 안내 */}
                 {(['월휴','늦월휴'].includes(popupOffType)) && (
                   <div className="mt-2 text-[10px] font-bold text-cyan-600 bg-cyan-50 rounded-lg px-3 py-1.5">
