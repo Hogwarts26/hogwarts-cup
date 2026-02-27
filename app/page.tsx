@@ -1300,7 +1300,7 @@ export default function HogwartsApp() {
                       <div className="text-[10px] text-slate-400">마감 시간 이후 인증한 경우</div>
                     </div>
                   </label>
-                  {!['반휴','월반휴','늦반휴','늦월반휴'].includes(popupOffType) && (
+                  {popupOffType !== '-' && popupOffType !== '결석' && (
                     <label className="flex items-center gap-3 p-3 rounded-xl border-2 border-slate-100 cursor-pointer hover:border-slate-300 hover:bg-slate-50 transition-all">
                       <input
                         type="checkbox"
