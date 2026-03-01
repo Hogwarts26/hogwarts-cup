@@ -151,7 +151,8 @@ const studentData: Record<string, StudentInfo> = {
 // ==========================================
 const HOUSE_NOTICES: Record<string, { title: string; content: string }> = {
   "래번클로": {
-    title: `하위권은 데이터의 오류일 뿐, \n 논리적으로 반등하라!`,
+    title: `하위권은 데이터의 오류일 뿐,
+    논리적으로 반등하라!`,
     content: `래번클로 여러분, 지난주 4위라는 기록은 우리 기숙사의 지적 수준에 비해 매우 비정상적인 데이터입니다. 하지만 우리는 감정적으로 동요하지 않습니다. 무엇이 부족했는지 객관적으로 분석하고 수정하면 됩니다. 이번 주부터 우리는 학습 효율 극대화 전략을 세워 점수를 복구할 겁니다.
 
 플리트윅 교수님께서는 이번 주 도서관 고전 마법 심화 스터디를 강력 추천하셨습니다. 다른 기숙사 학생들이 봄 날씨에 들떠 산만해질 때, 우리는 도서관에서 더 높은 효율을 낼 것이 분명해요.
@@ -181,7 +182,8 @@ const HOUSE_NOTICES: Record<string, { title: string; content: string }> = {
 `,
   },
   "후플푸프": {
-    title: `노란 꽃바람이 불어옵니다! \n 1위 수성 기념 봄맞이 티타임`,
+    title: `노란 꽃바람이 불어옵니다!
+    1위 수성 기념 봄맞이 티타임`,
     content: `사랑하는 후플푸프 학우 여러분! 우리가 0.6점 차이로 짜릿한 1위를 거머쥐었습니다! 지난주 여러분이 보여준 배려와 조용한 꾸준함이 래번클로와 슬리데린의 거센 추격을 뿌리쳤습니다. 스프라우트 교수님께서는 승리를 기념하여 휴게실에 햇살을 머금은 레몬 스콘을 가득 준비해 주셨습니다.
 
 봄바람이 불어오는 3월입니다. 꽃가루 때문에 재채기하는 친구가 있다면 먼저 손수건을 건네주는 우리 기숙사만의 다정함을 잊지 마세요. 이번 주엔 휴게실 창가에 작은 화분들을 나누어 심을 예정입니다. 우리들의 성실함으로 꽃을 피워, 이번 달에도 우승 깃발을 계속 지켜나가요!
@@ -860,7 +862,7 @@ export default function HogwartsApp() {
     <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 font-sans relative">
       <style>{GLOBAL_STYLE}</style>
 
-      {/* 기숙사 공지사항 팝업 */}
+       {/* 기숙사 공지사항 팝업 */}
       {selectedHouseNotice && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setSelectedHouseNotice(null)}>
           <div className="relative bg-[#f4e4bc] p-6 md:p-12 w-full max-w-2xl rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.3)] overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()} style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.05) 100%)' }}>
@@ -868,7 +870,7 @@ export default function HogwartsApp() {
             <button onClick={() => setSelectedHouseNotice(null)} className="absolute top-2 right-2 md:top-4 md:right-4 text-slate-800 hover:rotate-90 transition-transform p-2 text-2xl z-20">✕</button>
             <div className="relative z-10 font-serif flex flex-col overflow-hidden">
               <div className="w-16 h-1 bg-slate-800/20 mx-auto mb-4 md:mb-6 shrink-0" />
-              <h3 className="text-xl md:text-3xl font-black text-[#4a3728] mb-4 md:mb-6 text-center italic border-b border-[#4a3728]/20 pb-4 shrink-0 px-4">{HOUSE_NOTICES[selectedHouseNotice]?.title}</h3>
+              <h3 className="text-xl md:text-3xl font-black text-[#4a3728] mb-4 md:mb-6 text-center italic border-b border-[#4a3728]/20 pb-4 shrink-0 px-4 whitespace-pre-wrap">{HOUSE_NOTICES[selectedHouseNotice]?.title}</h3>
               <div className="overflow-y-auto pr-2 custom-scrollbar">
                 <p className="text-base md:text-lg leading-relaxed text-[#5d4037] whitespace-pre-wrap font-medium">{HOUSE_NOTICES[selectedHouseNotice]?.content}</p>
                 <div className="mt-8 mb-4 text-right italic font-bold text-[#4a3728]/60">— Hogwarts School of Witchcraft and Wizardry —</div>
