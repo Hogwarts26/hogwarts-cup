@@ -116,7 +116,7 @@ const studentData: Record<string, StudentInfo> = {
   "🐾발자국": { house: "슬리데린", emoji: "🐾", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🐆표범":  { house: "슬리데린", emoji: "🐆", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🐡복어":  { house: "슬리데린", emoji: "🐡", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
-  "🐜개미":  { house: "슬리데린", emoji: "🐜", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
+  "🐶강쥐":  { house: "슬리데린", emoji: "🐶", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🦔도치":  { house: "슬리데린", emoji: "🦔", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🎂케이크": { house: "슬리데린", emoji: "🎂", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🐻곰돌":  { house: "슬리데린", emoji: "🐻", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
@@ -136,12 +136,12 @@ const studentData: Record<string, StudentInfo> = {
   "🦋나비":  { house: "그리핀도르", emoji: "🦋", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
   "🔥불꽃":  { house: "그리핀도르", emoji: "🔥", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
   "🍋레몬":  { house: "그리핀도르", emoji: "🍋", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
-  "🍓딸기":  { house: "후플푸프", emoji: "🍓", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
+  "🫧거품":  { house: "후플푸프", emoji: "🫧", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🐎말":    { house: "후플푸프", emoji: "🐎", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🐈‍⬛깜냥": { house: "후플푸프", emoji: "🐈‍⬛", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🦊여우":  { house: "후플푸프", emoji: "🦊", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🦖공룡":  { house: "후플푸프", emoji: "🦖", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
-  "🐨코알라":  { house: "후플푸프", emoji: "🐨", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
+  "💚초록":  { house: "후플푸프", emoji: "💚", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🐧펭귄":  { house: "후플푸프", emoji: "🐧", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🐿️다람":  { house: "후플푸프", emoji: "🐿️", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
 };
@@ -151,45 +151,41 @@ const studentData: Record<string, StudentInfo> = {
 // ==========================================
 const HOUSE_NOTICES: Record<string, { title: string; content: string }> = {
   "래번클로": {
-    title: `데이터의 승리, 
-    우리가 다시 정점에 섰습니다!`,
-    content: `자랑스러운 래번클로 학우 여러분! 지난주 4위라는 기록이 단순한 통계적 오류였음을 우리가 실력으로 증명해 냈습니다. 1주일 만에 정상을 탈환한 여러분의 집중력에 플리트윅 교수님께서도 무척 흡족해하고 계십니다. 특히 마법 이론 시험에서 고득점을 휩쓴 5학년들의 활약이 결정적이었습니다.
+    title: `하위권은 데이터의 오류일 뿐, 논리적으로 반등하라!`,
+    content: `래번클로 여러분, 지난주 4위라는 기록은 우리 기숙사의 지적 수준에 비해 매우 비정상적인 데이터입니다. 하지만 우리는 감정적으로 동요하지 않습니다. 무엇이 부족했는지 객관적으로 분석하고 수정하면 됩니다. 이번 주부터 우리는 학습 효율 극대화 전략을 세워 점수를 복구할 겁니다.
 
-이번 주는 노래하는 수선화의 주파수를 분석해 마법적 공명 현상을 연구하는 소모임을 가질 예정입니다. 1위의 자리를 지키는 것은 얻는 것보다 어렵습니다. 방심하지 말고 지적인 우위를 계속 유지합시다. 독수리 문고리가 이제는 "침묵 속에 담긴 소리는 무엇인가?"라는 난해한 질문을 던지기 시작했으니, 철학적인 사유를 멈추지 마십시오!
+플리트윅 교수님께서는 이번 주 도서관 고전 마법 심화 스터디를 강력 추천하셨습니다. 다른 기숙사 학생들이 봄 날씨에 들떠 산만해질 때, 우리는 도서관에서 더 높은 효율을 낼 것이 분명해요.
+
+독수리 문고리가 이번 주엔 "3월의 바람은 어떤 방향에서 오는가?"라는 질문을 던졌습니다. 물리적, 마법적 관점에서 답을 찾아내어 래번클로의 저력을 다시 증명합시다. 데이터는 거짓말을 하지 않으니, 이제 상승 곡선을 그려봅시다!
 
 `,
   },
   "그리핀도르": {
-    title: `3위의 벽을 깨고, 
-    다시 뜨겁게 타오를 시간!
-`,
-    content: `그리핀도르 학우 여러분! 3위라는 성적표는 우리 사자들에게 결코 어울리지 않습니다. 하지만 좌절할 필요는 없습니다. 네빌 롱보텀 교수님께서는 "진정한 용기는 쓰러졌을 때 다시 일어나는 것"이라며 여러분을 독려하고 계십니다.
+    title: `3월의 시작, 사자들의 포효가 필요한 시간!`,
+    content: `그리핀도르 학우 여러분! 3위라는 성적은 우리에게 만족스럽지 않습니다. 하지만 3월은 사자들이 가장 활발하게 움직이는 계절! 긴 겨울잠에서 깨어나듯, 우리도 이제 본격적으로 점수를 끌어올릴 시간입니다. 네빌 교수님께서는 이번 주말, 운동장에서 봄맞이 퀴디치 연습을 대대적으로 열겠다고 하셨습니다.
 
-이번 주부터 시작되는 야외 변신술 수업에서 그리핀도르만의 과감한 마법을 보여줍시다. 또한, 성곽 북쪽의 노래하는 수선화들에게 우리 기숙사의 자부심이 담긴 웅장한 합창을 들려주는 것은 어떨까요? (물론 소란죄로 감점되지 않는 선에서 말이죠!) 
+실내에만 웅크리고 있지 말고, 따뜻해진 날씨만큼 에너지 넘치게 수업에 참여하세요! 교수님들의 질문에 가장 먼저 손을 드는 용기, 그것이 우리가 1위로 가는 열쇠입니다. 
+복도에서 꽃가루 때문에 목소리가 변하더라도 당황하지 말고 더 크게 노래하듯 주문을 외우세요! 그리핀도르의 기세는 그 어떤 장애물도 뚫을 수 있습니다!
 
-이번 주말에는 퀴디치 팀의 특별 훈련이 예정되어 있습니다. 몸을 움직여 연휴의 나른함을 완전히 털어내고, 다시 1위를 향해 돌격합시다!
 
 `,
   },
   "슬리데린": {
-    title: `정상이 눈앞입니다, 
-    단 하나의 빈틈도 허용하지 마십시오!`,
-    content: `슬리데린 학우 여러분, 우리는지난주 2위를 기록하며 상위권을 유지하고 있습니다. 1위인 래번클로를 턱끝까지 추격한 여러분의 집요함은 칭찬받아 마땅합니다. 슬러그혼 교수님께서는 이번 주말, 특별히 선발된 학생들을 위해 봄맞이 고수익 약초 감별회를 사감실에서 열 계획이십니다.
+    title: `단 0.6점, 그러나 다음은 완벽한 0점 차의 승리`,
+    content: `슬리데린 학우 여러분, 지난주 결과는 매우 유감스럽습니다. 57.3점이라는 기록은 결코 낮지 않았으나, 1위와의 차이는 고작 0.6점이었습니다. 이 숫자는 우리에게 무엇을 의미합니까? 우리가 아주 조금만 더 정교했더라면 결과는 뒤집혔을 것이라는 뜻입니다. 슬러그혼 교수님께서는 이번 주 마법약 실습에서 단 한 방울의 오차도 허용하지 않겠다고 선언하셨습니다.
 
-최근 그리핀도르 학생들이 복도에서 소란을 피우며 우리를 도발하고 있다는 보고가 있습니다. 우리는 그런 유치한 감정 싸움에 에너지를 낭비하지 않습니다. 오직 실력과 결과로 그들의 코를 납작하게 해주십시오. 
+실패를 분석하는 자만이 다음 승리를 거머쥡니다. 이번 주 우리 기숙사의 목표는 단 하나, '압도적인 정밀함'입니다. 학업이든 일상이든 빈틈을 보이지 마십시오. 타 기숙사 애들이 꽃가루 때문에 목소리가 변하며 망신을 당할 때, 우리는 완벽한 주문으로 상대를 제압합시다. 
 
-3월 둘째 주 암호는 '은밀한 독주'입니다. 래번클로가 지식에 취해 있을 때, 우리는 완벽한 전략으로 그들의 자리를 빼앗을 것입니다.
+3월의 암호는 '철저한 승리'입니다. 이 암호를 잊지 말고 자부심을 되찾으십시오.
 
 `,
   },
   "후플푸프": {
-    title: `잠시 쉬어가는 발걸음, 
-    더 단단한 뿌리를 내립시다`,
-    content: `친애하는 후플푸프 학우 여러분, 지난주 1위에서 4위로 내려온 결과에 너무 상심하지 마세요. 스프라우트 교수님께서는 "폭풍우 뒤에 땅이 더 굳어지는 법"이라며 여러분의 마음을 다독여 주셨습니다. 우리가 잠시 자리를 내주었을 뿐, 우리의 성실함은 어디로 가지 않았으니 낙심하지 마세요.
+    title: `노란 꽃바람이 불어옵니다!\n1위 수성 기념 봄맞이 티타임`,
+    content: `사랑하는 후플푸프 학우 여러분! 우리가 0.6점 차이로 짜릿한 1위를 거머쥐었습니다! 지난주 여러분이 보여준 배려와 조용한 꾸준함이 래번클로와 슬리데린의 거센 추격을 뿌리쳤습니다. 스프라우트 교수님께서는 승리를 기념하여 휴게실에 햇살을 머금은 레몬 스콘을 가득 준비해 주셨습니다.
 
-이번 주에는 노래하는 수선화들이 잘 자랄 수 있도록 온실에서 만든 특제 영양분을 나누어 줄 예정입니다. 다른 학생들이 점수에 연연하며 다툴 때, 우리는 묵묵히 학교를 아름답게 가꾸는 후플푸프의 본분을 다합시다. 그런 선한 영향력이 결국 다시 우리에게 상점으로 돌아올테니까요. 
+봄바람이 불어오는 3월입니다. 꽃가루 때문에 재채기하는 친구가 있다면 먼저 손수건을 건네주는 우리 기숙사만의 다정함을 잊지 마세요. 이번 주엔 휴게실 창가에 작은 화분들을 나누어 심을 예정입니다. 우리들의 성실함으로 꽃을 피워, 이번 달에도 우승 깃발을 계속 지켜나가요!
 
-이번주에는 휴게실에 준비된 초코 컵케이크를 먹으며 서로를 응원합시다. 우리는 다시 올라갈 수 있습니다!
 `,
   },
 };
@@ -864,7 +860,7 @@ export default function HogwartsApp() {
     <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 font-sans relative">
       <style>{GLOBAL_STYLE}</style>
 
-       {/* 기숙사 공지사항 팝업 */}
+      {/* 기숙사 공지사항 팝업 */}
       {selectedHouseNotice && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setSelectedHouseNotice(null)}>
           <div className="relative bg-[#f4e4bc] p-6 md:p-12 w-full max-w-2xl rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.3)] overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()} style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.05) 100%)' }}>
@@ -885,33 +881,86 @@ export default function HogwartsApp() {
       {/* 관리자 요약 팝업 */}
       {showSummary && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowSummary(false)}>
-          <div className="bg-white rounded-[2rem] p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative" onClick={e => e.stopPropagation()}>
-            <button onClick={() => setShowSummary(false)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-800 transition-colors text-2xl font-black">✕</button>
-            <h3 className="text-2xl font-serif font-black text-slate-800 mb-8 italic tracking-tighter border-b-2 border-slate-100 pb-4 text-center">House Weekly Summary</h3>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border-t border-l border-slate-300 overflow-hidden rounded-xl">
-              {HOUSE_ORDER.map(house => {
-                const studentsInHouse = Object.keys(studentData).filter(n => studentData[n].house === house);
-                const config = HOUSE_CONFIG[house];
-                return (
-                  <div key={house} className="flex flex-col border-r border-b border-slate-300">
-                    <div className={`${config.bg} p-2 text-white font-black text-center text-[11px] tracking-widest`}>{config.icon} {house}</div>
-                    <div className="flex flex-col flex-1 divide-y divide-slate-200">
-                      {studentsInHouse.sort(sortKorean).map(name => {
-                        const totalMins = records.filter(r => r.student_name === name).reduce((sum, r) => sum + timeStrToMinutes(r.study_time), 0);
-                        return (
-                          <div key={name} className="flex h-10">
-                            <div className={`w-10 flex items-center justify-center text-lg border-r border-slate-200 ${config.bg.replace('bg-', 'bg-opacity-10 bg-')}`}>{studentData[name].emoji}</div>
-                            <div className="flex-1 flex items-center justify-center font-black text-sm bg-white">
-                              <span className={totalMins < 1200 ? "text-red-500" : "text-slate-800"}>{totalMins > 0 ? minutesToTimeStr(totalMins) : "-"}</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+          <div className="bg-white rounded-[2rem] p-4 md:p-6 w-full max-w-5xl max-h-[90vh] overflow-y-auto shadow-2xl relative" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setShowSummary(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-800 transition-colors text-2xl font-black z-10">✕</button>
+            <h3 className="text-xl font-serif font-black text-slate-800 mb-4 italic tracking-tighter border-b-2 border-slate-100 pb-3 text-center">House Weekly Summary</h3>
+
+            {HOUSE_ORDER.map(house => {
+              const studentsInHouse = Object.keys(studentData).filter(n => studentData[n].house === house).sort(sortKorean);
+              const config = HOUSE_CONFIG[house];
+              return (
+                <div key={house} className="mb-6">
+                  {/* 기숙사 헤더 */}
+                  <div className={`${config.bg} px-4 py-2 rounded-t-xl flex items-center gap-2`}>
+                    <span className="text-lg">{config.icon}</span>
+                    <span className="text-white font-black text-sm tracking-widest">{house}</span>
                   </div>
-                );
-              })}
-            </div>
+
+                  {/* 테이블 */}
+                  <div className="overflow-x-auto border border-t-0 border-slate-200 rounded-b-xl">
+                    <table className="w-full text-[11px] border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200">
+                          <th className="p-2 text-left font-black text-slate-500 w-16">학생</th>
+                          {DAYS.map(d => (
+                            <th key={d} className="p-2 text-center font-black text-slate-500 w-12">{d}</th>
+                          ))}
+                          <th className="p-2 text-center font-black text-slate-700 bg-slate-100 w-14">총시간</th>
+                          <th className="p-2 text-center font-black text-slate-700 bg-slate-100 w-12">총점</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {studentsInHouse.map((name, idx) => {
+                          const totalMins = records.filter(r => r.student_name === name).reduce((sum, r) => sum + timeStrToMinutes(r.study_time), 0);
+                          const totalPts  = records.filter(r => r.student_name === name).reduce((sum, r) => sum + calc(r).total, 0);
+                          return (
+                            <tr key={name} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
+                              <td className="p-2">
+                                <div className="flex items-center gap-1">
+                                  <span className="text-base">{studentData[name].emoji}</span>
+                                  <span className="font-black text-slate-700 text-[10px]">{formatDisplayName(name)}</span>
+                                </div>
+                              </td>
+                              {DAYS.map(day => {
+                                const rec = records.find(r => r.student_name === name && r.day_of_week === day) || {};
+                                const mins = timeStrToMinutes(rec.study_time);
+                                const offBg =
+                                  ['반휴','월반휴','늦반휴','늦월반휴'].includes(rec.off_type) ? 'text-emerald-600' :
+                                  ['주휴','월휴','늦휴','늦월휴'].includes(rec.off_type) ? 'text-blue-500' :
+                                  rec.off_type === '결석' ? 'text-red-500' : 'text-slate-700';
+                                return (
+                                  <td key={day} className="p-2 text-center">
+                                    {rec.off_type && !['주휴','월휴','늦휴','늦월휴','-',''].includes(rec.off_type) ? (
+                                      <span className={`font-bold ${offBg}`}>
+                                        {mins > 0 ? minutesToTimeStr(mins) : rec.off_type === '결석' ? '결석' : '-'}
+                                      </span>
+                                    ) : rec.off_type && ['주휴','월휴','늦휴','늦월휴'].includes(rec.off_type) ? (
+                                      <span className="font-bold text-blue-400 text-[9px]">{rec.off_type}</span>
+                                    ) : (
+                                      <span className="text-slate-300">-</span>
+                                    )}
+                                  </td>
+                                );
+                              })}
+                              <td className="p-2 text-center bg-slate-50">
+                                <span className={`font-black ${totalMins < 1200 ? 'text-red-500' : 'text-slate-800'}`}>
+                                  {totalMins > 0 ? minutesToTimeStr(totalMins) : '-'}
+                                </span>
+                              </td>
+                              <td className="p-2 text-center bg-slate-50">
+                                <span className={`font-black ${totalPts < 0 ? 'text-red-500' : totalPts > 0 ? 'text-blue-600' : 'text-slate-400'}`}>
+                                  {totalPts > 0 ? `+${totalPts}` : totalPts}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
