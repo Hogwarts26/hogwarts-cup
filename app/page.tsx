@@ -917,9 +917,9 @@ export default function HogwartsApp() {
                           return (
                             <tr key={name} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
                               <td className="p-2">
-                                <div className="flex items-center gap-1">
-                                  <span className="text-base">{studentData[name].emoji}</span>
-                                  <span className="font-black text-slate-700 text-[10px]">{formatDisplayName(name)}</span>
+                                <div className="flex flex-col items-center gap-0.5">
+                                  <span className="text-base leading-none">{studentData[name].emoji}</span>
+                                  <span className="font-black text-slate-700 text-[9px] leading-none">{formatDisplayName(name)}</span>
                                 </div>
                               </td>
                               {DAYS.map(day => {
