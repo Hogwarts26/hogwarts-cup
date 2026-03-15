@@ -136,7 +136,7 @@ const studentData: Record<string, StudentInfo> = {
   "🦋나비":  { house: "그리핀도르", emoji: "🦋", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
   "🔥불꽃":  { house: "그리핀도르", emoji: "🔥", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
   "🍋레몬":  { house: "그리핀도르", emoji: "🍋", color: "bg-red-50", accent: "bg-red-700", text: "text-red-900" },
-  "🐨코알라":  { house: "후플푸프", emoji: "🐨", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
+  "🐨코알라": { house: "후플푸프", emoji: "🐨", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🐎말":    { house: "후플푸프", emoji: "🐎", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🐈‍⬛깜냥": { house: "후플푸프", emoji: "🐈‍⬛", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
   "🦊여우":  { house: "후플푸프", emoji: "🦊", color: "bg-amber-50", accent: "bg-amber-500", text: "text-amber-900" },
@@ -885,11 +885,12 @@ export default function HogwartsApp() {
             <button onClick={() => setShowSummary(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-800 transition-colors text-2xl font-black z-10">✕</button>
             <h3 className="text-xl font-serif font-black text-slate-800 mb-4 italic tracking-tighter border-b-2 border-slate-100 pb-3 text-center">House Weekly Summary</h3>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {HOUSE_ORDER.map(house => {
               const studentsInHouse = Object.keys(studentData).filter(n => studentData[n].house === house).sort(sortKorean);
               const config = HOUSE_CONFIG[house];
               return (
-                <div key={house} className="mb-6">
+                <div key={house} className="mb-0">
                   {/* 기숙사 헤더 */}
                   <div className={`${config.bg} px-4 py-2 rounded-t-xl flex items-center gap-2`}>
                     <span className="text-lg">{config.icon}</span>
@@ -961,6 +962,7 @@ export default function HogwartsApp() {
                 </div>
               );
             })}
+            </div>
           </div>
         </div>
       )}
