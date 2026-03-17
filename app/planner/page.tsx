@@ -253,6 +253,10 @@ export default function PlannerPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [bgm, setBgm] = useState<HTMLAudioElement | null>(null);
 
+  // 해그리드 편지 팝업
+  const [showLetterPopup, setShowLetterPopup] = useState(false);
+  const [hasReadLetter, setHasReadLetter] = useState(false);
+
   // 타임블록 드래그 중인 아이템 추적
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
 
@@ -316,6 +320,15 @@ export default function PlannerPage() {
     }
   }, []);
 
+  useEffect(() => {
+  const read = localStorage.getItem('hagrid_letter_read');
+  if (!read) {
+    setShowLetterPopup(true);
+  } else {
+    setHasReadLetter(true);
+  }
+}, [selectedName]);
+
   const fetchPlannerData = async (name: string, mondayDate: string) => {
     setLoading(true);
     try {
@@ -378,6 +391,12 @@ export default function PlannerPage() {
     localStorage.setItem('planner_theme', newMode ? 'dark' : 'light');
   };
 
+const handleCloseLetter = () => {
+  setShowLetterPopup(false);
+  setHasReadLetter(true);
+  localStorage.setItem('hagrid_letter_read', 'true');
+};
+  
   const toggleViewMode = () => {
     const newMode = viewMode === 'todo' ? 'timeblock' : 'todo';
     setViewMode(newMode);
@@ -541,6 +560,12 @@ export default function PlannerPage() {
             <button onClick={toggleTheme} className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${theme.btn}`}>
               {isDarkMode ? '🌝' : '🌞'}
             </button>
+            <button
+             onClick={() => setShowLetterPopup(true)}
+             className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${theme.btn}`}
+           >
+            ✉️
+           </button>
           </div>
         </div>
 
@@ -778,8 +803,43 @@ export default function PlannerPage() {
               );
             })}
           </div>
-        )}
+              )}
       </div>
+
+      {/* ✉️ 해그리드 편지 팝업 */}
+      {showLetterPopup && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[999]">
+          <div className={`w-[90%] max-w-md p-6 rounded-2xl ${theme.card} relative`}>
+            <button
+              onClick={handleCloseLetter}
+              className="absolute top-3 right-3 text-sm opacity-50 hover:opacity-100"
+            >
+              ✕
+            </button>
+
+            <h2 className="text-lg font-black mb-3">📬 사냥터지기 해그리드의 편지</h2>
+
+            <div className="text-xs leading-relaxed whitespace-pre-line opacity-80">
+{`안녕, ${selectedName}.
+
+요즘 날이 부쩍 따뜻해졌지? 성 근처 숲에 꽃향기가 살살 불어오니까 눈꺼풀은 천근만근이고 책장 넘기는 소리가 자장가처럼 들릴 거야. 나도 다 이해해. 사실 나도 요즘 수십 마리의 용 녀석들을 돌보느라 정신이 하나도 없거든.
+
+이 녀석들이 얼마나 정신 사납게 구는지, 내 오두막이 남아나질 않는다니까! 매주 용이 부활해서 불을 뿜어대지, 거기다 또 어디서 새로운 용의 알을 구해다가 슬쩍 맡기고 가는 학생들까지 보고 있으면… ‘진짜 망했구나’라는 생각이 머릿속을 꽉 채우곤 해(그렇다고 용들을 돌보는게 싫다는 건 아냐. 이건 내가 꿈꿔왔던 일이라고!). 하지만 어쩌겠어, 이미 벌어진 일이고 내가 해야 할 일인걸. 진짜 망하지 않게 발버둥 치는 수밖에 없지 않겠어?
+
+아무튼, 내가 요즘 읽고 있는 머글 책에서 아주 기막힌 구절을 발견했어. 최유수라는 머글 작가의 <아무도 없는 바다>라는 에세이에 나오는 말인데.
+
+“하고 있어라. 그게 무엇이든 지금이 어떤 상황이든, 일단 하고 있어라. 하고 있지 않으면 그 무엇도 되지 않는다. 하고 있으면 하고 있는 사이 무엇이든 된다.”
+
+이 말이 정말 내 가슴을 툭 치더라고. 나도 일단 ‘그냥 하자’는 마음가짐을 다시 새겨보려고 해. 뭐, 이런 식으로 올해 벌써 열세 번 정도는 다시 태어난 것 같긴 하지만… 그래도 뭐 어때? 중요한 건 몇 번을 넘어지든 다시 태어나려고 마음먹는 그 자체 아니겠어?
+
+자, 너도 졸음 좀 쫓아내고 다시 깃펜을 잡아봐. 나도 가서 저 말썽꾸러기 녀석들 밥 주러 가야겠어!
+
+— 너의 친구, 루비우스 해그리드`}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
