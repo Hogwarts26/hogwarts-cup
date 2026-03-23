@@ -117,12 +117,12 @@ const HAGRID_LETTER = {
 
 영국에 '존 돌렌'이라는 머글이 있었는데, 한때는 마약에 빠져서 노숙 생활을 하며 경찰서까지 들락날락했대. 그런데 우연히 강아지 한 마리를 얻게 된 게 삶을 완전히 바꿔놓았다는 거야(마치 나와 팽 같은 관계인 셈이지!).
 
-그 머글은 ‘내가 잘못되면 이 작은 녀석은 어떻게 될까?' 하는 걱정에 약도 끊고, 길거리에서 그림을 그리기 시작했어. 그런데 세상에, 지금은 그 그림들이 한 점에 머글 화폐단위로는 5천 달러가 넘는 가격에 팔리는 화가가 됐다지 뭐야! 대충 800갈레온이나 하는 거금이라고! 세상에. 위즐리 형제의 장난감 가게 창업에 드는 돈이 천 갈레온이었다는데. 아주 엄청나지.
+그 머글은 '내가 잘못되면 이 작은 녀석은 어떻게 될까?' 하는 걱정에 약도 끊고, 길거리에서 그림을 그리기 시작했어. 그런데 세상에, 지금은 그 그림들이 한 점에 머글 화폐단위로는 5천 달러가 넘는 가격에 팔리는 화가가 됐다지 뭐야! 대충 800갈레온이나 하는 거금이라고! 세상에. 위즐리 형제의 장난감 가게 창업에 드는 돈이 천 갈레온이었다는데. 아주 엄청나지.
 
 아무튼간에, 사람들은 누구나 어제보다 나은 내일을 꿈꾸곤 해. 너도 오늘보다 성적이 더 오르면 좋겠고, 오늘보다 더 보람찬 내일을 보내고 싶을 거야.
 하지만 말이야, 오늘보다 나은 내일을 만들려면 언제나 '계기'가 필요해. 존 돌렌에게 그 강아지가 그랬던 것처럼 말이야.
 
-{formatDisplayName(name)}, 너는 지금 어때? 그런 계기를 잘 만들어가고 있어?
+{NAME}, 너는 지금 어때? 그런 계기를 잘 만들어가고 있어?
 당연히 불안하겠지만, 네가 매일 책상 앞에 앉아 꿋꿋하게 버티는 그 시간들이 결국 너를 완전히 다른 내일로 데려다줄 가장 확실한 계기가 될 테니 너무 걱정하지 말려무나. 
 그러니까 이번 주도 기운 잃지 말고 끝까지 해보자고. 너라면 충분히 해낼 수 있어!
 
@@ -373,7 +373,6 @@ function HagridLetterModal({ name, onClose }: { name: string; onClose: () => voi
         onClick={e => e.stopPropagation()}
         style={{ fontFamily: "'Pretendard', sans-serif" }}
       >
-        {/* 상단 헤더 */}
         <div className="px-7 pt-7 pb-4 border-b border-amber-400/10">
           <div className="flex items-center gap-3">
             <span className="text-3xl">📬</span>
@@ -383,14 +382,12 @@ function HagridLetterModal({ name, onClose }: { name: string; onClose: () => voi
             </div>
           </div>
         </div>
-
-        {/* 본문 */}
         <div className="px-7 py-5 overflow-y-auto" style={{ maxHeight: '62vh' }}>
           <p className="font-bold text-base text-white mb-4">안녕, {formatDisplayName(name)}!</p>
-          <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">{HAGRID_LETTER.content}</p>
+          <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
+            {HAGRID_LETTER.content.replace('{NAME}', formatDisplayName(name))}
+          </p>
         </div>
-
-        {/* 닫기 버튼 */}
         <div className="px-7 pb-6 pt-3 border-t border-amber-400/10">
           <button
             onClick={onClose}
