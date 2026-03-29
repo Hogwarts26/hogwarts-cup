@@ -27,23 +27,17 @@ const SCHEDULES = {
     { label: "7교시", start: "19:20", end: "20:40", isStudy: true },
     { label: "8교시", start: "20:50", end: "22:10", isStudy: true }
   ],
-  '90': [
+'90': [
     { label: "1교시", start: "06:30", end: "08:00", isStudy: true },
-    { label: "쉬는시간", start: "08:00", end: "08:15", isStudy: false },
     { label: "2교시", start: "08:15", end: "09:45", isStudy: true },
-    { label: "쉬는시간", start: "09:45", end: "10:00", isStudy: false },
     { label: "3교시", start: "10:00", end: "11:30", isStudy: true },
-    { label: "쉬는시간", start: "11:30", end: "11:45", isStudy: false },
     { label: "4교시", start: "11:45", end: "13:15", isStudy: true },
     { label: "점심시간", start: "13:15", end: "14:35", isStudy: false },
     { label: "5교시", start: "14:35", end: "16:05", isStudy: true },
-    { label: "쉬는시간", start: "16:05", end: "16:20", isStudy: false },
     { label: "6교시", start: "16:20", end: "17:50", isStudy: true },
     { label: "저녁시간", start: "17:50", end: "18:50", isStudy: false },
     { label: "7교시", start: "18:50", end: "20:20", isStudy: true },
-    { label: "쉬는시간", start: "20:20", end: "20:35", isStudy: false },
     { label: "8교시", start: "20:35", end: "22:05", isStudy: true },
-    { label: "쉬는시간", start: "22:05", end: "22:20", isStudy: false },
     { label: "9교시", start: "22:20", end: "23:20", isStudy: true }
   ]
 };
