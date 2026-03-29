@@ -495,7 +495,7 @@ export default function HogwartsApp() {
 
   function getAdjustedToday() {
     const now = new Date();
-    if (now.getDay() === 1 && now.getHours() < 18) {
+    if (now.getDay() === 1 && now.getHours() < 6) {
       const adj = new Date(now); adj.setDate(now.getDate() - 1); return adj;
     }
     return now;
