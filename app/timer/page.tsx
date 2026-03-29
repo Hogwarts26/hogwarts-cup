@@ -26,6 +26,25 @@ const SCHEDULES = {
     { label: "저녁시간", start: "18:00", end: "19:20", isStudy: false },
     { label: "7교시", start: "19:20", end: "20:40", isStudy: true },
     { label: "8교시", start: "20:50", end: "22:10", isStudy: true }
+  ],
+  '90': [
+    { label: "1교시", start: "06:30", end: "08:00", isStudy: true },
+    { label: "쉬는시간", start: "08:00", end: "08:15", isStudy: false },
+    { label: "2교시", start: "08:15", end: "09:45", isStudy: true },
+    { label: "쉬는시간", start: "09:45", end: "10:00", isStudy: false },
+    { label: "3교시", start: "10:00", end: "11:30", isStudy: true },
+    { label: "쉬는시간", start: "11:30", end: "11:45", isStudy: false },
+    { label: "4교시", start: "11:45", end: "13:15", isStudy: true },
+    { label: "점심시간", start: "13:15", end: "14:35", isStudy: false },
+    { label: "5교시", start: "14:35", end: "16:05", isStudy: true },
+    { label: "쉬는시간", start: "16:05", end: "16:20", isStudy: false },
+    { label: "6교시", start: "16:20", end: "17:50", isStudy: true },
+    { label: "저녁시간", start: "17:50", end: "18:50", isStudy: false },
+    { label: "7교시", start: "18:50", end: "20:20", isStudy: true },
+    { label: "쉬는시간", start: "20:20", end: "20:35", isStudy: false },
+    { label: "8교시", start: "20:35", end: "22:05", isStudy: true },
+    { label: "쉬는시간", start: "22:05", end: "22:20", isStudy: false },
+    { label: "9교시", start: "22:20", end: "23:20", isStudy: true }
   ]
 };
 
@@ -34,7 +53,7 @@ export default function TimerPage() {
   const [now, setNow] = useState<Date | null>(null);
   const [isMuted, setIsMuted] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const [scheduleMode, setScheduleMode] = useState<'100' | '80' | '50'>('100');
+  const [scheduleMode, setScheduleMode] = useState<'100' | '80' | '90' | '50'>('100');
   
   const lastPlayedRef = useRef<string>("");
 
@@ -92,7 +111,7 @@ export default function TimerPage() {
       return { current, isGap: false, isAllDone: false, nowTotalSec, gapStart: startSec, customEndSec: endSec, isBeforeStart: false };
     }
 
-    const activeList = SCHEDULES[scheduleMode as '100' | '80'];
+    const activeList = SCHEDULES[scheduleMode as '100' | '80' | '90'];
     const firstStartSec = getSeconds(activeList[0].start);
     const lastEndSec = getSeconds(activeList[activeList.length - 1].end);
 
@@ -199,9 +218,9 @@ export default function TimerPage() {
           </div>
         </div>
         <div className={`flex p-1 rounded-2xl border ${isDarkMode ? 'bg-slate-900/40 border-white/5' : 'bg-slate-200/50 border-slate-300'}`}>
-          {(['100', '80', '50'] as const).map((m) => (
+          {(['100', '80', '90', '50'] as const).map((m) => (
             <button key={m} onClick={() => { setScheduleMode(m); lastPlayedRef.current = ""; }} className={`flex-1 py-2 rounded-xl text-[10px] font-black transition-all ${scheduleMode === m ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500'}`}>
-              {m === '100' ? '100/20' : m === '80' ? '80/10' : '50/10'}
+              {m === '100' ? '100/20' : m === '80' ? '80/10' : m === '90' ? '90/15' : '50/10'}
             </button>
           ))}
         </div>
@@ -239,7 +258,7 @@ export default function TimerPage() {
           {scheduleMode === '50' ? (
             <div className="text-center opacity-60 font-bold py-4">정각부터 50분 공부, <br/> 10분 휴식이 반복됩니다.</div>
           ) : (
-            SCHEDULES[scheduleMode as '100' | '80'].map((p, i) => {
+            SCHEDULES[scheduleMode as '100' | '80' | '90'].map((p, i) => {
               const isItemCurrent = !isAllDone && !isBeforeStart && current?.label === p.label;
               const isItemPast = nowTotalSec >= getSeconds(p.end);
               return (
