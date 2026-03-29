@@ -27,12 +27,12 @@ const SCHEDULES = {
     { label: "7교시", start: "19:20", end: "20:40", isStudy: true },
     { label: "8교시", start: "20:50", end: "22:10", isStudy: true }
   ],
-'90': [
+  '90': [
     { label: "1교시", start: "06:30", end: "08:00", isStudy: true },
     { label: "2교시", start: "08:15", end: "09:45", isStudy: true },
     { label: "3교시", start: "10:00", end: "11:30", isStudy: true },
-    { label: "4교시", start: "11:45", end: "13:15", isStudy: true },
-    { label: "점심시간", start: "13:15", end: "14:35", isStudy: false },
+    { label: "점심시간", start: "11:30", end: "12:50", isStudy: false },
+    { label: "4교시", start: "12:50", end: "14:20", isStudy: true },
     { label: "5교시", start: "14:35", end: "16:05", isStudy: true },
     { label: "6교시", start: "16:20", end: "17:50", isStudy: true },
     { label: "저녁시간", start: "17:50", end: "18:50", isStudy: false },
