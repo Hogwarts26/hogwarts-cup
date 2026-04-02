@@ -138,7 +138,7 @@ const studentData: Record<string, StudentInfo> = {
   "🦔도치":  { house: "슬리데린", emoji: "🦔", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🎂케이크": { house: "슬리데린", emoji: "🎂", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🐻곰돌":  { house: "슬리데린", emoji: "🐻", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
-  "🪙갈레온": { house: "래번클로", emoji: "🪙", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
+  "[졸업생]🪙갈레온": { house: "래번클로", emoji: "🪙", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
   "💫별":    { house: "래번클로", emoji: "💫", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
   "🍪쿠키":  { house: "래번클로", emoji: "🍪", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
   "🐵숭이":  { house: "래번클로", emoji: "🐵", color: "bg-blue-50", accent: "bg-blue-700", text: "text-blue-900" },
@@ -210,6 +210,7 @@ const HOUSE_NOTICES: Record<string, { title: string; content: string }> = {
 // ==========================================
 const GLOBAL_STYLE = `
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
   @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
   body {
     font-family: 'Cinzel', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto,
@@ -269,6 +270,11 @@ const GLOBAL_STYLE = `
 const sortKorean = (a: string, b: string) => {
   const clean = (s: string) => s.replace(/[^\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/g, "");
   return clean(a).localeCompare(clean(b), 'ko');
+};
+const isGraduated = (name: string) => name.startsWith('[졸업생]');
+const getGraduatedDisplayName = (name: string) => {
+  const match = name.replace('[졸업생]', '').match(/[가-힣a-zA-Z0-9]+/);
+  return match ? match[0].trim() : name;
 };
 const formatDisplayName = (name: string): string => {
   if (!name) return "";
@@ -854,7 +860,7 @@ export default function HogwartsApp() {
             <h3 className="text-xl font-serif font-black text-slate-800 mb-4 italic tracking-tighter border-b-2 border-slate-100 pb-3 text-center">House Weekly Summary</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {HOUSE_ORDER.map(house => {
-                const studentsInHouse = Object.keys(studentData).filter(n => studentData[n].house === house).sort(sortKorean);
+                const studentsInHouse = Object.keys(studentData).filter(n => studentData[n].house === house).sort();
                 const config = HOUSE_CONFIG[house];
                 return (
                   <div key={house} className="mb-0">
@@ -1023,21 +1029,50 @@ export default function HogwartsApp() {
             </thead>
             <tbody>
               {displayList.map(name => {
-                const info     = studentData[name];
-                const monRec   = records.find(r => r.student_name === name && r.day_of_week === '월') || {};
-                const offCount = monRec.monthly_off_count ?? 4;
-                const rows     = [{ f: 'off_type' }, { f: 'is_late' }, { f: 'am_3h' }, { f: 'study_time' }, { f: 'penalty' }, { f: 'bonus' }, { f: 'total' }];
-                const totalMins = records.filter(r => r.student_name === name).reduce((sum, r) => sum + timeStrToMinutes(r.study_time), 0);
-                const totalPts  = records.filter(r => r.student_name === name).reduce((sum, r) => sum + calc(r).total, 0);
-                return (
-                  <React.Fragment key={name}>
-                    {isAdmin && (
-                      <tr className="bg-slate-100/50 border-t-2 border-slate-200">
-                        <td className="sticky left-0 bg-slate-100/50 z-20 border-r" />
-                        {DAYS.map(d => <td key={d} className="p-1 text-[10px] font-black text-slate-500 text-center">{d}</td>)}
-                        <td colSpan={2} className="border-l" />
-                      </tr>
-                    )}
+  const info     = studentData[name];
+  const monRec   = records.find(r => r.student_name === name && r.day_of_week === '월') || {};
+  const offCount = monRec.monthly_off_count ?? 4;
+  const rows     = [{ f: 'off_type' }, { f: 'is_late' }, { f: 'am_3h' }, { f: 'study_time' }, { f: 'penalty' }, { f: 'bonus' }, { f: 'total' }];
+  const totalMins = records.filter(r => r.student_name === name).reduce((sum, r) => sum + timeStrToMinutes(r.study_time), 0);
+  const totalPts  = records.filter(r => r.student_name === name).reduce((sum, r) => sum + calc(r).total, 0);
+
+  // 졸업생 처리
+  if (isGraduated(name)) {
+    return (
+      <React.Fragment key={name}>
+        {isAdmin && (
+          <tr className="bg-slate-100/50 border-t-2 border-slate-200">
+            <td className="sticky left-0 bg-slate-100/50 z-20 border-r" />
+            {DAYS.map(d => <td key={d} className="p-1 text-[10px] font-black text-slate-500 text-center">{d}</td>)}
+            <td colSpan={2} className="border-l" />
+          </tr>
+        )}
+        <tr className="border-b-[6px] border-slate-100">
+          <td
+            className={`p-4 text-center sticky left-0 z-20 font-bold border-r-[3px] ${info.color} ${info.text} cursor-pointer hover:brightness-95 transition-all`}
+            onClick={() => setSelectedStudentReport(name)}
+          >
+            <div className="text-3xl mb-1">{info.emoji}</div>
+            <div className="leading-tight text-sm font-black mb-1">{formatDisplayName(name)}</div>
+            <div className="text-[9px] font-black opacity-70 mb-2">{info.house}</div>
+          </td>
+          <td
+            colSpan={DAYS.length + 2}
+            className="text-center py-8 bg-white"
+          >
+            <p
+              className="text-slate-500 text-lg md:text-xl"
+              style={{ fontFamily: "'Dancing Script', 'Segoe Script', cursive", fontStyle: 'italic' }}
+            >
+              호그와트 졸업생 {getGraduatedDisplayName(name)}님의 앞날이 행복으로 가득하길 바랍니다.
+            </p>
+          </td>
+        </tr>
+      </React.Fragment>
+    );
+  }
+
+  // 이하 기존 rows.map 코드 그대로 ...
                     {rows.map((row, rIdx) => (
                       <tr key={row.f} className={rIdx === 6 ? "border-b-[6px] border-slate-100" : "border-b border-slate-50"}>
                         {rIdx === 0 && (
