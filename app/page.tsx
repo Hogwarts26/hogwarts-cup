@@ -252,7 +252,8 @@ const GLOBAL_STYLE = `
 // 졸업생 명단 (졸업생 이름을 여기에 추가/제거)
 // ==========================================
 const GRADUATED_NAMES: string[] = [
-  "🪙갈레온",
+  "🐶강쥐",
+  "💚초록",
 ];
 const isGraduated = (name: string) => GRADUATED_NAMES.includes(name);
 
