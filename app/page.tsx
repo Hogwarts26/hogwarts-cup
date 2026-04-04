@@ -306,7 +306,7 @@ const calcProgress = (studyMinutesSinceAcquired: number, dragonIndex: number): n
 };
 
 // ==========================================
-// 해그리드 편지 본문
+// 재학생 해그리드 편지 본문
 // ==========================================
 const HAGRID_LETTER = {
   title: `사냥터지기 해그리드가 보내는 편지`,
@@ -322,6 +322,23 @@ const HAGRID_LETTER = {
 오늘 하루도 정말 고생 많았어. 네가 꿋꿋하게 버틴 이 시간들이 결국엔 아주 귀한 보물로 돌아올 거야. 기운 잃지 말고, 끝까지 해보자고! 
 
 — 너의 영원한 친구, 루비우스 해그리드가`,
+};
+
+// ==========================================
+// 졸업생 해그리드 편지 본문
+// ==========================================
+const HAGRID_LETTER_GRADUATED = {
+  title: `사냥터지기 해그리드가 보내는 편지`,
+  content: `졸업을 진심으로 축하한다!
+와, 정말이지... 처음 네가 성에 들어오던 날이 엊그제 같은데 벌써 네가 졸업할 때가 다 됐다는 게 믿어지지가 않아. 그때 네 눈이 얼마나 커졌었는지, 아직도 선히 기억이 나. 촛불이 천장에 둥둥 떠다니는 걸 보고 입을 딱 벌렸었잖니. 하하! 그 모습이 너무 귀여워서 내가 혼자 실실 웃었더랬지.
+
+보아하니 넌 이제 제대로 된 마법사 — 아니, 마녀 — 가 됐구나. 어깨도 꽤 펴졌고, 눈빛도 달라졌어. 내가 뭘 잘 모르는 것 같아도, 사람 눈빛은 볼 줄 알아. 넌 진짜배기야. 호그와트가 너를 키운 게 아니라, 네가 호그와트를 빛낸 거야.
+
+이제 성을 떠나면 무섭고 넓은 세상이 기다릴 테지. 뭔가 이상하고 위험한 것도 잔뜩 있을거야. 히포그리프도, 용도, 가끔은 사람도 그렇고. 하하. 어쨌든, 뭐가 무서워도 눈을 피하지 마. 내가 살면서 배운 게 있다면, 제대로 눈 마주치고 인사하면 대부분의 것들은 그렇게 나쁘지만은 않더라고.
+
+내 오두막집은 언제나 열려 있어. 진짜로. 허브차도 항상 있고, 락다운케이크는... 음, 그건 좀 다시 생각해 볼게. 아무튼, 보고 싶으면 날 찾아와. 넌 졸업 후에도 내 친구니까.`,
+  closing: `늘 네 편인,\n—루비우스 해그리드`,
+  ps: `추신: 팡을 쓰다듬어 줘서 고마워. 걘 네가 좋다나봐.`,
 };
 
 // 줄바꿈 텍스트 → JSX 변환
@@ -372,7 +389,7 @@ const calc = (r: any) => {
 };
 
 // ==========================================
-// 해그리드 편지 팝업 컴포넌트
+// 재학생 해그리드 편지 팝업 컴포넌트
 // ==========================================
 function HagridLetterModal({ name, onClose }: { name: string; onClose: () => void }) {
   return (
@@ -399,6 +416,58 @@ function HagridLetterModal({ name, onClose }: { name: string; onClose: () => voi
           <p className="font-bold text-base text-white mb-4">안녕, {formatDisplayName(name)}!</p>
           <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
             {HAGRID_LETTER.content.replace('{NAME}', formatDisplayName(name))}
+          </p>
+        </div>
+        <div className="px-7 pb-6 pt-3 border-t border-amber-400/10">
+          <button
+            onClick={onClose}
+            className="w-full py-3 rounded-2xl text-sm font-black tracking-wide transition-all bg-amber-400/15 text-amber-300 hover:bg-amber-400/25 border border-amber-400/20"
+          >
+            편지 접기 ✉️
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 졸업생 해그리드 편지 팝업 컴포넌트
+// ==========================================
+function HagridLetterGraduatedModal({ name, onClose }: { name: string; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}
+      onClick={onClose}
+    >
+      <div
+        className="relative max-w-lg w-full rounded-[2rem] border border-amber-400/20 shadow-2xl overflow-hidden bg-[#1a1209]"
+        onClick={e => e.stopPropagation()}
+        style={{ fontFamily: "'Pretendard', sans-serif" }}
+      >
+        <div className="px-7 pt-7 pb-4 border-b border-amber-400/10">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">📬</span>
+            <div>
+              <p className="text-[10px] font-black tracking-[0.25em] uppercase text-amber-400/60">Hagrid's Letter</p>
+              <p className="text-base font-black text-amber-300">{HAGRID_LETTER_GRADUATED.title}</p>
+            </div>
+          </div>
+        </div>
+        <div className="px-7 py-5 overflow-y-auto" style={{ maxHeight: '62vh' }}>
+          <p className="font-bold text-base text-white mb-4">안녕, {formatDisplayName(name)}!</p>
+          {/* 본문 */}
+          <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap mb-6">
+            {HAGRID_LETTER_GRADUATED.content}
+          </p>
+          {/* 클로징 - 본문보다 작은 폰트 */}
+          <p className="text-slate-400 text-xs leading-relaxed whitespace-pre-wrap mb-2 italic">
+            {HAGRID_LETTER_GRADUATED.closing}
+          </p>
+          {/* 추신 - 본문보다 작은 폰트 */}
+          <p className="text-slate-500 text-xs leading-relaxed whitespace-pre-wrap italic">
+            {HAGRID_LETTER_GRADUATED.ps}
           </p>
         </div>
         <div className="px-7 pb-6 pt-3 border-t border-amber-400/10">
@@ -536,8 +605,9 @@ export default function HogwartsApp() {
   const [namingDragonIdx, setNamingDragonIdx] = useState<number | null>(null);
   const [tempName, setTempName] = useState("");
 
-  const [isLetterOpen,  setIsLetterOpen]  = useState(false);
-  const [hasReadLetter, setHasReadLetter] = useState(false);
+  const [isLetterOpen,          setIsLetterOpen]          = useState(false);
+  const [hasReadLetter,         setHasReadLetter]         = useState(false);
+  const [isGraduatedLetterOpen, setIsGraduatedLetterOpen] = useState(false);
 
   const [studentInputPopup, setStudentInputPopup] = useState<{ name: string; day: string } | null>(null);
   const [popupOffType,   setPopupOffType]   = useState('-');
@@ -564,9 +634,22 @@ export default function HogwartsApp() {
     return now;
   }
 
-  // ── 편지 체크 함수 (useEffect보다 위에 선언) ──
+  // ── 편지 체크 함수 ──
   const checkAndShowLetter = (name: string, admin: boolean) => {
-    if (!name || admin || isGraduated(name)) return;
+    if (!name || admin) return;
+
+    if (isGraduated(name)) {
+      // 졸업생 편지: 주 1회
+      const letterKey  = `hagrid_letter_graduated_week_${name}`;
+      const lastMonday = localStorage.getItem(letterKey);
+      const thisMonday = getThisMonday();
+      if (lastMonday !== thisMonday) {
+        setTimeout(() => setIsGraduatedLetterOpen(true), 900);
+      }
+      return;
+    }
+
+    // 재학생 편지: 주 1회
     const letterKey  = `hagrid_letter_week_${name}`;
     const lastMonday = localStorage.getItem(letterKey);
     const thisMonday = getThisMonday();
@@ -583,6 +666,13 @@ export default function HogwartsApp() {
     if (selectedName) {
       localStorage.setItem(`hagrid_letter_week_${selectedName}`, getThisMonday());
       setHasReadLetter(true);
+    }
+  };
+
+  const closeGraduatedLetter = () => {
+    setIsGraduatedLetterOpen(false);
+    if (selectedName) {
+      localStorage.setItem(`hagrid_letter_graduated_week_${selectedName}`, getThisMonday());
     }
   };
 
@@ -631,7 +721,6 @@ export default function HogwartsApp() {
     }
   }, []);
 
-  // ── 수정 3: bgm cleanup ──
   useEffect(() => {
     return () => {
       bgm?.pause();
@@ -953,9 +1042,14 @@ export default function HogwartsApp() {
     <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 font-sans relative">
       <style>{GLOBAL_STYLE}</style>
 
-      {/* ── 해그리드 편지 팝업 ── */}
+      {/* ── 재학생 해그리드 편지 팝업 ── */}
       {isLetterOpen && (
         <HagridLetterModal name={selectedName} onClose={closeLetter} />
+      )}
+
+      {/* ── 졸업생 해그리드 편지 팝업 ── */}
+      {isGraduatedLetterOpen && (
+        <HagridLetterGraduatedModal name={selectedName} onClose={closeGraduatedLetter} />
       )}
 
       {/* 기숙사 공지사항 팝업 */}
@@ -1022,7 +1116,6 @@ export default function HogwartsApp() {
                               </td>
                               {graduated ? (
                                 <td colSpan={DAYS.length + 2} className="p-2 text-center">
-                                  {/* ✅ 수정 1: {NAME} → {formatDisplayName(name)} */}
                                   <span
                                     className="text-slate-400 text-[12px]"
                                     style={{ fontFamily: "'Nanum Pen Script', cursive" }}
@@ -1097,6 +1190,15 @@ export default function HogwartsApp() {
                 {!hasReadLetter && (
                   <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-stone-100" />
                 )}
+              </button>
+            )}
+            {!isAdmin && currentUserGraduated && (
+              <button
+                onClick={() => setIsGraduatedLetterOpen(true)}
+                className="relative text-[10px] font-black px-3 py-1.5 rounded-full shadow-sm transition-all border-2 whitespace-nowrap bg-amber-50 border-amber-400 text-amber-600"
+                title="해그리드의 편지"
+              >
+                📬
               </button>
             )}
             {!isAdmin && !currentUserGraduated && (
@@ -1542,7 +1644,6 @@ export default function HogwartsApp() {
                   if (eggStep === 1) {
                     setEggStep(2);
                   } else {
-                    // ✅ 수정 4: 마스터 데이터 로드 가드
                     if (!studentMasterData[selectedName]) {
                       alert("데이터 로딩 중입니다. 잠시 후 다시 시도해주세요.");
                       return;
