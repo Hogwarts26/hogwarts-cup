@@ -249,6 +249,7 @@ const GLOBAL_STYLE = `
 // ==========================================
 const GRADUATED_NAMES: string[] = [
   "🦉올뺌",
+  "🦖공룡",
 ];
 const isGraduated = (name: string) => GRADUATED_NAMES.includes(name);
 
