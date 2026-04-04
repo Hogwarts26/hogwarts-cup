@@ -1005,11 +1005,11 @@ export default function HogwartsApp() {
   const currentUserGraduated = !isAdmin && isGraduated(selectedName);
 
   const displayList = isAdmin
-    ? Object.keys(studentData).sort((a, b) => {
-        const houseDiff = HOUSE_ORDER.indexOf(studentData[a].house) - HOUSE_ORDER.indexOf(studentData[b].house);
-        return houseDiff !== 0 ? houseDiff : sortKorean(a, b);
-      })
-    : [selectedName];
+  ? Object.keys(studentData).filter(n => !isGraduated(n)).sort((a, b) => {
+      const houseDiff = HOUSE_ORDER.indexOf(studentData[a].house) - HOUSE_ORDER.indexOf(studentData[b].house);
+      return houseDiff !== 0 ? houseDiff : sortKorean(a, b);
+    })
+  : [selectedName];
 
   // ==========================================
   // 로그인 화면
