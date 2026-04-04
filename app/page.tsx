@@ -1201,8 +1201,8 @@ export default function HogwartsApp() {
                           <div className="text-[9px] font-black opacity-70">{info.house}</div>
                           <div className="text-[9px] font-black text-amber-500 mt-1">🎓 졸업</div>
                         </td>
-                        <td colSpan={DAYS.length + 2} className="text-center bg-white py-10 px-10">
-                          <p className="text-slate-400 text-lg md:text-xl" style={{ fontFamily: "'Nanum Pen Script', cursive" }}>
+                        <td colSpan={DAYS.length + 2} className="text-center bg-white py-10 px-6">
+                          <p className="text-slate-400 text-2xl md:text-3xl" style={{ fontFamily: "'Nanum Pen Script', cursive" }}>
                             호그와트 졸업생 {formatDisplayName(name)}님의 앞날이 행복으로 가득하길 바랍니다. 🎓
                           </p>
                         </td>
