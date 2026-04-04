@@ -190,7 +190,7 @@ const HOUSE_NOTICES: Record<string, { title: string; content: string }> = {
 // ==========================================
 const GLOBAL_STYLE = `
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap');
-  @import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Diphylleia&display=swap');
   @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
   body {
     font-family: 'Cinzel', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto,
@@ -1119,7 +1119,7 @@ export default function HogwartsApp() {
                                 <td colSpan={DAYS.length + 2} className="p-2 text-center">
                                   <span
                                     className="text-slate-400 text-[12px]"
-                                    style={{ fontFamily: "'Nanum Pen Script', cursive" }}
+                                    style={{ fontFamily: "'Diphylleia', serif" }}
                                   >
                                     {formatDisplayName(name)}님의 졸업을 축하합니다 🎓
                                   </span>
@@ -1305,7 +1305,7 @@ export default function HogwartsApp() {
                           <div className="text-[9px] font-black text-amber-500 mt-1">🎓 졸업</div>
                         </td>
                         <td colSpan={DAYS.length + 2} className="text-center bg-white py-10 px-6">
-                          <p className="text-slate-400 text-2xl md:text-3xl" style={{ fontFamily: "'Nanum Pen Script', cursive" }}>
+                          <p className="text-slate-400 text-2xl md:text-3xl" style={{ fontFamily: "'Diphylleia', serif" }}>
                             호그와트 졸업생 {formatDisplayName(name)}님의 앞날이 행복으로 가득하길 바랍니다. 🎓
                           </p>
                         </td>
@@ -1713,7 +1713,7 @@ export default function HogwartsApp() {
                 <div className="text-5xl mb-5">{studentData[selectedStudentReport].emoji}</div>
                 <p
                   className="text-slate-600 text-2xl md:text-3xl leading-relaxed"
-                  style={{ fontFamily: "'Nanum Pen Script', cursive" }}
+                  style={{ fontFamily: "'Diphylleia', serif" }}
                 >
                   호그와트 졸업생 {formatDisplayName(selectedStudentReport)}님의<br />앞날이 행복으로 가득하길 바랍니다.
                 </p>
