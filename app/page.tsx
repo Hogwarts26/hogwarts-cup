@@ -248,7 +248,7 @@ const GLOBAL_STYLE = `
 // 졸업생 명단 (졸업생 이름을 여기에 추가/제거)
 // ==========================================
 const GRADUATED_NAMES: string[] = [
-  // 예: "🐶강쥐",
+  "🦉올뺌",
 ];
 const isGraduated = (name: string) => GRADUATED_NAMES.includes(name);
 
@@ -1032,6 +1032,7 @@ export default function HogwartsApp() {
                       </thead>
                       <tbody>
                         {studentsInHouse.map((name, idx) => {
+                          const graduated = isGraduated(name);
                           const totalMins = records.filter(r => r.student_name === name).reduce((sum, r) => sum + timeStrToMinutes(r.study_time), 0);
                           const totalPts  = records.filter(r => r.student_name === name).reduce((sum, r) => sum + calc(r).total, 0);
                           return (
@@ -1040,39 +1041,54 @@ export default function HogwartsApp() {
                                 <div className="flex flex-col items-center gap-0.5">
                                   <span className="text-base leading-none">{studentData[name].emoji}</span>
                                   <span className="font-black text-slate-700 text-[9px] leading-none">{formatDisplayName(name)}</span>
+                                  {graduated && <span className="text-[8px] text-amber-500 font-black">🎓</span>}
                                 </div>
                               </td>
-                              {DAYS.map(day => {
-                                const rec = records.find(r => r.student_name === name && r.day_of_week === day) || {};
-                                const mins = timeStrToMinutes(rec.study_time);
-                                const offBg =
-                                  ['반휴','월반휴','늦반휴','늦월반휴'].includes(rec.off_type) ? 'text-emerald-600' :
-                                  ['주휴','월휴','늦휴','늦월휴'].includes(rec.off_type) ? 'text-blue-500' :
-                                  rec.off_type === '결석' ? 'text-red-500' : 'text-slate-700';
-                                return (
-                                  <td key={day} className="p-2 text-center">
-                                    {rec.off_type && !['주휴','월휴','늦휴','늦월휴','-',''].includes(rec.off_type) ? (
-                                      <span className={`font-bold ${offBg}`}>
-                                        {mins > 0 ? minutesToTimeStr(mins) : rec.off_type === '결석' ? '결석' : '-'}
-                                      </span>
-                                    ) : rec.off_type && ['주휴','월휴','늦휴','늦월휴'].includes(rec.off_type) ? (
-                                      <span className="font-bold text-blue-400 text-[9px]">{rec.off_type}</span>
-                                    ) : (
-                                      <span className="text-slate-300">-</span>
-                                    )}
+                              {graduated ? (
+                                <td colSpan={DAYS.length + 2} className="p-2 text-center">
+                                  {/* ★ 졸업생 축하 문구 폰트: fontFamily 값을 바꾸면 됩니다 */}
+                                  <span
+                                    className="text-slate-400 text-[12px]"
+                                    style={{ fontFamily: "'Nanum Pen Script', cursive" }}
+                                  >
+                                    {NAME}님의 졸업을 축하합니다 🎓
+                                  </span>
+                                </td>
+                              ) : (
+                                <>
+                                  {DAYS.map(day => {
+                                    const rec = records.find(r => r.student_name === name && r.day_of_week === day) || {};
+                                    const mins = timeStrToMinutes(rec.study_time);
+                                    const offBg =
+                                      ['반휴','월반휴','늦반휴','늦월반휴'].includes(rec.off_type) ? 'text-emerald-600' :
+                                      ['주휴','월휴','늦휴','늦월휴'].includes(rec.off_type) ? 'text-blue-500' :
+                                      rec.off_type === '결석' ? 'text-red-500' : 'text-slate-700';
+                                    return (
+                                      <td key={day} className="p-2 text-center">
+                                        {rec.off_type && !['주휴','월휴','늦휴','늦월휴','-',''].includes(rec.off_type) ? (
+                                          <span className={`font-bold ${offBg}`}>
+                                            {mins > 0 ? minutesToTimeStr(mins) : rec.off_type === '결석' ? '결석' : '-'}
+                                          </span>
+                                        ) : rec.off_type && ['주휴','월휴','늦휴','늦월휴'].includes(rec.off_type) ? (
+                                          <span className="font-bold text-blue-400 text-[9px]">{rec.off_type}</span>
+                                        ) : (
+                                          <span className="text-slate-300">-</span>
+                                        )}
+                                      </td>
+                                    );
+                                  })}
+                                  <td className="p-2 text-center bg-slate-50">
+                                    <span className={`font-black ${totalMins < 1200 ? 'text-red-500' : 'text-slate-800'}`}>
+                                      {totalMins > 0 ? minutesToTimeStr(totalMins) : '-'}
+                                    </span>
                                   </td>
-                                );
-                              })}
-                              <td className="p-2 text-center bg-slate-50">
-                                <span className={`font-black ${totalMins < 1200 ? 'text-red-500' : 'text-slate-800'}`}>
-                                  {totalMins > 0 ? minutesToTimeStr(totalMins) : '-'}
-                                </span>
-                              </td>
-                              <td className="p-2 text-center bg-slate-50">
-                                <span className={`font-black ${totalPts < 0 ? 'text-red-500' : totalPts > 0 ? 'text-blue-600' : 'text-slate-400'}`}>
-                                  {totalPts > 0 ? `+${totalPts}` : totalPts}
-                                </span>
-                              </td>
+                                  <td className="p-2 text-center bg-slate-50">
+                                    <span className={`font-black ${totalPts < 0 ? 'text-red-500' : totalPts > 0 ? 'text-blue-600' : 'text-slate-400'}`}>
+                                      {totalPts > 0 ? `+${totalPts}` : totalPts}
+                                    </span>
+                                  </td>
+                                </>
+                              )}
                             </tr>
                           );
                         })}
