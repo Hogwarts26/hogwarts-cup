@@ -114,7 +114,6 @@ const DRAGON_MESSAGES: Record<number, string[]> = {
 const studentData: Record<string, StudentInfo> = {
   "🤖로봇":  { house: "슬리데린", emoji: "🤖", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🐾발자국": { house: "슬리데린", emoji: "🐾", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
-  "🐆표범":  { house: "슬리데린", emoji: "🐆", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🐡복어":  { house: "슬리데린", emoji: "🐡", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🐜개미":  { house: "슬리데린", emoji: "🐜", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
   "🦔도치":  { house: "슬리데린", emoji: "🦔", color: "bg-emerald-50", accent: "bg-emerald-600", text: "text-emerald-900" },
@@ -151,40 +150,36 @@ const studentData: Record<string, StudentInfo> = {
 // ==========================================
 const HOUSE_NOTICES: Record<string, { title: string; content: string }> = {
   "래번클로": {
-    title: `하위권은 데이터의 오류일 뿐, 논리적으로 반등하라!`,
-    content: `래번클로 여러분, 지난주 4위라는 기록은 우리 기숙사의 지적 수준에 비해 매우 비정상적인 데이터입니다. 하지만 우리는 감정적으로 동요하지 않습니다. 무엇이 부족했는지 객관적으로 분석하고 수정하면 됩니다. 이번 주부터 우리는 학습 효율 극대화 전략을 세워 점수를 복구할 겁니다.
+    title: `4위 탈출 성공! 이제 상승 곡선만 남았습니다.`,
+    content: `래번클로 학우 여러분, 이번에도 데이터가 증명되었습니다! 최하위를 벗어나 3위로 올라선 것은 우리의 지적 효율성이 회복되고 있다는 신호입니다. 슬리데린이 순위 하락으로 당황하고 있을 때, 우리는 이 기세를 몰아 2위 후플푸프와의 격차를 줄여야 합니다.
 
-플리트윅 교수님께서는 이번 주 도서관 고전 마법 심화 스터디를 강력 추천하셨습니다. 다른 기숙사 학생들이 봄 날씨에 들떠 산만해질 때, 우리는 도서관에서 더 높은 효율을 낼 것이 분명해요.
-
-독수리 문고리가 이번 주엔 "3월의 바람은 어떤 방향에서 오는가?"라는 질문을 던졌습니다. 물리적, 마법적 관점에서 답을 찾아내어 래번클로의 저력을 다시 증명합시다. 데이터는 거짓말을 하지 않으니, 이제 상승 곡선을 그려봅시다!
+시험을 5일 앞두고 도서관 전체에 개인용 소음 차단 마법을 걸어두는 분들이 많은데, 사서 선생님의 안내 방송은 들릴 정도로 강도를 조절해 주세요. 독수리 문고리가 오늘 아침엔 "가장 조용한 곳에서 들리는 가장 큰 소리는 무엇인가?"라는 질문을 던지더군요. 시험을 앞두고 요동치는 우리 자신의 확신이 아닐까 싶습니다. 이번주 결전을 앞둔 동료들, 본인의 논리를 믿으세요. 반등은 이미 시작되었으니까요.
 
 `,
   },
   "그리핀도르": {
-    title: `3월의 시작, 사자들의 포효가 필요한 시간!`,
-    content: `그리핀도르 학우 여러분! 3위라는 성적은 우리에게 만족스럽지 않습니다. 하지만 3월은 사자들이 가장 활발하게 움직이는 계절! 긴 겨울잠에서 깨어나듯, 우리도 이제 본격적으로 점수를 끌어올릴 시간입니다. 네빌 교수님께서는 이번 주말, 운동장에서 봄맞이 퀴디치 연습을 대대적으로 열겠다고 하셨습니다.
+    title: `이번 주 금요일 밤,\n'승리 기원 파티'는 잠시 참아주세요!`,
+    content: `우리가 1위를 지키고 있어서 다들 신난 건 알겠는데, 이번 주만큼은 좀 진정합시다! 이번주 토요일에 시험을 보러 가는 선배들이 휴게실에서 마지막으로 책을 보고 있는데, 옆에서 빗자루 손질을 하거나 폭발하는 카드 게임을 하는 건 예의가 아니잖아요?
 
-실내에만 웅크리고 있지 말고, 따뜻해진 날씨만큼 에너지 넘치게 수업에 참여하세요! 교수님들의 질문에 가장 먼저 손을 드는 용기, 그것이 우리가 1위로 가는 열쇠입니다. 
-복도에서 꽃가루 때문에 목소리가 변하더라도 당황하지 말고 더 크게 노래하듯 주문을 외우세요! 그리핀도르의 기세는 그 어떤 장애물도 뚫을 수 있습니다!
-
+금요일 밤에 몰래 버터맥주 파티를 계획 중인 3학년들, 제가 다 알고 있습니다. 이번 주는 파티 대신 시험장으로 향하는 동료들에게 조용히 어깨를 두드려주는 '그리핀도르다운' 의리를 보여주자고요. 시험만 끝나봐요, 토요일 저녁엔 연회장이 떠나가라 축제를 벌여도 제가 모른 척해드릴 테니까요!
 
 `,
   },
   "슬리데린": {
-    title: `단 0.6점, 그러나 다음은 완벽한 0점 차의 승리`,
-    content: `슬리데린 학우 여러분, 지난주 결과는 매우 유감스럽습니다. 57.3점이라는 기록은 결코 낮지 않았으나, 1위와의 차이는 고작 0.6점이었습니다. 이 숫자는 우리에게 무엇을 의미합니까? 우리가 아주 조금만 더 정교했더라면 결과는 뒤집혔을 것이라는 뜻입니다. 슬러그혼 교수님께서는 이번 주 마법약 실습에서 단 한 방울의 오차도 허용하지 않겠다고 선언하셨습니다.
+    title: `4위라는 굴욕을 씻어낼 독기 어린 반격을 준비하십시오.`,
+    content: `슬리데린 학우 여러분, 현재 점수판 맨 밑바닥에 우리 이름이 걸려 있다는 사실이 믿기십니까? 래번클로 애들이 우리를 제치고 분석이니 뭐니 떠드는 꼴을 더 이상 지켜볼 순 없습니다. 이번 주, 시험을 앞둔 동료들은 철저하게 개인 정비에 집중하고, 나머지 인원들은 수업 시간에 질문을 독점해서 가산점을 싹쓸이합시다.
 
-실패를 분석하는 자만이 다음 승리를 거머쥡니다. 이번 주 우리 기숙사의 목표는 단 하나, '압도적인 정밀함'입니다. 학업이든 일상이든 빈틈을 보이지 마십시오. 타 기숙사 애들이 꽃가루 때문에 목소리가 변하며 망신을 당할 때, 우리는 완벽한 주문으로 상대를 제압합시다. 
+특히 이번주 시험 이후 이 지긋지긋한 성을 떠날 야심가들은 졸업 면담 준비 철저히 하세요. 슬리데린은 떠나는 뒷모습조차 남들에게 경외감을 주어야 하니까요. 
 
-3월의 암호는 '철저한 승리'입니다. 이 암호를 잊지 말고 자부심을 되찾으십시오.
+이번 주 암호는 '독보적인 부활'입니다. 암호를 헷갈려서 입구 벽 앞에서 서성거리는 멍청한 소리는 들리지 않게 해 주십시오.
 
 `,
   },
   "후플푸프": {
-    title: `노란 꽃바람이 불어옵니다!\n1위 수성 기념 봄맞이 티타임`,
-    content: `사랑하는 후플푸프 학우 여러분! 우리가 0.6점 차이로 짜릿한 1위를 거머쥐었습니다! 지난주 여러분이 보여준 배려와 조용한 꾸준함이 래번클로와 슬리데린의 거센 추격을 뿌리쳤습니다. 스프라우트 교수님께서는 승리를 기념하여 휴게실에 햇살을 머금은 레몬 스콘을 가득 준비해 주셨습니다.
+    title: `도서관 3번 테이블에 '정서 안정용 사탕' 두고 가신 분?`,
+    content: `아슬아슬하게 2위라 다들 조금 예민해져 있는 것 같아요. 특히 시험 공부하다가 너무 긴장해서 그런지, 도서관이나 휴게실 곳곳에 개인 물건을 두고 가는 친구들이 많네요. 어제는 3번 테이블에서 '긴장 완화용 박하 사탕' 한 봉지가 발견됐어요. 주인은 얼른 찾아가서 당 충전하세요!
 
-봄바람이 불어오는 3월입니다. 꽃가루 때문에 재채기하는 친구가 있다면 먼저 손수건을 건네주는 우리 기숙사만의 다정함을 잊지 마세요. 이번 주엔 휴게실 창가에 작은 화분들을 나누어 심을 예정입니다. 우리들의 성실함으로 꽃을 피워, 이번 달에도 우승 깃발을 계속 지켜나가요!
+해그리드 씨가 보내온 편지 읽어봤나요? 우리에게 지금 꼭 필요한 말인 것 같아요. 4월 4일 시험 후에 졸업을 고민하며 싱숭생숭해 하는 친구들도 많을 텐데, 이번 주 내내 휴게실 벽난로 앞에 따뜻한 코코아를 상시 비치해 둘 테니 언제든 와서 마음을 달래고 가세요. 우리는 끝까지 함께니까요.
 
 `,
   },
@@ -195,6 +190,7 @@ const HOUSE_NOTICES: Record<string, { title: string; content: string }> = {
 // ==========================================
 const GLOBAL_STYLE = `
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap');
   @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
   body {
     font-family: 'Cinzel', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto,
@@ -252,8 +248,7 @@ const GLOBAL_STYLE = `
 // 졸업생 명단 (졸업생 이름을 여기에 추가/제거)
 // ==========================================
 const GRADUATED_NAMES: string[] = [
-  "🐶강쥐",
-  "💚초록",
+  // 예: "🐶강쥐",
 ];
 const isGraduated = (name: string) => GRADUATED_NAMES.includes(name);
 
@@ -317,19 +312,16 @@ const calcProgress = (studyMinutesSinceAcquired: number, dragonIndex: number): n
 // ==========================================
 const HAGRID_LETTER = {
   title: `사냥터지기 해그리드가 보내는 편지`,
-  content: `공부하느라 고생이 많아. 머글세계에서 보는 중요한 시험이 2주 뒤라지? 내가 다 긴장돼서 손에 땀이 나네... 편지가 좀 축축하더라도 이해해줘.
-오늘은 네가 꼭 읽어봤으면 하는 신기한 머글 이야기가 있어서 말이야. 궁금하지?
+  content: `성 주위를 걷다 보면 발밑에 깔린 클로버들을 자주 보게 되는데, 오늘 그 녀석들을 보다가 네 생각이 나서 펜을 들었어.
 
-영국에 '존 돌렌'이라는 머글이 있었는데, 한때는 마약에 빠져서 노숙 생활을 하며 경찰서까지 들락날락했대. 그런데 우연히 강아지 한 마리를 얻게 된 게 삶을 완전히 바꿔놓았다는 거야(마치 나와 팽 같은 관계인 셈이지!).
+혹시 네잎클로버가 어떻게 만들어지는지 알아? 사람들이 길을 지나가며 클로버를 밟거나 숲속의 곤충이나 동물들 때문에 잎에 상처가 날 때가 있거든. 그때 작은 상처가 생기는데, 그 상처를 딛고 일어나 네잎클로버가 되는 거야.
 
-그 머글은 '내가 잘못되면 이 작은 녀석은 어떻게 될까?' 하는 걱정에 약도 끊고, 길거리에서 그림을 그리기 시작했어. 그런데 세상에, 지금은 그 그림들이 한 점에 머글 화폐단위로는 5천 달러가 넘는 가격에 팔리는 화가가 됐다지 뭐야! 대충 800갈레온이나 하는 거금이라고! 세상에. 위즐리 형제의 장난감 가게 창업에 드는 돈이 천 갈레온이었다는데. 아주 엄청나지.
+말하자면 우리가 그토록 찾는 행운이라는 건, 사실 클로버가 받은 상처가 아물면서 만들어진 결과물인 셈이지.
 
-아무튼간에, 사람들은 누구나 어제보다 나은 내일을 꿈꾸곤 해. 너도 오늘보다 성적이 더 오르면 좋겠고, 오늘보다 더 보람찬 내일을 보내고 싶을 거야.
-하지만 말이야, 오늘보다 나은 내일을 만들려면 언제나 '계기'가 필요해. 존 돌렌에게 그 강아지가 그랬던 것처럼 말이야.
+{NAME}, 공부하다 보면 마음이 뜻대로 안 되고 누군가에게 밟힌 것처럼 아프고 힘들 때가 있을 거야. 지금 이 순간이 꼭 폐허 같아서 다 포기하고 싶어질지도 모르지. 하지만 그건 네가 못나서 그런 게 아니라 네 인생의 행운을 만들어내기 위해 잠시 성장통을 겪고 있는 거라고 생각해보면 어때?
 
-{NAME}, 너는 지금 어때? 그런 계기를 잘 만들어가고 있어?
-당연히 불안하겠지만, 네가 매일 책상 앞에 앉아 꿋꿋하게 버티는 그 시간들이 결국 너를 완전히 다른 내일로 데려다줄 가장 확실한 계기가 될 테니 너무 걱정하지 말려무나. 
-그러니까 이번 주도 기운 잃지 말고 끝까지 해보자고. 너라면 충분히 해낼 수 있어!
+지금 네가 받는 그 상처들이 결국엔 남들은 가지지 못한 특별한 네 잎을 틔워낼 가장 확실한 과정이 되어줄 거야. 그러니까 너무 낙담하지 마. 너는 지금 그 누구보다 멋진 행운을 네 스스로 빚어내고 있는 중이니까.
+오늘 하루도 정말 고생 많았어. 네가 꿋꿋하게 버틴 이 시간들이 결국엔 아주 귀한 보물로 돌아올 거야. 기운 잃지 말고, 끝까지 해보자고! 
 
 — 너의 영원한 친구, 루비우스 해그리드가`,
 };
@@ -1218,7 +1210,7 @@ export default function HogwartsApp() {
                           <div className="text-[9px] font-black text-amber-500 mt-1">🎓 졸업</div>
                         </td>
                         <td colSpan={DAYS.length + 2} className="text-center bg-white py-10 px-6">
-                          <p className="text-slate-400 text-lg md:text-xl" style={{ fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>
+                          <p className="text-slate-400 text-lg md:text-xl" style={{ fontFamily: "'Nanum Pen Script', cursive" }}>
                             호그와트 졸업생 {formatDisplayName(name)}님의 앞날이 행복으로 가득하길 바랍니다. 🎓
                           </p>
                         </td>
@@ -1634,6 +1626,22 @@ export default function HogwartsApp() {
       {selectedStudentReport && studentData[selectedStudentReport] && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
           <div className="bg-white p-5 md:px-10 md:py-8 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+
+            {/* 졸업생 리포트 */}
+            {isGraduated(selectedStudentReport) ? (
+              <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="Logo" className="w-24 h-24 object-contain drop-shadow-md mb-4 opacity-60" />
+                <div className="text-5xl mb-5">{studentData[selectedStudentReport].emoji}</div>
+                <p
+                  className="text-slate-600 text-2xl md:text-3xl leading-relaxed"
+                  style={{ fontFamily: "'Nanum Pen Script', cursive" }}
+                >
+                  호그와트 졸업생 {formatDisplayName(selectedStudentReport)}님의<br />앞날이 행복으로 가득하길 바랍니다.
+                </p>
+                <div className="mt-6 text-3xl tracking-widest">🎓 ✨ 🎉</div>
+              </div>
+            ) : (
+            /* 일반 학생 리포트 */
             <div className="flex items-end justify-center mb-6 w-full">
               <div className="w-[45%] flex justify-end">
                 <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="Logo" className="w-36 h-36 md:w-44 md:h-44 object-contain drop-shadow-md" />
@@ -1673,6 +1681,7 @@ export default function HogwartsApp() {
                 <div className="flex justify-between text-cyan-400"><span>월휴</span><span>{calculatePoints(selectedStudentReport).remainingMonthlyOff}</span></div>
               </div>
             </div>
+            )}
           </div>
         </div>
       )}
