@@ -1184,7 +1184,7 @@ export default function HogwartsApp() {
       {/* 헤더 */}
       <div className="max-w-[1100px] mx-auto mb-8 px-4">
         <div className="flex flex-col gap-y-6">
-          <div className="flex gap-2 flex-wrap justify-end items-center">
+          <div className="flex gap-1.5 flex-wrap justify-end items-center">
             <button onClick={toggleMusic} className={`text-[10px] font-black px-3 py-1.5 rounded-full shadow-sm transition-all border-2 whitespace-nowrap ${isPlaying ? 'bg-white border-yellow-400 text-yellow-500 animate-pulse' : 'bg-slate-50 border-slate-300 text-slate-500'}`}>
               {isPlaying ? '🎵' : '🔇'}
             </button>
