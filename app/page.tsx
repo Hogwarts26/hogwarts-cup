@@ -389,9 +389,10 @@ function HagridLetterModal({ name, onClose, initialWeek }: {
   const weekLetters = letters.filter(l => l.week === selectedWeek);
   // 현재 보여줄 편지
   const selected = weekLetters.find(l => l.type === selectedType) || weekLetters[0] || null;
-  // 해당 주에 personal 편지도 있는지
-  const hasPersonal = weekLetters.some(l => l.type === 'personal');
-  const hasWeekly   = weekLetters.some(l => l.type === 'weekly');
+  // 해당 주에 각 타입 편지 존재 여부
+  const hasPersonal  = weekLetters.some(l => l.type === 'personal');
+  const hasWeekly    = weekLetters.some(l => l.type === 'weekly');
+  const hasGraduated = weekLetters.some(l => l.type === 'graduated');
 
   return (
     <div
@@ -454,29 +455,45 @@ function HagridLetterModal({ name, onClose, initialWeek }: {
               </div>
             )}
 
-            {/* 편지 종류 탭 (주간 + 개별 둘 다 있을 때만) */}
-            {hasWeekly && hasPersonal && (
+            {/* 편지 종류 탭 (2가지 이상 있을 때만) */}
+            {(hasWeekly || hasPersonal || hasGraduated) && weekLetters.length > 1 && (
               <div className="flex gap-2 px-5 py-2.5 border-b border-amber-400/10 shrink-0">
-                <button
-                  onClick={() => setSelectedType('weekly')}
-                  className={`px-3 py-1 rounded-lg text-[10px] font-black transition-all
-                    ${selectedType === 'weekly'
-                      ? 'bg-amber-400/20 text-amber-300'
-                      : 'text-amber-400/30 hover:text-amber-400/60'
-                    }`}
-                >
-                  📮 주간편지
-                </button>
-                <button
-                  onClick={() => setSelectedType('personal')}
-                  className={`px-3 py-1 rounded-lg text-[10px] font-black transition-all
-                    ${selectedType === 'personal'
-                      ? 'bg-amber-400/20 text-amber-300'
-                      : 'text-amber-400/30 hover:text-amber-400/60'
-                    }`}
-                >
-                  ✉️ 개별편지
-                </button>
+                {hasWeekly && (
+                  <button
+                    onClick={() => setSelectedType('weekly')}
+                    className={`px-3 py-1 rounded-lg text-[10px] font-black transition-all
+                      ${selectedType === 'weekly'
+                        ? 'bg-amber-400/20 text-amber-300'
+                        : 'text-amber-400/30 hover:text-amber-400/60'
+                      }`}
+                  >
+                    📮 주간편지
+                  </button>
+                )}
+                {hasPersonal && (
+                  <button
+                    onClick={() => setSelectedType('personal')}
+                    className={`px-3 py-1 rounded-lg text-[10px] font-black transition-all
+                      ${selectedType === 'personal'
+                        ? 'bg-amber-400/20 text-amber-300'
+                        : 'text-amber-400/30 hover:text-amber-400/60'
+                      }`}
+                  >
+                    ✉️ 개별편지
+                  </button>
+                )}
+                {hasGraduated && (
+                  <button
+                    onClick={() => setSelectedType('graduated')}
+                    className={`px-3 py-1 rounded-lg text-[10px] font-black transition-all
+                      ${selectedType === 'graduated'
+                        ? 'bg-amber-400/20 text-amber-300'
+                        : 'text-amber-400/30 hover:text-amber-400/60'
+                      }`}
+                  >
+                    🎓 졸업편지
+                  </button>
+                )}
               </div>
             )}
 
@@ -649,7 +666,7 @@ export default function HogwartsApp() {
   const [composeTarget,   setComposeTarget]   = useState<'all' | string>('all'); // 'all' or 학생명
   const [composeContent,  setComposeContent]  = useState('');
   const [composeTitle,    setComposeTitle]    = useState('');
-  const [composeType,     setComposeType]     = useState<'weekly' | 'personal'>('weekly');
+  const [composeType,     setComposeType]     = useState<'weekly' | 'personal' | 'graduated'>('weekly');
   const [isSendingLetter, setIsSendingLetter] = useState(false);
 
   const [studentInputPopup, setStudentInputPopup] = useState<{ name: string; day: string } | null>(null);
@@ -1078,7 +1095,7 @@ export default function HogwartsApp() {
   const currentUserGraduated = !isAdmin && isGraduated(selectedName);
 
   const displayList = isAdmin
-    ? Object.keys(studentData).sort((a, b) => {
+    ? Object.keys(studentData).filter(n => !isGraduated(n)).sort((a, b) => {
         const houseDiff = HOUSE_ORDER.indexOf(studentData[a].house) - HOUSE_ORDER.indexOf(studentData[b].house);
         return houseDiff !== 0 ? houseDiff : sortKorean(a, b);
       })
@@ -1138,13 +1155,24 @@ export default function HogwartsApp() {
                 <div className="text-[10px] font-black text-amber-400/60 uppercase tracking-widest mb-2">수신 대상</div>
                 <select
                   value={composeTarget}
-                  onChange={e => setComposeTarget(e.target.value)}
+                  onChange={e => {
+                    const t = e.target.value;
+                    setComposeTarget(t);
+                    // 졸업생 선택 시 졸업편지로, 재학생/전체 선택 시 주간편지로 자동 전환
+                    if (t !== 'all' && isGraduated(t)) setComposeType('graduated');
+                    else setComposeType('weekly');
+                  }}
                   className="w-full bg-white/5 border border-amber-400/20 rounded-xl px-4 py-2.5 text-white text-sm font-bold outline-none"
                 >
                   <option value="all">전체 재학생</option>
                   {Object.keys(studentData).filter(n => !isGraduated(n)).sort(sortKorean).map(n => (
                     <option key={n} value={n}>{n}</option>
                   ))}
+                  <optgroup label="── 졸업생 ──">
+                  {Object.keys(studentData).filter(n => isGraduated(n)).sort(sortKorean).map(n => (
+                    <option key={n} value={n}>{n}</option>
+                  ))}
+                  </optgroup>
                 </select>
               </div>
               {/* 제목 (선택) */}
@@ -1153,10 +1181,13 @@ export default function HogwartsApp() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setComposeType('weekly')}
+                    disabled={composeTarget !== 'all' && isGraduated(composeTarget)}
                     className={`flex-1 py-2 rounded-xl text-[11px] font-black border transition-all
-                      ${composeType === 'weekly'
-                        ? 'bg-amber-400/20 text-amber-300 border-amber-400/40'
-                        : 'bg-white/5 text-white/40 border-amber-400/10 hover:text-white/70'}`}
+                      ${composeTarget !== 'all' && isGraduated(composeTarget)
+                        ? 'opacity-30 cursor-not-allowed bg-white/5 text-white/30 border-amber-400/10'
+                        : composeType === 'weekly'
+                          ? 'bg-amber-400/20 text-amber-300 border-amber-400/40'
+                          : 'bg-white/5 text-white/40 border-amber-400/10 hover:text-white/70'}`}
                   >
                     📮 주간편지
                   </button>
@@ -1169,9 +1200,22 @@ export default function HogwartsApp() {
                   >
                     ✉️ 개별편지
                   </button>
+                  <button
+                    onClick={() => setComposeType('graduated')}
+                    disabled={composeTarget === 'all' || !isGraduated(composeTarget)}
+                    className={`flex-1 py-2 rounded-xl text-[11px] font-black border transition-all
+                      ${composeTarget === 'all' || !isGraduated(composeTarget)
+                        ? 'opacity-30 cursor-not-allowed bg-white/5 text-white/30 border-amber-400/10'
+                        : composeType === 'graduated'
+                          ? 'bg-amber-400/20 text-amber-300 border-amber-400/40'
+                          : 'bg-white/5 text-white/40 border-amber-400/10 hover:text-white/70'}`}
+                  >
+                    🎓 졸업편지
+                  </button>
                 </div>
                 {composeType === 'weekly' && <p className="text-[9px] text-amber-400/40 mt-1">같은 주에 재발송하면 덮어써집니다.</p>}
                 {composeType === 'personal' && <p className="text-[9px] text-amber-400/40 mt-1">주간편지와 별개로 저장됩니다.</p>}
+                {composeType === 'graduated' && <p className="text-[9px] text-amber-400/40 mt-1">졸업생에게 보내는 고정 편지입니다.</p>}
               </div>
               <div>
                 <div className="text-[10px] font-black text-amber-400/60 uppercase tracking-widest mb-2">제목 (선택)</div>
