@@ -181,13 +181,12 @@ const HOUSE_NOTICES: Record<string, { title: string; content: string }> = {
 `,
   },
 };
-
 // ==========================================
 // 전역 스타일
 // ==========================================
 const GLOBAL_STYLE = `
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap');
-  @import url('https://fonts.googleapis.com/css2?family=Diphylleia&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap');
   @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
   body {
     font-family: 'Cinzel', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto,
@@ -277,6 +276,8 @@ const eggToBackground = (egg: string): string => {
 };
 
 // 성장 단계 계산
+// - 첫 번째 용(dragonIndex === 0): 6000/12000/18000 기준
+// - 두 번째 용 이후: 3000/6000/9000 기준 (50시간씩)
 const calcStage = (studyMinutesSinceAcquired: number, dragonIndex: number): number => {
   if (dragonIndex === 0) {
     if (studyMinutesSinceAcquired >= 18000) return 4;
@@ -302,54 +303,6 @@ const calcProgress = (studyMinutesSinceAcquired: number, dragonIndex: number): n
   const hi = thresholds[stage];
   return Math.min(100, ((studyMinutesSinceAcquired - lo) / (hi - lo)) * 100);
 };
-
-// ==========================================
-// 재학생 해그리드 편지 본문
-// ==========================================
-const HAGRID_LETTER = {
-  title: `사냥터지기 해그리드가 보내는 편지`,
-  content: `오늘 밤 순찰 돌다가 올려다봤더니 성안 도서관 창문에 불이 하나도 꺼지질 않더구나. 네 방 창가에도 불빛이 새어나오는 걸 봤어. 팽은 심심했는지 내 장화 뒤축을 한참 물어뜯고 있었고. 그래서 그냥 오두막 들어와서 펜을 들었지.
-
-{NAME}, 지난 주는 어땠어?
-공부가 길어지다 보면 머릿속에 슬그머니 이런 생각이 기어들어올 때가 있지. '이번에 잘 안 되면 어떡하지? 이러다 내 인생이 통째로 잘못되는 건 아닐까?'
-
-사람들이 실패라고 부르는 것들 있잖아, 가까이서 들여다보면 생각보다 별거 아니더라고. 그냥 간절히 원했는데 상황이 좀 안 따라줬거나, 한 번 해봤는데 생각처럼 안 됐거나, 그뿐인 거야. 근데 거기다 사람들이 실패라는 딱지를 붙여놓는 거지. 그 딱지가 네 전부인 것처럼 느껴질 수 있는데, 절대 그렇지 않아.
-
-생각대로 안 됐으면 다시 하면 되는 거야. 그게 다야. 그 과정에서 네가 얼마나 단단해지는지, 지금은 잘 모르겠지만 나중에 꼭 알게 될 거야.
-
-맥고나걸 교수님 연구실에 두꺼운 책들 말이야. 한 권에 몇백 페이지씩 되는 것들. 네 인생도 그런 거야. 지금은 한창 이야기가 쓰여지는 중인데, 오늘 이 힘든 페이지 몇 장 가지고 결말을 지레짐작할 필요 없어. 이 경험이 너를 어디로 데려다줄지는 아무도 몰라. 나도 모르고, 너도 아직 모르는 거야.
-
-그러니까 너무 낙담하지 마. 가슴 쫙 펴고 이번 한 주도 걸어가는 거야. 알았지?
-
-— 너의 영원한 친구, 루비우스 해그리드가`,
-};
-
-// ==========================================
-// 졸업생 해그리드 편지 본문
-// ==========================================
-const HAGRID_LETTER_GRADUATED = {
-  title: `사냥터지기 해그리드가 보내는 편지`,
-  content: `졸업을 진심으로 축하한다!
-와, 정말이지... 처음 네가 성에 들어오던 날이 엊그제 같은데 벌써 네가 졸업할 때가 다 됐다는 게 믿어지지가 않아. 그때 네 눈이 얼마나 커졌었는지, 아직도 선히 기억이 나. 촛불이 천장에 둥둥 떠다니는 걸 보고 입을 딱 벌렸었잖니. 하하! 그 모습이 너무 귀여워서 내가 혼자 실실 웃었더랬지.
-
-보아하니 넌 이제 제대로 된 마법사 — 아니, 마녀 — 가 됐구나. 어깨도 꽤 펴졌고, 눈빛도 달라졌어. 내가 뭘 잘 모르는 것 같아도, 사람 눈빛은 볼 줄 알아. 넌 진짜배기야. 호그와트가 너를 키운 게 아니라, 네가 호그와트를 빛낸 거야.
-
-이제 성을 떠나면 무섭고 넓은 세상이 기다릴 테지. 뭔가 이상하고 위험한 것도 잔뜩 있을거야. 히포그리프도, 용도, 가끔은 사람도 그렇고. 하하. 어쨌든, 뭐가 무서워도 눈을 피하지 마. 내가 살면서 배운 게 있다면, 제대로 눈 마주치고 인사하면 대부분의 것들은 그렇게 나쁘지만은 않더라고.
-
-내 오두막집은 언제나 열려 있어. 진짜로. 허브차도 항상 있고, 락다운케이크는... 음, 그건 좀 다시 생각해 볼게. 아무튼, 보고 싶으면 날 찾아와. 넌 졸업 후에도 내 친구니까.`,
-  closing: `늘 네 편인,\n—루비우스 해그리드`,
-  ps: `추신: 팡을 쓰다듬어 줘서 고마워. 걘 네가 좋다나봐.`,
-};
-
-// 줄바꿈 텍스트 → JSX 변환
-function renderLines(text: string) {
-  return text.split('\n').map((line, i, arr) => (
-    <React.Fragment key={i}>
-      {line}
-      {i < arr.length - 1 && <br />}
-    </React.Fragment>
-  ));
-}
 
 // 이번 주 월요일 날짜 문자열 (YYYY-MM-DD)
 function getThisMonday(): string {
@@ -389,52 +342,47 @@ const calc = (r: any) => {
 };
 
 // ==========================================
-// 재학생 해그리드 편지 팝업 컴포넌트
+// 해그리드 편지 팝업 컴포넌트 (DB 기반)
 // ==========================================
-function HagridLetterModal({ name, onClose }: { name: string; onClose: () => void }) {
-  return (
-    <div
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}
-      onClick={onClose}
-    >
-      <div
-        className="relative max-w-lg w-full rounded-[2rem] border border-amber-400/20 shadow-2xl overflow-hidden bg-[#1a1209]"
-        onClick={e => e.stopPropagation()}
-        style={{ fontFamily: "'Pretendard', sans-serif" }}
-      >
-        <div className="px-7 pt-7 pb-4 border-b border-amber-400/10">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">📬</span>
-            <div>
-              <p className="text-[10px] font-black tracking-[0.25em] uppercase text-amber-400/60">Hagrid's Letter</p>
-              <p className="text-base font-black text-amber-300">{HAGRID_LETTER.title}</p>
-            </div>
-          </div>
-        </div>
-        <div className="px-7 py-5 overflow-y-auto" style={{ maxHeight: '62vh' }}>
-          <p className="font-bold text-base text-white mb-4">안녕, {formatDisplayName(name)}!</p>
-          <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
-            {HAGRID_LETTER.content.replace('{NAME}', formatDisplayName(name))}
-          </p>
-        </div>
-        <div className="px-7 pb-6 pt-3 border-t border-amber-400/10">
-          <button
-            onClick={onClose}
-            className="w-full py-3 rounded-2xl text-sm font-black tracking-wide transition-all bg-amber-400/15 text-amber-300 hover:bg-amber-400/25 border border-amber-400/20"
-          >
-            편지 접기 ✉️
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+type LetterRecord = { id: string; week: string; title: string | null; content: string };
 
-// ==========================================
-// 졸업생 해그리드 편지 팝업 컴포넌트
-// ==========================================
-function HagridLetterGraduatedModal({ name, onClose }: { name: string; onClose: () => void }) {
+function HagridLetterModal({ name, onClose, initialWeek }: {
+  name: string;
+  onClose: () => void;
+  initialWeek?: string | null; // 특정 주 편지를 바로 열기
+}) {
+  const [letters, setLetters]     = React.useState<LetterRecord[]>([]);
+  const [selected, setSelected]   = React.useState<LetterRecord | null>(null);
+  const [loading, setLoading]     = React.useState(true);
+
+  React.useEffect(() => {
+    const load = async () => {
+      const today = new Date().toLocaleDateString('en-CA');
+      const { data } = await supabase
+        .from('hagrid_letters')
+        .select('id, week, title, content')
+        .eq('student_name', name)
+        .lte('week', today)          // 오늘 이하 날짜만
+        .order('week', { ascending: false });
+      const list = (data || []) as LetterRecord[];
+      setLetters(list);
+      // initialWeek 있으면 해당 편지 바로 오픈, 없으면 가장 최신 편지 오픈
+      if (initialWeek) {
+        const found = list.find(l => l.week === initialWeek);
+        setSelected(found || list[0] || null);
+      } else {
+        setSelected(list[0] || null);
+      }
+      setLoading(false);
+    };
+    load();
+  }, [name]);
+
+  const formatWeekLabel = (week: string) => {
+    const d = new Date(week + 'T00:00:00');
+    return `${d.getMonth() + 1}월 ${d.getDate()}일 주`;
+  };
+
   return (
     <div
       className="fixed inset-0 z-[200] flex items-center justify-center p-4"
@@ -442,40 +390,74 @@ function HagridLetterGraduatedModal({ name, onClose }: { name: string; onClose: 
       onClick={onClose}
     >
       <div
-        className="relative max-w-lg w-full rounded-[2rem] border border-amber-400/20 shadow-2xl overflow-hidden bg-[#1a1209]"
+        className="relative max-w-lg w-full rounded-[2rem] border border-amber-400/20 shadow-2xl overflow-hidden bg-[#1a1209] flex flex-col"
+        style={{ maxHeight: '90vh', fontFamily: "'Pretendard', sans-serif" }}
         onClick={e => e.stopPropagation()}
-        style={{ fontFamily: "'Pretendard', sans-serif" }}
       >
-        <div className="px-7 pt-7 pb-4 border-b border-amber-400/10">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">📬</span>
-            <div>
-              <p className="text-[10px] font-black tracking-[0.25em] uppercase text-amber-400/60">Hagrid's Letter</p>
-              <p className="text-base font-black text-amber-300">{HAGRID_LETTER_GRADUATED.title}</p>
+        {/* 헤더 */}
+        <div className="px-7 pt-7 pb-4 border-b border-amber-400/10 shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">📬</span>
+              <div>
+                <p className="text-[10px] font-black tracking-[0.25em] uppercase text-amber-400/60">Hagrid's Letter</p>
+                <p className="text-base font-black text-amber-300">
+                  {selected?.title || '사냥터지기 해그리드가 보내는 편지'}
+                </p>
+              </div>
             </div>
+            <button onClick={onClose} className="text-white/30 hover:text-white text-xl transition-colors">✕</button>
           </div>
         </div>
-        <div className="px-7 py-5 overflow-y-auto" style={{ maxHeight: '62vh' }}>
-          <p className="font-bold text-base text-white mb-4">안녕, {formatDisplayName(name)}!</p>
-          {/* 본문 */}
-          <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap mb-6">
-            {HAGRID_LETTER_GRADUATED.content}
-          </p>
-          {/* 클로징 - 본문보다 작은 폰트 */}
-          <p className="text-slate-400 text-xs leading-relaxed whitespace-pre-wrap mb-2 italic">
-            {HAGRID_LETTER_GRADUATED.closing}
-          </p>
-          {/* 추신 - 본문보다 작은 폰트 */}
-          <p className="text-slate-500 text-xs leading-relaxed whitespace-pre-wrap italic">
-            {HAGRID_LETTER_GRADUATED.ps}
-          </p>
-        </div>
-        <div className="px-7 pb-6 pt-3 border-t border-amber-400/10">
+
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <p className="text-amber-400/60 text-sm">편지를 불러오는 중...</p>
+          </div>
+        ) : letters.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 px-7">
+            <p className="text-amber-400/60 text-sm text-center">아직 해그리드에게서 온 편지가 없어요.</p>
+          </div>
+        ) : (
+          <div className="flex flex-1 overflow-hidden min-h-0">
+            {/* 편지 목록 사이드바 */}
+            <div className="w-28 shrink-0 border-r border-amber-400/10 overflow-y-auto">
+              {letters.map(letter => (
+                <button
+                  key={letter.id}
+                  onClick={() => setSelected(letter)}
+                  className={`w-full text-left px-3 py-3 text-[10px] font-black transition-all border-b border-amber-400/5
+                    ${selected?.id === letter.id
+                      ? 'bg-amber-400/15 text-amber-300'
+                      : 'text-amber-400/40 hover:bg-amber-400/5 hover:text-amber-400/70'
+                    }`}
+                >
+                  {formatWeekLabel(letter.week)}
+                </button>
+              ))}
+            </div>
+
+            {/* 편지 본문 */}
+            <div className="flex-1 overflow-y-auto px-7 py-5">
+              {selected && (
+                <>
+                  <p className="font-bold text-base text-white mb-4">안녕, {formatDisplayName(name)}!</p>
+                  <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
+                    {selected.content.replace('{NAME}', formatDisplayName(name))}
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 하단 버튼 */}
+        <div className="px-7 pb-6 pt-3 border-t border-amber-400/10 shrink-0">
           <button
             onClick={onClose}
             className="w-full py-3 rounded-2xl text-sm font-black tracking-wide transition-all bg-amber-400/15 text-amber-300 hover:bg-amber-400/25 border border-amber-400/20"
           >
-            편지 접기 ✉️
+            편지함 닫기 ✉️
           </button>
         </div>
       </div>
@@ -509,6 +491,7 @@ function DragonSlot({
   const baseUrl    = "https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public";
   const finalUrl   = `${baseUrl}/${fileName}.webp`;
 
+  // 배경 이미지: 성룡(4단계) 달성한 용만 해당 지역 배경, 나머지는 x.jpg
   const bgFile = stage === 4 ? eggToBackground(dragon.egg) : 'x.jpg';
 
   const stageMsgs = DRAGON_MESSAGES[stage] || DRAGON_MESSAGES[1];
@@ -526,6 +509,7 @@ function DragonSlot({
 
   return (
     <div className="w-full rounded-[1.5rem] md:rounded-[2rem] overflow-hidden shadow-2xl border border-slate-200 bg-slate-50 relative aspect-video">
+      {/* 배경 이미지 */}
       <img
         src={`https://raw.githubusercontent.com/Hogwarts26/hogwarts-cup/main/public/${bgFile}`}
         alt="Dragon Habitat"
@@ -534,6 +518,7 @@ function DragonSlot({
       />
 
       <div className="absolute inset-0 flex items-center justify-center z-30">
+        {/* 게이지바 */}
         <div className="absolute top-2 left-2 md:top-4 md:left-4 flex items-center gap-2">
           <div className="w-20 md:w-24 h-2.5 md:h-3 bg-white/40 backdrop-blur-md rounded-full overflow-hidden border border-white/30 shadow-sm">
             <div
@@ -546,14 +531,17 @@ function DragonSlot({
           </span>
         </div>
 
+        {/* 드래곤 + 말풍선 + 이름 */}
         <div className={`relative flex flex-col items-center ${positionClass}`}>
           <div className="absolute -top-14 md:-top-16 flex flex-col items-center w-full">
+            {/* 말풍선 */}
             <div className="relative bg-white/95 backdrop-blur-sm px-3 py-1 md:px-4 md:py-1.5 rounded-2xl shadow-xl border border-slate-100">
               <p className="text-[8px] md:text-[11px] font-bold text-slate-700 whitespace-nowrap italic text-center">
                 ({randomMsg})
               </p>
               <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[6px] border-t-white/95" />
             </div>
+            {/* 이름 */}
             <div
               className="mt-1 cursor-pointer pointer-events-auto hover:scale-110 active:scale-95 transition-all"
               onClick={onClickName}
@@ -565,6 +553,7 @@ function DragonSlot({
             </div>
           </div>
 
+          {/* 드래곤 이미지 */}
           <img
             key={fileName}
             src={finalUrl}
@@ -595,19 +584,29 @@ export default function HogwartsApp() {
   const [isSaving,     setIsSaving]     = useState(false);
   const [studentMasterData, setStudentMasterData] = useState<any>({});
 
+  // Dragon Cave (지역 선택용 - 새 알 데려올 때만 사용)
   const [currentImageFile, setCurrentImageFile] = useState('x.jpg');
   const [isFading,   setIsFading]   = useState(false);
   const [eggStep,    setEggStep]    = useState(0);
   const [tempEgg,    setTempEgg]    = useState<string | null>(null);
 
+  // 다중 용 상태
   const [dragons, setDragons] = useState<DragonEntry[]>([]);
 
+  // 이름 짓기 팝업 (어떤 용 인덱스인지)
   const [namingDragonIdx, setNamingDragonIdx] = useState<number | null>(null);
   const [tempName, setTempName] = useState("");
 
-  const [isLetterOpen,          setIsLetterOpen]          = useState(false);
-  const [hasReadLetter,         setHasReadLetter]         = useState(false);
-  const [isGraduatedLetterOpen, setIsGraduatedLetterOpen] = useState(false);
+  // 편지 state
+  const [isLetterOpen,    setIsLetterOpen]    = useState(false);
+  const [hasReadLetter,   setHasReadLetter]   = useState(false);
+  const [initialWeek,     setInitialWeek]     = useState<string | null>(null); // 열릴 때 포커스할 주차
+  // 관리자 편지 발송 팝업
+  const [showLetterCompose, setShowLetterCompose] = useState(false);
+  const [composeTarget,   setComposeTarget]   = useState<'all' | string>('all'); // 'all' or 학생명
+  const [composeContent,  setComposeContent]  = useState('');
+  const [composeTitle,    setComposeTitle]    = useState('');
+  const [isSendingLetter, setIsSendingLetter] = useState(false);
 
   const [studentInputPopup, setStudentInputPopup] = useState<{ name: string; day: string } | null>(null);
   const [popupOffType,   setPopupOffType]   = useState('-');
@@ -615,6 +614,7 @@ export default function HogwartsApp() {
   const [popupIsLate,    setPopupIsLate]    = useState(false);
   const [popupAm3h,      setPopupAm3h]      = useState(false);
 
+  // UI
   const [currentTime,           setCurrentTime]           = useState(getAdjustedToday());
   const [selectedHouseNotice,   setSelectedHouseNotice]   = useState<string | null>(null);
   const [showSummary,           setShowSummary]           = useState(false);
@@ -634,59 +634,84 @@ export default function HogwartsApp() {
     return now;
   }
 
-  // ── 편지 체크 함수 ──
-  const checkAndShowLetter = (name: string, admin: boolean) => {
-    if (!name || admin) return;
-
-    if (isGraduated(name)) {
-      // 졸업생 편지: 주 1회
-      const letterKey  = `hagrid_letter_graduated_week_${name}`;
-      const lastMonday = localStorage.getItem(letterKey);
-      const thisMonday = getThisMonday();
-      if (lastMonday !== thisMonday) {
-        setTimeout(() => setIsGraduatedLetterOpen(true), 900);
-      }
-      return;
-    }
-
-    // 재학생 편지: 주 1회
-    const letterKey  = `hagrid_letter_week_${name}`;
-    const lastMonday = localStorage.getItem(letterKey);
+  // 편지 체크 함수 (DB 기반)
+  const checkAndShowLetter = async (name: string, admin: boolean) => {
+    if (!name || admin || isGraduated(name)) return;
     const thisMonday = getThisMonday();
-    if (lastMonday !== thisMonday) {
-      setHasReadLetter(false);
-      setTimeout(() => setIsLetterOpen(true), 900);
+    // 이번 주 편지가 DB에 있는지 확인
+    const { data } = await supabase
+      .from('hagrid_letters')
+      .select('week')
+      .eq('student_name', name)
+      .eq('week', thisMonday)
+      .maybeSingle();
+    if (data) {
+      // 이번 주 편지 있음 → 읽었는지 localStorage로 확인
+      const readKey = `hagrid_letter_read_${name}_${thisMonday}`;
+      if (!localStorage.getItem(readKey)) {
+        setHasReadLetter(false);
+        setInitialWeek(thisMonday);
+        setTimeout(() => setIsLetterOpen(true), 900);
+      } else {
+        setHasReadLetter(true);
+      }
     } else {
-      setHasReadLetter(true);
+      setHasReadLetter(true); // 이번 주 편지 없으면 알림 없음
     }
   };
 
   const closeLetter = () => {
     setIsLetterOpen(false);
     if (selectedName) {
-      localStorage.setItem(`hagrid_letter_week_${selectedName}`, getThisMonday());
+      const thisMonday = getThisMonday();
+      localStorage.setItem(`hagrid_letter_read_${selectedName}_${thisMonday}`, '1');
       setHasReadLetter(true);
     }
   };
 
-  const closeGraduatedLetter = () => {
-    setIsGraduatedLetterOpen(false);
-    if (selectedName) {
-      localStorage.setItem(`hagrid_letter_graduated_week_${selectedName}`, getThisMonday());
+  // 관리자 편지 발송
+  const sendLetter = async () => {
+    if (!composeContent.trim()) { alert('편지 내용을 입력해주세요.'); return; }
+    setIsSendingLetter(true);
+    const thisMonday = getThisMonday();
+    const targets = composeTarget === 'all'
+      ? Object.keys(studentData).filter(n => !isGraduated(n))
+      : [composeTarget];
+    const rows = targets.map(student_name => ({
+      student_name,
+      week: thisMonday,
+      title: composeTitle || null,
+      content: composeContent,
+    }));
+    const { error } = await supabase
+      .from('hagrid_letters')
+      .upsert(rows, { onConflict: 'student_name,week' });
+    if (error) { alert('발송 실패: ' + error.message); }
+    else {
+      alert(`편지 발송 완료! (${targets.length}명)`);
+      setShowLetterCompose(false);
+      setComposeContent('');
+      setComposeTitle('');
     }
+    setIsSendingLetter(false);
   };
 
   const totalStudyTime = studentMasterData[selectedName]?.total_study_time || 0;
 
+  // 첫 번째 용이 4단계인지 (새 알 데려오기 가능 조건)
   const firstDragonMaxed = dragons.length > 0
     && calcStage(Math.max(0, totalStudyTime - dragons[0].acquired_time), 0) === 4;
 
+  // 현재 마지막 용이 진행 중인지 (마지막 용이 4단계면 또 추가 가능)
   const lastDragonMaxed = dragons.length > 0 && (() => {
     const last = dragons[dragons.length - 1];
     const idx  = dragons.length - 1;
     return calcStage(Math.max(0, totalStudyTime - last.acquired_time), idx) === 4;
   })();
 
+  // 새 알 데려오기 버튼 활성 조건:
+  // - 아직 알이 없거나
+  // - 마지막 용이 4단계 달성
   const canAddNewEgg = dragons.length === 0 || lastDragonMaxed;
 
   // ── 기숙사 랭킹 ──
@@ -721,13 +746,7 @@ export default function HogwartsApp() {
     }
   }, []);
 
-  useEffect(() => {
-    return () => {
-      bgm?.pause();
-      if (bgm) bgm.src = '';
-      setIsPlaying(false);
-    };
-  }, [bgm]);
+  useEffect(() => { return () => { bgm?.pause(); setIsPlaying(false); }; }, [bgm]);
 
   useEffect(() => {
     supabase.from('student_master').select('*').then(({ data, error }) => {
@@ -740,13 +759,16 @@ export default function HogwartsApp() {
 
   useEffect(() => { if (isLoggedIn) fetchRecords(); }, [isLoggedIn, selectedName]);
 
+  // 마스터 데이터 → dragons 상태 동기화
   useEffect(() => {
     const master = studentMasterData[selectedName];
     if (!master) return;
 
+    // dragons 컬럼이 있으면 우선 사용
     if (master.dragons && Array.isArray(master.dragons) && master.dragons.length > 0) {
       setDragons(master.dragons);
     } else if (master.selected_egg) {
+      // 기존 레거시 데이터 마이그레이션: selected_egg → dragons[0]
       setDragons([{
         egg: master.selected_egg,
         name: master.dragon_name || "이름 없는 용",
@@ -899,7 +921,7 @@ export default function HogwartsApp() {
 
   // ── 학생 입력 팝업 열기 ──
   const openStudentInput = (name: string, day: string) => {
-    if (isAdmin) return;
+    if (isAdmin) return; // 관리자는 기존 방식 사용
     const rec = records.find(r => r.student_name === name && r.day_of_week === day) || {};
     setPopupOffType(rec.off_type || '-');
     setPopupStudyTime(rec.study_time || '');
@@ -914,21 +936,25 @@ export default function HogwartsApp() {
     const { name, day } = studentInputPopup;
     setIsSaving(true);
 
+    // 월휴 자동 차감 계산
     const monRec = records.find(r => r.student_name === name && r.day_of_week === '월') || {};
     const prevRec = records.find(r => r.student_name === name && r.day_of_week === day) || {};
     const prevOff = prevRec.off_type || '-';
     const currentOffCount = monRec.monthly_off_count ?? 4;
 
+    // 이전 월휴 차감 복원
     const prevDeduct =
       ['월휴', '늦월휴'].includes(prevOff) ? 2 :
       ['월반휴', '늦월반휴'].includes(prevOff) ? 1 : 0;
 
+    // 새 월휴 차감
     const newDeduct =
       ['월휴', '늦월휴'].includes(popupOffType) ? 2 :
       ['월반휴', '늦월반휴'].includes(popupOffType) ? 1 : 0;
 
     const newOffCount = Math.max(0, Math.min(4, currentOffCount + prevDeduct - newDeduct));
 
+    // 레코드 업데이트
     const newRecords = [...records];
     const recIdx = newRecords.findIndex(r => r.student_name === name && r.day_of_week === day);
     const updatedData = {
@@ -943,6 +969,7 @@ export default function HogwartsApp() {
     };
     if (recIdx > -1) newRecords[recIdx] = updatedData; else newRecords.push(updatedData);
 
+    // 월 레코드 monthly_off_count도 업데이트
     const monIdx = newRecords.findIndex(r => r.student_name === name && r.day_of_week === '월');
     if (monIdx > -1) newRecords[monIdx] = { ...newRecords[monIdx], monthly_off_count: newOffCount };
 
@@ -950,6 +977,7 @@ export default function HogwartsApp() {
 
     await supabase.from('study_records').upsert(updatedData, { onConflict: 'student_name,day_of_week' });
 
+    // 월 레코드도 monthly_off_count 갱신
     if (newDeduct !== prevDeduct) {
       await supabase.from('study_records').upsert(
         { ...newRecords[monIdx], monthly_off_count: newOffCount },
@@ -1004,11 +1032,11 @@ export default function HogwartsApp() {
   const currentUserGraduated = !isAdmin && isGraduated(selectedName);
 
   const displayList = isAdmin
-  ? Object.keys(studentData).filter(n => !isGraduated(n)).sort((a, b) => {
-      const houseDiff = HOUSE_ORDER.indexOf(studentData[a].house) - HOUSE_ORDER.indexOf(studentData[b].house);
-      return houseDiff !== 0 ? houseDiff : sortKorean(a, b);
-    })
-  : [selectedName];
+    ? Object.keys(studentData).sort((a, b) => {
+        const houseDiff = HOUSE_ORDER.indexOf(studentData[a].house) - HOUSE_ORDER.indexOf(studentData[b].house);
+        return houseDiff !== 0 ? houseDiff : sortKorean(a, b);
+      })
+    : [selectedName];
 
   // ==========================================
   // 로그인 화면
@@ -1042,14 +1070,71 @@ export default function HogwartsApp() {
     <div className="min-h-screen bg-stone-100 p-2 md:p-4 pb-16 font-sans relative">
       <style>{GLOBAL_STYLE}</style>
 
-      {/* ── 재학생 해그리드 편지 팝업 ── */}
+      {/* ── 해그리드 편지 팝업 ── */}
       {isLetterOpen && (
-        <HagridLetterModal name={selectedName} onClose={closeLetter} />
+        <HagridLetterModal name={selectedName} onClose={closeLetter} initialWeek={initialWeek} />
       )}
 
-      {/* ── 졸업생 해그리드 편지 팝업 ── */}
-      {isGraduatedLetterOpen && (
-        <HagridLetterGraduatedModal name={selectedName} onClose={closeGraduatedLetter} />
+      {/* 관리자 편지 발송 팝업 */}
+      {showLetterCompose && isAdmin && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowLetterCompose(false)}>
+          <div className="bg-[#1a1209] rounded-[2rem] w-full max-w-lg shadow-2xl overflow-hidden border border-amber-400/20" onClick={e => e.stopPropagation()}>
+            <div className="px-7 pt-7 pb-4 border-b border-amber-400/10 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">📬</span>
+                <p className="text-base font-black text-amber-300">해그리드 편지 발송</p>
+              </div>
+              <button onClick={() => setShowLetterCompose(false)} className="text-white/30 hover:text-white text-xl">✕</button>
+            </div>
+            <div className="p-6 space-y-4">
+              {/* 수신 대상 */}
+              <div>
+                <div className="text-[10px] font-black text-amber-400/60 uppercase tracking-widest mb-2">수신 대상</div>
+                <select
+                  value={composeTarget}
+                  onChange={e => setComposeTarget(e.target.value)}
+                  className="w-full bg-white/5 border border-amber-400/20 rounded-xl px-4 py-2.5 text-white text-sm font-bold outline-none"
+                >
+                  <option value="all">전체 재학생</option>
+                  {Object.keys(studentData).filter(n => !isGraduated(n)).sort(sortKorean).map(n => (
+                    <option key={n} value={n}>{n}</option>
+                  ))}
+                </select>
+              </div>
+              {/* 제목 (선택) */}
+              <div>
+                <div className="text-[10px] font-black text-amber-400/60 uppercase tracking-widest mb-2">제목 (선택)</div>
+                <input
+                  type="text"
+                  value={composeTitle}
+                  onChange={e => setComposeTitle(e.target.value)}
+                  placeholder="사냥터지기 해그리드가 보내는 편지"
+                  className="w-full bg-white/5 border border-amber-400/20 rounded-xl px-4 py-2.5 text-white text-sm font-bold outline-none placeholder:text-white/20"
+                />
+              </div>
+              {/* 본문 */}
+              <div>
+                <div className="text-[10px] font-black text-amber-400/60 uppercase tracking-widest mb-2">편지 본문</div>
+                <div className="text-[9px] text-amber-400/40 mb-1">학생 이름을 넣고 싶은 곳에 {"{NAME}"} 을 쓰세요.</div>
+                <textarea
+                  value={composeContent}
+                  onChange={e => setComposeContent(e.target.value)}
+                  placeholder="편지 내용을 입력하세요..."
+                  rows={10}
+                  className="w-full bg-white/5 border border-amber-400/20 rounded-xl px-4 py-3 text-white text-sm leading-relaxed outline-none placeholder:text-white/20 resize-none"
+                />
+              </div>
+              {/* 발송 버튼 */}
+              <button
+                onClick={sendLetter}
+                disabled={isSendingLetter}
+                className="w-full py-3 rounded-2xl text-sm font-black tracking-wide transition-all bg-amber-500 text-white hover:bg-amber-400 active:scale-95 disabled:opacity-50"
+              >
+                {isSendingLetter ? '발송 중...' : `📨 ${getThisMonday()} 주차로 발송`}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* 기숙사 공지사항 팝업 */}
@@ -1079,15 +1164,17 @@ export default function HogwartsApp() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {HOUSE_ORDER.map(house => {
-              const studentsInHouse = Object.keys(studentData).filter(n => studentData[n].house === house && !isGraduated(n)).sort(sortKorean);
+              const studentsInHouse = Object.keys(studentData).filter(n => studentData[n].house === house).sort(sortKorean);
               const config = HOUSE_CONFIG[house];
               return (
                 <div key={house} className="mb-0">
+                  {/* 기숙사 헤더 */}
                   <div className={`${config.bg} px-4 py-2 rounded-t-xl flex items-center gap-2`}>
                     <span className="text-lg">{config.icon}</span>
                     <span className="text-white font-black text-sm tracking-widest">{house}</span>
                   </div>
 
+                  {/* 테이블 */}
                   <div className="overflow-x-auto border border-t-0 border-slate-200 rounded-b-xl">
                     <table className="w-full text-[11px] border-collapse">
                       <thead>
@@ -1116,11 +1203,12 @@ export default function HogwartsApp() {
                               </td>
                               {graduated ? (
                                 <td colSpan={DAYS.length + 2} className="p-2 text-center">
+                                  {/* ★ 졸업생 축하 문구 폰트: fontFamily 값을 바꾸면 됩니다 */}
                                   <span
                                     className="text-slate-400 text-[12px]"
-                                    style={{ fontFamily: "'Diphylleia', serif" }}
+                                    style={{ fontFamily: "'Nanum Pen Script', cursive" }}
                                   >
-                                    {formatDisplayName(name)}님의 졸업을 축하합니다 🎓
+                                    졸업을 축하합니다 🎓
                                   </span>
                                 </td>
                               ) : (
@@ -1175,13 +1263,13 @@ export default function HogwartsApp() {
       {/* 헤더 */}
       <div className="max-w-[1100px] mx-auto mb-8 px-4">
         <div className="flex flex-col gap-y-6">
-          <div className="flex gap-1.5 flex-wrap justify-end items-center">
+          <div className="flex gap-2 flex-wrap justify-end items-center">
             <button onClick={toggleMusic} className={`text-[10px] font-black px-3 py-1.5 rounded-full shadow-sm transition-all border-2 whitespace-nowrap ${isPlaying ? 'bg-white border-yellow-400 text-yellow-500 animate-pulse' : 'bg-slate-50 border-slate-300 text-slate-500'}`}>
               {isPlaying ? '🎵' : '🔇'}
             </button>
             {!isAdmin && !currentUserGraduated && (
               <button
-                onClick={() => setIsLetterOpen(true)}
+                onClick={() => { setInitialWeek(null); setIsLetterOpen(true); }}
                 className={`relative text-[10px] font-black px-3 py-1.5 rounded-full shadow-sm transition-all border-2 whitespace-nowrap
                   ${!hasReadLetter ? 'bg-amber-50 border-amber-400 text-amber-600 animate-pulse' : 'bg-slate-50 border-slate-300 text-slate-500'}`}
                 title="해그리드의 편지"
@@ -1190,15 +1278,6 @@ export default function HogwartsApp() {
                 {!hasReadLetter && (
                   <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-stone-100" />
                 )}
-              </button>
-            )}
-            {!isAdmin && currentUserGraduated && (
-              <button
-                onClick={() => setIsGraduatedLetterOpen(true)}
-                className="relative text-[10px] font-black px-3 py-1.5 rounded-full shadow-sm transition-all border-2 whitespace-nowrap bg-amber-50 border-amber-400 text-amber-600"
-                title="해그리드의 편지"
-              >
-                📬
               </button>
             )}
             {!isAdmin && !currentUserGraduated && (
@@ -1211,6 +1290,7 @@ export default function HogwartsApp() {
             {isAdmin && (
               <>
                 <button onClick={() => setShowSummary(true)} className="text-[10px] font-black text-white bg-indigo-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-indigo-700 whitespace-nowrap">요약</button>
+                <button onClick={() => setShowLetterCompose(true)} className="text-[10px] font-black text-white bg-amber-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-amber-700 whitespace-nowrap">📬 편지 발송</button>
                 <button onClick={resetWeeklyData}            className="text-[10px] font-black text-white bg-red-600    px-3 py-1.5 rounded-full shadow-lg hover:bg-red-700    whitespace-nowrap">주간 리셋</button>
                 <button onClick={resetMonthlyOff}            className="text-[10px] font-black text-white bg-orange-600 px-3 py-1.5 rounded-full shadow-lg hover:bg-orange-700 whitespace-nowrap">월휴 리셋</button>
               </>
@@ -1304,7 +1384,7 @@ export default function HogwartsApp() {
                           <div className="text-[9px] font-black text-amber-500 mt-1">🎓 졸업</div>
                         </td>
                         <td colSpan={DAYS.length + 2} className="text-center bg-white py-10 px-6">
-                          <p className="text-slate-400 text-2xl md:text-3xl" style={{ fontFamily: "'Diphylleia', serif" }}>
+                          <p className="text-slate-400 text-lg md:text-xl" style={{ fontFamily: "'Nanum Pen Script', cursive" }}>
                             호그와트 졸업생 {formatDisplayName(name)}님의 앞날이 행복으로 가득하길 바랍니다. 🎓
                           </p>
                         </td>
@@ -1409,7 +1489,9 @@ export default function HogwartsApp() {
         </div>
       </div>
 
-      {/* Dragon Cave */}
+      {/* ══════════════════════════════════════
+          Dragon Cave
+      ══════════════════════════════════════ */}
       <div className="mt-16 px-4 pb-24 text-left max-w-6xl mx-auto">
         <hr className="border-slate-200 mb-10" />
         <h2 className="text-2xl font-black italic mb-8 uppercase"
@@ -1417,6 +1499,7 @@ export default function HogwartsApp() {
           Dragon Cave
         </h2>
 
+        {/* 기존 용들 슬롯 (세로 배열) */}
         {dragons.length > 0 && (
           <div className="flex flex-col gap-4 mb-6">
             {dragons.map((dragon, idx) => (
@@ -1432,6 +1515,7 @@ export default function HogwartsApp() {
           </div>
         )}
 
+        {/* 새 알 데려오기 구역 (canAddNewEgg 또는 dragons가 0개일 때) */}
         {canAddNewEgg && (
           <div className="mt-2">
             {dragons.length > 0 && (
@@ -1440,6 +1524,7 @@ export default function HogwartsApp() {
               </p>
             )}
 
+            {/* 지역 버튼 */}
             <div className="grid grid-cols-3 gap-2 mb-4 max-w-sm">
               {['volcano', 'jungle', 'forest', 'desert', 'coast', 'alpine'].map(region => (
                 <button
@@ -1456,6 +1541,7 @@ export default function HogwartsApp() {
               ))}
             </div>
 
+            {/* 알 선택 이미지 */}
             <div className="relative">
               <div className="flex justify-end mb-2">
                 <button onClick={handleResetImage} className="text-[9px] font-black text-slate-300 hover:text-slate-500 uppercase tracking-widest transition-colors">
@@ -1471,6 +1557,7 @@ export default function HogwartsApp() {
                   onError={e => { e.currentTarget.src = "https://via.placeholder.com/1200x675?text=Habitat+Image+Not+Found"; }}
                 />
 
+                {/* 알 선택 UI */}
                 {!isFading && currentImageFile !== 'x.jpg' && (
                   <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-8 px-4 z-20">
                     {[1, 2, 3].map(num => {
@@ -1492,6 +1579,7 @@ export default function HogwartsApp() {
                   </div>
                 )}
 
+                {/* 아무 지역도 선택 안 했을 때 안내 */}
                 {currentImageFile === 'x.jpg' && (
                   <div className="absolute inset-0 flex items-center justify-center z-20">
                     <p className="text-white/60 text-sm font-black uppercase tracking-widest drop-shadow-md">
@@ -1504,6 +1592,7 @@ export default function HogwartsApp() {
           </div>
         )}
 
+        {/* 첫 용도 없고 canAddNewEgg도 아닌 경우 (=용 키우는 중) 안내 없음 */}
         {!canAddNewEgg && dragons.length === 0 && (
           <div className="text-center py-10 text-slate-400 text-sm font-black uppercase tracking-widest">
             지역을 선택하여 첫 번째 알을 데려오세요
@@ -1515,6 +1604,7 @@ export default function HogwartsApp() {
       {studentInputPopup && !isAdmin && (
         <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setStudentInputPopup(null)}>
           <div className="bg-white rounded-[2rem] w-full max-w-sm shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            {/* 팝업 헤더 */}
             <div className="bg-slate-900 px-6 py-4 flex items-center justify-between">
               <div>
                 <div className="text-yellow-500 font-black text-xs tracking-widest uppercase">{studentInputPopup.day}요일 기록</div>
@@ -1524,56 +1614,46 @@ export default function HogwartsApp() {
             </div>
 
             <div className="p-6 space-y-5">
+
+              {/* 출결 선택 */}
               <div>
                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">출결 유형</div>
                 {(() => {
-  const monRec = records.find(r => r.student_name === studentInputPopup?.name && r.day_of_week === '월') || {};
-  const offCount = monRec.monthly_off_count ?? 4;
-  const prevRec = records.find(r => r.student_name === studentInputPopup?.name && r.day_of_week === studentInputPopup?.day) || {};
-  const prevDeduct = ['월휴','늦월휴'].includes(prevRec.off_type) ? 2 : ['월반휴','늦월반휴'].includes(prevRec.off_type) ? 1 : 0;
-  const availableCount = Math.min(4, offCount + prevDeduct);
-
-  // ── 주휴 잔여 계산 추가 ──
-  const usedWeeklyOff = records
-    .filter(r => r.student_name === studentInputPopup?.name && r.day_of_week !== studentInputPopup?.day)
-    .reduce((sum, r) => {
-      if (['반휴','늦반휴'].includes(r.off_type)) return sum + 0.5;
-      if (['주휴','늦휴'].includes(r.off_type))   return sum + 1.0;
-      return sum;
-    }, 0);
-  const remainingWeeklyOff = 1.5 - usedWeeklyOff; // 잔여 주휴 (0, 0.5, 1, 1.5)
-
-  return (
-    <div className="grid grid-cols-3 gap-2">
-      {['-', '출석', '반휴', '주휴', '월반휴', '월휴', '늦반휴', '늦휴', '늦월반휴', '늦월휴', '자율', '결석'].map(opt => {
-        const needsMonthly = ['월휴','늦월휴'].includes(opt) ? 2 : ['월반휴','늦월반휴'].includes(opt) ? 1 : 0;
-        const needsWeekly  = ['반휴','늦반휴'].includes(opt) ? 0.5 : ['주휴','늦휴'].includes(opt) ? 1.0 : 0;
-        const isDisabled =
-          (needsMonthly > 0 && availableCount < needsMonthly) ||
-          (needsWeekly  > 0 && remainingWeeklyOff < needsWeekly);
-        return (
-          <button
-            key={opt}
-            onClick={() => !isDisabled && setPopupOffType(opt)}
-            disabled={isDisabled}
-            className={`py-2 px-1 rounded-xl text-[11px] font-black border-2 transition-all active:scale-95
-              ${isDisabled
-                ? 'bg-slate-100 border-slate-100 text-slate-300 cursor-not-allowed line-through'
-                : popupOffType === opt
-                  ? opt === '결석' ? 'bg-red-500 border-red-500 text-white'
-                  : ['월휴','월반휴','늦월휴','늦월반휴'].includes(opt) ? 'bg-cyan-500 border-cyan-500 text-white'
-                  : ['반휴','늦반휴','주휴','늦휴'].includes(opt) ? 'bg-emerald-500 border-emerald-500 text-white'
-                  : 'bg-slate-900 border-slate-900 text-white'
-                  : 'bg-slate-50 border-slate-100 text-slate-500 hover:border-slate-300'
-              }`}
-          >
-            {opt}
-          </button>
-        );
-      })}
-    </div>
-  );
-})()}
+                  const monRec = records.find(r => r.student_name === studentInputPopup?.name && r.day_of_week === '월') || {};
+                  const offCount = monRec.monthly_off_count ?? 4;
+                  // 현재 선택한 날의 기존 월휴 차감 복원 고려
+                  const prevRec = records.find(r => r.student_name === studentInputPopup?.name && r.day_of_week === studentInputPopup?.day) || {};
+                  const prevDeduct = ['월휴','늦월휴'].includes(prevRec.off_type) ? 2 : ['월반휴','늦월반휴'].includes(prevRec.off_type) ? 1 : 0;
+                  const availableCount = Math.min(4, offCount + prevDeduct); // 이미 차감된 만큼 복원해서 계산
+                  return (
+                    <div className="grid grid-cols-3 gap-2">
+                      {['-', '출석', '반휴', '주휴', '월반휴', '월휴', '늦반휴', '늦휴', '늦월반휴', '늦월휴', '자율', '결석'].map(opt => {
+                        const needsCount = ['월휴','늦월휴'].includes(opt) ? 2 : ['월반휴','늦월반휴'].includes(opt) ? 1 : 0;
+                        const isDisabled = needsCount > 0 && availableCount < needsCount;
+                        return (
+                          <button
+                            key={opt}
+                            onClick={() => !isDisabled && setPopupOffType(opt)}
+                            disabled={isDisabled}
+                            className={`py-2 px-1 rounded-xl text-[11px] font-black border-2 transition-all active:scale-95
+                              ${isDisabled
+                                ? 'bg-slate-100 border-slate-100 text-slate-300 cursor-not-allowed line-through'
+                                : popupOffType === opt
+                                  ? opt === '결석' ? 'bg-red-500 border-red-500 text-white'
+                                  : ['월휴','월반휴','늦월휴','늦월반휴'].includes(opt) ? 'bg-cyan-500 border-cyan-500 text-white'
+                                  : ['반휴','늦반휴','주휴','늦휴'].includes(opt) ? 'bg-emerald-500 border-emerald-500 text-white'
+                                  : 'bg-slate-900 border-slate-900 text-white'
+                                  : 'bg-slate-50 border-slate-100 text-slate-500 hover:border-slate-300'
+                              }`}
+                          >
+                            {opt}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+                {/* 월휴 차감 안내 */}
                 {(['월휴','늦월휴'].includes(popupOffType)) && (
                   <div className="mt-2 text-[10px] font-bold text-cyan-600 bg-cyan-50 rounded-lg px-3 py-1.5">
                     ✦ 월휴 2칸이 차감됩니다
@@ -1586,6 +1666,7 @@ export default function HogwartsApp() {
                 )}
               </div>
 
+              {/* 공부 시간 */}
               {popupOffType !== '-' && popupOffType !== '결석' && (
                 <div>
                   <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">공부 시간</div>
@@ -1599,6 +1680,7 @@ export default function HogwartsApp() {
                 </div>
               )}
 
+              {/* 체크박스 옵션 */}
               {popupOffType !== '-' && popupOffType !== '결석' && !['주휴','월휴','늦휴','늦월휴'].includes(popupOffType) && (
                 <div className="space-y-3">
                   <label className="flex items-center gap-3 p-3 rounded-xl border-2 border-slate-100 cursor-pointer hover:border-amber-200 hover:bg-amber-50 transition-all">
@@ -1630,6 +1712,7 @@ export default function HogwartsApp() {
                 </div>
               )}
 
+              {/* 저장 버튼 */}
               <button
                 onClick={saveStudentInput}
                 disabled={isSaving}
@@ -1658,10 +1741,7 @@ export default function HogwartsApp() {
                   if (eggStep === 1) {
                     setEggStep(2);
                   } else {
-                    if (!studentMasterData[selectedName]) {
-                      alert("데이터 로딩 중입니다. 잠시 후 다시 시도해주세요.");
-                      return;
-                    }
+                    // 새 용 추가
                     const newDragon: DragonEntry = {
                       egg: tempEgg,
                       name: "이름 없는 용",
@@ -1672,6 +1752,7 @@ export default function HogwartsApp() {
                     setEggStep(0);
                     setTempEgg(null);
                     handleResetImage();
+                    // 이름 짓기 팝업 바로 열기
                     setNamingDragonIdx(newDragons.length - 1);
                     setTempName("");
                   }
@@ -1720,19 +1801,21 @@ export default function HogwartsApp() {
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedStudentReport(null)}>
           <div className="bg-white p-5 md:px-10 md:py-8 w-full max-w-lg shadow-[0_25px_60px_-12px_rgba(0,0,0,0.3)] relative rounded-[3rem] animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
 
+            {/* 졸업생 리포트 */}
             {isGraduated(selectedStudentReport) ? (
               <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
                 <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="Logo" className="w-24 h-24 object-contain drop-shadow-md mb-4 opacity-60" />
                 <div className="text-5xl mb-5">{studentData[selectedStudentReport].emoji}</div>
                 <p
                   className="text-slate-600 text-2xl md:text-3xl leading-relaxed"
-                  style={{ fontFamily: "'Diphylleia', serif" }}
+                  style={{ fontFamily: "'Nanum Pen Script', cursive" }}
                 >
                   호그와트 졸업생 {formatDisplayName(selectedStudentReport)}님의<br />앞날이 행복으로 가득하길 바랍니다.
                 </p>
                 <div className="mt-6 text-3xl tracking-widest">🎓 ✨ 🎉</div>
               </div>
             ) : (
+            /* 일반 학생 리포트 */
             <div className="flex items-end justify-center mb-6 w-full">
               <div className="w-[45%] flex justify-end">
                 <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="Logo" className="w-36 h-36 md:w-44 md:h-44 object-contain drop-shadow-md" />
@@ -1748,9 +1831,6 @@ export default function HogwartsApp() {
                 </div>
               </div>
             </div>
-            )}
-            {!isGraduated(selectedStudentReport) && (
-              <>
             <div className="text-xl md:text-2xl font-black text-black mb-4 text-center tracking-tight">{getWeeklyDateRange()}</div>
             <div className="grid grid-cols-4 gap-2.5 mb-2">
               {DAYS.map(day => {
@@ -1775,7 +1855,6 @@ export default function HogwartsApp() {
                 <div className="flex justify-between text-cyan-400"><span>월휴</span><span>{calculatePoints(selectedStudentReport).remainingMonthlyOff}</span></div>
               </div>
             </div>
-              </>
             )}
           </div>
         </div>
