@@ -344,35 +344,35 @@ const calc = (r: any) => {
 // ==========================================
 // 해그리드 편지 팝업 컴포넌트 (DB 기반)
 // ==========================================
-type LetterRecord = { id: string; week: string; title: string | null; content: string };
+type LetterRecord = { id: string; week: string; title: string | null; content: string; type: string };
 
 function HagridLetterModal({ name, onClose, initialWeek }: {
   name: string;
   onClose: () => void;
-  initialWeek?: string | null; // 특정 주 편지를 바로 열기
+  initialWeek?: string | null;
 }) {
-  const [letters, setLetters]     = React.useState<LetterRecord[]>([]);
-  const [selected, setSelected]   = React.useState<LetterRecord | null>(null);
-  const [loading, setLoading]     = React.useState(true);
+  const [letters, setLetters]       = React.useState<LetterRecord[]>([]);
+  const [selectedWeek, setSelectedWeek] = React.useState<string | null>(null);
+  const [selectedType, setSelectedType] = React.useState<string>('weekly');
+  const [loading, setLoading]       = React.useState(true);
 
   React.useEffect(() => {
     const load = async () => {
       const today = new Date().toLocaleDateString('en-CA');
       const { data } = await supabase
         .from('hagrid_letters')
-        .select('id, week, title, content')
+        .select('id, week, title, content, type')
         .eq('student_name', name)
-        .lte('week', today)          // 오늘 이하 날짜만
+        .lte('week', today)
         .order('week', { ascending: false });
       const list = (data || []) as LetterRecord[];
       setLetters(list);
-      // initialWeek 있으면 해당 편지 바로 오픈, 없으면 가장 최신 편지 오픈
-      if (initialWeek) {
-        const found = list.find(l => l.week === initialWeek);
-        setSelected(found || list[0] || null);
-      } else {
-        setSelected(list[0] || null);
-      }
+      // 초기 주차 설정
+      const targetWeek = initialWeek || list[0]?.week || null;
+      setSelectedWeek(targetWeek);
+      // 해당 주에 weekly 편지가 있으면 weekly, 없으면 첫 번째 type
+      const weekLetters = list.filter(l => l.week === targetWeek);
+      setSelectedType(weekLetters.find(l => l.type === 'weekly') ? 'weekly' : (weekLetters[0]?.type || 'weekly'));
       setLoading(false);
     };
     load();
@@ -382,6 +382,16 @@ function HagridLetterModal({ name, onClose, initialWeek }: {
     const d = new Date(week + 'T00:00:00');
     return `${d.getMonth() + 1}월 ${d.getDate()}일 주`;
   };
+
+  // 중복 없는 주차 목록
+  const weeks = Array.from(new Set(letters.map(l => l.week)));
+  // 현재 선택된 주의 편지들
+  const weekLetters = letters.filter(l => l.week === selectedWeek);
+  // 현재 보여줄 편지
+  const selected = weekLetters.find(l => l.type === selectedType) || weekLetters[0] || null;
+  // 해당 주에 personal 편지도 있는지
+  const hasPersonal = weekLetters.some(l => l.type === 'personal');
+  const hasWeekly   = weekLetters.some(l => l.type === 'weekly');
 
   return (
     <div
@@ -420,23 +430,53 @@ function HagridLetterModal({ name, onClose, initialWeek }: {
           </div>
         ) : (
           <>
-            {/* 날짜 탭 (상단 가로 스크롤, 편지 2개 이상일 때만 표시) */}
-            {letters.length > 1 && (
+            {/* 주차 탭 */}
+            {weeks.length > 1 && (
               <div className="flex gap-1.5 px-5 py-3 overflow-x-auto border-b border-amber-400/10 shrink-0"
                 style={{ scrollbarWidth: 'none' }}>
-                {letters.map(letter => (
+                {weeks.map(week => (
                   <button
-                    key={letter.id}
-                    onClick={() => setSelected(letter)}
+                    key={week}
+                    onClick={() => {
+                      setSelectedWeek(week);
+                      const wl = letters.filter(l => l.week === week);
+                      setSelectedType(wl.find(l => l.type === 'weekly') ? 'weekly' : (wl[0]?.type || 'weekly'));
+                    }}
                     className={`shrink-0 px-3 py-1.5 rounded-full text-[10px] font-black transition-all whitespace-nowrap border
-                      ${selected?.id === letter.id
+                      ${selectedWeek === week
                         ? 'bg-amber-400/20 text-amber-300 border-amber-400/40'
                         : 'text-amber-400/40 hover:text-amber-400/70 hover:bg-amber-400/10 border-transparent'
                       }`}
                   >
-                    {formatWeekLabel(letter.week)}
+                    {formatWeekLabel(week)}
                   </button>
                 ))}
+              </div>
+            )}
+
+            {/* 편지 종류 탭 (주간 + 개별 둘 다 있을 때만) */}
+            {hasWeekly && hasPersonal && (
+              <div className="flex gap-2 px-5 py-2.5 border-b border-amber-400/10 shrink-0">
+                <button
+                  onClick={() => setSelectedType('weekly')}
+                  className={`px-3 py-1 rounded-lg text-[10px] font-black transition-all
+                    ${selectedType === 'weekly'
+                      ? 'bg-amber-400/20 text-amber-300'
+                      : 'text-amber-400/30 hover:text-amber-400/60'
+                    }`}
+                >
+                  📮 주간편지
+                </button>
+                <button
+                  onClick={() => setSelectedType('personal')}
+                  className={`px-3 py-1 rounded-lg text-[10px] font-black transition-all
+                    ${selectedType === 'personal'
+                      ? 'bg-amber-400/20 text-amber-300'
+                      : 'text-amber-400/30 hover:text-amber-400/60'
+                    }`}
+                >
+                  ✉️ 개별편지
+                </button>
               </div>
             )}
 
@@ -609,6 +649,7 @@ export default function HogwartsApp() {
   const [composeTarget,   setComposeTarget]   = useState<'all' | string>('all'); // 'all' or 학생명
   const [composeContent,  setComposeContent]  = useState('');
   const [composeTitle,    setComposeTitle]    = useState('');
+  const [composeType,     setComposeType]     = useState<'weekly' | 'personal'>('weekly');
   const [isSendingLetter, setIsSendingLetter] = useState(false);
 
   const [studentInputPopup, setStudentInputPopup] = useState<{ name: string; day: string } | null>(null);
@@ -685,16 +726,18 @@ export default function HogwartsApp() {
       week: thisMonday,
       title: composeTitle || null,
       content: composeContent,
+      type: composeType,
     }));
     const { error } = await supabase
       .from('hagrid_letters')
-      .upsert(rows, { onConflict: 'student_name,week' });
+      .upsert(rows, { onConflict: 'student_name,week,type' });
     if (error) { alert('발송 실패: ' + error.message); }
     else {
       alert(`편지 발송 완료! (${targets.length}명)`);
       setShowLetterCompose(false);
       setComposeContent('');
       setComposeTitle('');
+      setComposeType('weekly');
     }
     setIsSendingLetter(false);
   };
@@ -1105,6 +1148,31 @@ export default function HogwartsApp() {
                 </select>
               </div>
               {/* 제목 (선택) */}
+              <div>
+                <div className="text-[10px] font-black text-amber-400/60 uppercase tracking-widest mb-2">편지 종류</div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setComposeType('weekly')}
+                    className={`flex-1 py-2 rounded-xl text-[11px] font-black border transition-all
+                      ${composeType === 'weekly'
+                        ? 'bg-amber-400/20 text-amber-300 border-amber-400/40'
+                        : 'bg-white/5 text-white/40 border-amber-400/10 hover:text-white/70'}`}
+                  >
+                    📮 주간편지
+                  </button>
+                  <button
+                    onClick={() => setComposeType('personal')}
+                    className={`flex-1 py-2 rounded-xl text-[11px] font-black border transition-all
+                      ${composeType === 'personal'
+                        ? 'bg-amber-400/20 text-amber-300 border-amber-400/40'
+                        : 'bg-white/5 text-white/40 border-amber-400/10 hover:text-white/70'}`}
+                  >
+                    ✉️ 개별편지
+                  </button>
+                </div>
+                {composeType === 'weekly' && <p className="text-[9px] text-amber-400/40 mt-1">같은 주에 재발송하면 덮어써집니다.</p>}
+                {composeType === 'personal' && <p className="text-[9px] text-amber-400/40 mt-1">주간편지와 별개로 저장됩니다.</p>}
+              </div>
               <div>
                 <div className="text-[10px] font-black text-amber-400/60 uppercase tracking-widest mb-2">제목 (선택)</div>
                 <input
