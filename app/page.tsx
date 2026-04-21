@@ -1864,4 +1864,4 @@ export default function HogwartsApp() {
       )}
     </div>
   );
-}
+} 
