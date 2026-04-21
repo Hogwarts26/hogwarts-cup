@@ -316,7 +316,7 @@ function getThisMonday(): string {
 // ==========================================
 // 점수 계산
 // ==========================================
-const calc = (r: any) => {
+const calc = (r: any): { penalty: number; bonus: number; total: number; studyH: number } => {
   if (!r || !r.off_type || r.off_type === '-' || r.off_type === '')
     return { penalty: 0, bonus: 0, total: 0, studyH: 0 };
   if (r.off_type === '결석')
@@ -1452,10 +1452,12 @@ export default function HogwartsApp() {
                                   <span className="font-black text-sm text-slate-900">{rec.study_time || '-'}</span>
                                 )
                               ) : (
-                                <span className={`font-black text-sm ${row.f === 'penalty' && res.penalty < 0 ? 'text-red-500' : row.f === 'bonus' && res.bonus > 0 ? 'text-blue-600' : 'text-slate-900'}`}>
-                                  {res[row.f as keyof typeof res] || (row.f === 'total' ? 0 : '')}
-                                </span>
-                              )}
+                               <span className={`font-black text-sm ${row.f === 'penalty' && res.penalty < 0 ? 'text-red-500' : row.f === 'bonus' && res.bonus > 0 ? 'text-blue-600' : 'text-slate-900'}`}>
+                                {row.f === 'penalty' ? res.penalty
+                                 : row.f === 'bonus' ? res.bonus
+                                 : res.total || 0}
+                                    </span>
+                                 }
                             </td>
                           );
                         })}
