@@ -1818,7 +1818,8 @@ export default function HogwartsApp() {
                 <div className="mt-6 text-3xl tracking-widest">🎓 ✨ 🎉</div>
               </div>
             ) : (
-            /* 일반 학생 리포트 */
+              <>
+            {/* 일반 학생 리포트 */}
             <div className="flex items-end justify-center mb-6 w-full">
               <div className="w-[45%] flex justify-end">
                 <img src={HOUSE_LOGOS[studentData[selectedStudentReport].house]} alt="Logo" className="w-36 h-36 md:w-44 md:h-44 object-contain drop-shadow-md" />
@@ -1858,10 +1859,11 @@ export default function HogwartsApp() {
                 <div className="flex justify-between text-cyan-400"><span>월휴</span><span>{calculatePoints(selectedStudentReport).remainingMonthlyOff}</span></div>
               </div>
             </div>
+              </>
             )}
           </div>
         </div>
       )}
     </div>
   );
-} 
+}
