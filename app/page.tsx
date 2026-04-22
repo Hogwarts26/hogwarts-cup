@@ -188,8 +188,6 @@ const GLOBAL_STYLE = `
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap');
   @import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap');
   @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-  @import url('https://fonts.googleapis.com/css2?family=Diphylleia&display=swap');
-
   body {
     font-family: 'Cinzel', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto,
       'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
@@ -699,35 +697,34 @@ export default function HogwartsApp() {
 
   // 편지 체크 함수 (DB 기반)
   const checkAndShowLetter = async (name: string, admin: boolean) => {
-    if (!name || admin || isGraduated(name)) return;
+    if (!name || admin) return;
     const thisMonday = getThisMonday();
-    // 이번 주 편지가 DB에 있는지 확인
+    // 이번 주 편지가 DB에 있는지 확인 (모든 타입)
     const { data } = await supabase
       .from('hagrid_letters')
       .select('week')
       .eq('student_name', name)
-      .eq('week', thisMonday)
-      .maybeSingle();
-    if (data) {
-      // 이번 주 편지 있음 → 읽었는지 localStorage로 확인
-      const readKey = `hagrid_letter_read_${name}_${thisMonday}`;
+      .lte('week', thisMonday)
+      .limit(1);
+    const latestWeek = data?.[0]?.week || null;
+    if (latestWeek) {
+      const readKey = `hagrid_letter_read_${name}_${latestWeek}`;
       if (!localStorage.getItem(readKey)) {
         setHasReadLetter(false);
-        setInitialWeek(thisMonday);
+        setInitialWeek(latestWeek);
         setTimeout(() => setIsLetterOpen(true), 900);
       } else {
         setHasReadLetter(true);
       }
     } else {
-      setHasReadLetter(true); // 이번 주 편지 없으면 알림 없음
+      setHasReadLetter(true);
     }
   };
 
   const closeLetter = () => {
     setIsLetterOpen(false);
-    if (selectedName) {
-      const thisMonday = getThisMonday();
-      localStorage.setItem(`hagrid_letter_read_${selectedName}_${thisMonday}`, '1');
+    if (selectedName && initialWeek) {
+      localStorage.setItem(`hagrid_letter_read_${selectedName}_${initialWeek}`, '1');
       setHasReadLetter(true);
     }
   };
@@ -1323,7 +1320,7 @@ export default function HogwartsApp() {
                                   {/* ★ 졸업생 축하 문구 폰트: fontFamily 값을 바꾸면 됩니다 */}
                                   <span
                                     className="text-slate-400 text-[12px]"
-                                    style={{ fontFamily: "'Diphylleia', serif" }}
+                                    style={{ fontFamily: "'Nanum Pen Script', cursive" }}
                                   >
                                     졸업을 축하합니다 🎓
                                   </span>
@@ -1384,7 +1381,7 @@ export default function HogwartsApp() {
             <button onClick={toggleMusic} className={`text-[10px] font-black px-3 py-1.5 rounded-full shadow-sm transition-all border-2 whitespace-nowrap ${isPlaying ? 'bg-white border-yellow-400 text-yellow-500 animate-pulse' : 'bg-slate-50 border-slate-300 text-slate-500'}`}>
               {isPlaying ? '🎵' : '🔇'}
             </button>
-            {!isAdmin && !currentUserGraduated && (
+            {!isAdmin && (
               <button
                 onClick={() => { setInitialWeek(null); setIsLetterOpen(true); }}
                 className={`relative text-[10px] font-black px-3 py-1.5 rounded-full shadow-sm transition-all border-2 whitespace-nowrap
@@ -1501,7 +1498,7 @@ export default function HogwartsApp() {
                           <div className="text-[9px] font-black text-amber-500 mt-1">🎓 졸업</div>
                         </td>
                         <td colSpan={DAYS.length + 2} className="text-center bg-white py-10 px-6">
-                          <p className="text-slate-400 text-lg md:text-xl" style={{ fontFamily: "'Diphylleia', serif" }}>
+                          <p className="text-slate-400 text-lg md:text-xl" style={{ fontFamily: "'Nanum Pen Script', cursive" }}>
                             호그와트 졸업생 {formatDisplayName(name)}님의 앞날이 행복으로 가득하길 바랍니다. 🎓
                           </p>
                         </td>
@@ -1925,7 +1922,7 @@ export default function HogwartsApp() {
                 <div className="text-5xl mb-5">{studentData[selectedStudentReport].emoji}</div>
                 <p
                   className="text-slate-600 text-2xl md:text-3xl leading-relaxed"
-                  style={{ fontFamily: "'Diphylleia', serif" }}
+                  style={{ fontFamily: "'Nanum Pen Script', cursive" }}
                 >
                   호그와트 졸업생 {formatDisplayName(selectedStudentReport)}님의<br />앞날이 행복으로 가득하길 바랍니다.
                 </p>
