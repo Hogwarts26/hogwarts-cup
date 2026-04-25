@@ -1280,7 +1280,7 @@ export default function HogwartsApp() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {HOUSE_ORDER.map(house => {
-              const studentsInHouse = Object.keys(studentData).filter(n => studentData[n].house === house).sort(sortKorean);
+              const studentsInHouse = Object.keys(studentData).filter(n => studentData[n].house === house && !isGraduated(n)).sort(sortKorean);
               const config = HOUSE_CONFIG[house];
               return (
                 <div key={house} className="mb-0">
