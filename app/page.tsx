@@ -1167,7 +1167,6 @@ export default function HogwartsApp() {
                     else setComposeType('weekly');
                   }}
                   className="w-full bg-white/5 border border-amber-400/20 rounded-xl px-4 py-2.5 text-white text-sm font-bold outline-none"
-                   style={{ colorScheme: 'dark' }}
                 >
                   <option value="all">전체 재학생</option>
                   {Object.keys(studentData).filter(n => !isGraduated(n)).sort(sortKorean).map(n => (
