@@ -705,11 +705,12 @@ export default function HogwartsApp() {
     const thisMonday = getThisMonday();
     // 이번 주 편지가 DB에 있는지 확인 (모든 타입)
     const { data } = await supabase
-      .from('hagrid_letters')
-      .select('week')
-      .eq('student_name', name)
-      .lte('week', thisMonday)
-      .limit(1);
+  .from('hagrid_letters')
+  .select('week')
+  .eq('student_name', name)
+  .lte('week', thisMonday)
+  .order('week', { ascending: false })
+  .limit(1);
     const latestWeek = data?.[0]?.week || null;
     if (latestWeek) {
       const readKey = `hagrid_letter_read_${name}_${latestWeek}`;
